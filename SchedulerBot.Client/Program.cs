@@ -6,6 +6,8 @@ using System.IO;
 using System.Text;
 using System.Threading.Tasks;
 using DSharpPlus;
+using DSharpPlus.CommandsNext;
+using SchedulerBot.Client.Commands;
 
 namespace SchedulerBot.Client
 {
@@ -53,16 +55,17 @@ namespace SchedulerBot.Client
             Client = new DiscordClient(new DiscordConfiguration
             {
                 Token = Configuration.GetSection("Bot").GetValue<string>("Token"),
-                TokenType = TokenType.Bot
+                TokenType = TokenType.Bot,
+                UseInternalLogHandler = true,
+                LogLevel = DSharpPlus.LogLevel.Debug
             });
 
-            Client.MessageCreated += async e =>
+            var commands = Client.UseCommandsNext(new CommandsNextConfiguration
             {
-                if (e.Message.Content.ToLower().StartsWith("ping"))
-                {
-                    await e.Message.RespondAsync("Pong!");
-                }
-            };
+                StringPrefix = Configuration.GetSection("Bot").GetValue<string>("Prefix")
+            });
+
+            commands.RegisterCommands<MiscCommands>();
 
             Console.WriteLine("Connecting...");
             await Client.ConnectAsync();
