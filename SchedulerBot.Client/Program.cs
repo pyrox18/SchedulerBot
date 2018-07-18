@@ -34,19 +34,7 @@ namespace SchedulerBot.Client
 
             Console.WriteLine($"Environment: {environment}");
 
-            var builder = new ConfigurationBuilder();
-            if (environment == "Development")
-            {
-                builder.SetBasePath(Path.Combine(Directory.GetCurrentDirectory(), string.Format("..{0}..{0}..{0}", Path.DirectorySeparatorChar)));
-            }
-            else
-            {
-                builder.SetBasePath(Directory.GetCurrentDirectory());
-            }
-            builder.AddJsonFile("appsettings.json")
-                .AddJsonFile($"appsettings.{environment}.json");
-
-            Configuration = builder.Build();
+            Configuration = Configure(environment);
             
             var serviceProvider = ConfigureServices(new ServiceCollection());
 
@@ -57,7 +45,7 @@ namespace SchedulerBot.Client
                 Token = Configuration.GetSection("Bot").GetValue<string>("Token"),
                 TokenType = TokenType.Bot,
                 UseInternalLogHandler = true,
-                LogLevel = DSharpPlus.LogLevel.Debug
+                LogLevel = DSharpPlus.LogLevel.Debug,
             });
 
             var commands = Client.UseCommandsNext(new CommandsNextConfiguration
@@ -71,6 +59,23 @@ namespace SchedulerBot.Client
             await Client.ConnectAsync();
             Console.WriteLine("Bot connected");
             await Task.Delay(-1);
+        }
+
+        static IConfigurationRoot Configure(string environment)
+        {
+            var builder = new ConfigurationBuilder();
+            if (environment == "Development")
+            {
+                builder.SetBasePath(Path.Combine(Directory.GetCurrentDirectory(), string.Format("..{0}..{0}..{0}", Path.DirectorySeparatorChar)));
+            }
+            else
+            {
+                builder.SetBasePath(Directory.GetCurrentDirectory());
+            }
+            builder.AddJsonFile("appsettings.json")
+                .AddJsonFile($"appsettings.{environment}.json");
+
+            return builder.Build();
         }
 
         static IServiceProvider ConfigureServices(IServiceCollection services)
