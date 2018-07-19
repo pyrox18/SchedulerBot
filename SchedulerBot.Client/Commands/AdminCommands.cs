@@ -9,7 +9,7 @@ using DSharpPlus.CommandsNext.Attributes;
 namespace SchedulerBot.Client.Commands
 {
     [Hidden, RequireOwner]
-    public class AdminCommands
+    public class AdminCommands : BaseCommandModule
     {
         [Command("admincheck"), Description("Checks if the user is the bot owner.")]
         public async Task AdminCheck(CommandContext ctx)

@@ -10,7 +10,7 @@ namespace SchedulerBot.Client.Commands
 {
     [Group("perms")] 
     [Description("View and modify permissions for other commands.")]
-    public class PermissionsCommands
+    public class PermissionsCommands : BaseCommandModule
     { 
         [Command("allow"), Description("Allows a certain role or user to use a certain command.")]
         public async Task Allow(CommandContext ctx, string args)

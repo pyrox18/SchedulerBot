@@ -9,52 +9,50 @@ using DSharpPlus.Entities;
 
 namespace SchedulerBot.Client.Commands
 {
-    [Group("settings", CanInvokeWithoutSubcommand = true)]
+    [Group("settings")]
     [Description("Change settings for the bot.")]
-    public class SettingsCommands
+    public class SettingsCommands : BaseCommandModule
     {
-        public async Task ExecuteGroupAsync(CommandContext ctx)
+        [GroupCommand]
+        public async Task Settings(CommandContext ctx)
         {
             await ctx.RespondAsync("Settings");
         }
 
-        [Command("prefix"), Description("View or change the bot's prefix.")]
-        public async Task Prefix(CommandContext ctx, string prefix)
+        [Command("prefix"), Description("View the bot's prefix.")]
+        public async Task Prefix(CommandContext ctx)
         {
-            if (string.IsNullOrWhiteSpace(prefix))
-            {
-                await ctx.RespondAsync("`-`");
-            }
-            else
-            {
-                await ctx.RespondAsync($"Changing prefix to {prefix}");
-            }
+            await ctx.RespondAsync("`-`");
         }
 
-        [Command("defaultchannel"), Description("View or set the default channel that the bot sends messages to.")]
-        public async Task DefaultChannel(CommandContext ctx, DiscordChannel channel = null)
+        [Command("prefix"), Description("Change the bot's prefix.")]
+        public async Task Prefix(CommandContext ctx, string prefix)
         {
-            if (channel == null)
-            {
-                await ctx.RespondAsync("Default channel");
-            }
-            else
-            {
-                await ctx.RespondAsync($"Changing default channel to {channel.Mention}");
-            }
+            await ctx.RespondAsync($"Changing prefix to {prefix}");
+        }
+
+        [Command("defaultchannel"), Description("View the default channel that the bot sends messages to.")]
+        public async Task DefaultChannel(CommandContext ctx)
+        {
+            await ctx.RespondAsync("Default channel");
+        }
+
+        [Command("defaultchannel"), Description("Set the default channel that the bot sends messages to.")]
+        public async Task DefaultChannel(CommandContext ctx, DiscordChannel channel)
+        {
+            await ctx.RespondAsync($"Changing default channel to {channel.Mention}");
+        }
+
+        [Command("timezone"), Description("View the timezone for the bot.")]
+        public async Task Timezone(CommandContext ctx)
+        {
+            await ctx.RespondAsync("Timezone");
         }
 
         [Command("timezone"), Description("Change the timezone for the bot.")]
         public async Task Timezone(CommandContext ctx, string timezone)
         {
-            if (string.IsNullOrEmpty(timezone))
-            {
-                await ctx.RespondAsync("Timezone");
-            }
-            else
-            {
-                await ctx.RespondAsync($"Changing timezone to {timezone}");
-            }
+            await ctx.RespondAsync($"Changing timezone to {timezone}");
         }
     }
 }

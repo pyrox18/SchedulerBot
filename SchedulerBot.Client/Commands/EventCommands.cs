@@ -8,11 +8,12 @@ using DSharpPlus.CommandsNext.Attributes;
 
 namespace SchedulerBot.Client.Commands
 {
-    [Group("event", CanInvokeWithoutSubcommand = true)]
-    [Description("Commands for managing events. Invoke without a subcommand to create an event.")]
-    public class EventCommands
+    [Group("event")]
+    [Description("Commands for managing events.")]
+    public class EventCommands : BaseCommandModule
     {
-        public async Task ExecuteGroupAsync(CommandContext ctx, string args)
+        [GroupCommand, Description("Create an event.")]
+        public async Task Create(CommandContext ctx, string args)
         {
             await ctx.RespondAsync(args);
         }

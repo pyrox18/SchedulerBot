@@ -8,7 +8,7 @@ using DSharpPlus.CommandsNext.Attributes;
 
 namespace SchedulerBot.Client.Commands
 {
-    public class MiscCommands
+    public class MiscCommands : BaseCommandModule
     {
         [Command("ping"), Description("Pings the bot.")]
         public async Task Ping(CommandContext ctx)

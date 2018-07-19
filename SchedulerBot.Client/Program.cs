@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using DSharpPlus;
 using DSharpPlus.CommandsNext;
 using SchedulerBot.Client.Commands;
+using System.Collections.Generic;
 
 namespace SchedulerBot.Client
 {
@@ -50,7 +51,7 @@ namespace SchedulerBot.Client
 
             var commands = Client.UseCommandsNext(new CommandsNextConfiguration
             {
-                StringPrefix = Configuration.GetSection("Bot").GetValue<string>("Prefix")
+                StringPrefixes = Configuration.GetSection("Bot").GetSection("Prefixes").Get<string[]>()
             });
 
             commands.RegisterCommands<AdminCommands>();
