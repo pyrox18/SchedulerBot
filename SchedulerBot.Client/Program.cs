@@ -53,7 +53,12 @@ namespace SchedulerBot.Client
                 StringPrefix = Configuration.GetSection("Bot").GetValue<string>("Prefix")
             });
 
+            commands.RegisterCommands<AdminCommands>();
+            commands.RegisterCommands<EventCommands>();
+            commands.RegisterCommands<InitializerCommands>();
             commands.RegisterCommands<MiscCommands>();
+            commands.RegisterCommands<PermissionsCommands>();
+            commands.RegisterCommands<SettingsCommands>();
 
             Console.WriteLine("Connecting...");
             await Client.ConnectAsync();
