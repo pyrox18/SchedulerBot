@@ -6,6 +6,9 @@ using System.IO;
 using System.Text;
 using System.Threading.Tasks;
 using DSharpPlus;
+using DSharpPlus.CommandsNext;
+using SchedulerBot.Client.Commands;
+using System.Collections.Generic;
 
 namespace SchedulerBot.Client
 {
@@ -32,6 +35,40 @@ namespace SchedulerBot.Client
 
             Console.WriteLine($"Environment: {environment}");
 
+            Configuration = Configure(environment);
+            
+            var serviceProvider = ConfigureServices(new ServiceCollection());
+
+            // Bot
+
+            Client = new DiscordClient(new DiscordConfiguration
+            {
+                Token = Configuration.GetSection("Bot").GetValue<string>("Token"),
+                TokenType = TokenType.Bot,
+                UseInternalLogHandler = true,
+                LogLevel = DSharpPlus.LogLevel.Debug,
+            });
+
+            var commands = Client.UseCommandsNext(new CommandsNextConfiguration
+            {
+                StringPrefixes = Configuration.GetSection("Bot").GetSection("Prefixes").Get<string[]>()
+            });
+
+            commands.RegisterCommands<AdminCommands>();
+            commands.RegisterCommands<EventCommands>();
+            commands.RegisterCommands<InitializerCommands>();
+            commands.RegisterCommands<MiscCommands>();
+            commands.RegisterCommands<PermissionsCommands>();
+            commands.RegisterCommands<SettingsCommands>();
+
+            Console.WriteLine("Connecting...");
+            await Client.ConnectAsync();
+            Console.WriteLine("Bot connected");
+            await Task.Delay(-1);
+        }
+
+        static IConfigurationRoot Configure(string environment)
+        {
             var builder = new ConfigurationBuilder();
             if (environment == "Development")
             {
@@ -44,30 +81,7 @@ namespace SchedulerBot.Client
             builder.AddJsonFile("appsettings.json")
                 .AddJsonFile($"appsettings.{environment}.json");
 
-            Configuration = builder.Build();
-            
-            var serviceProvider = ConfigureServices(new ServiceCollection());
-
-            // Bot
-
-            Client = new DiscordClient(new DiscordConfiguration
-            {
-                Token = Configuration.GetSection("Bot").GetValue<string>("Token"),
-                TokenType = TokenType.Bot
-            });
-
-            Client.MessageCreated += async e =>
-            {
-                if (e.Message.Content.ToLower().StartsWith("ping"))
-                {
-                    await e.Message.RespondAsync("Pong!");
-                }
-            };
-
-            Console.WriteLine("Connecting...");
-            await Client.ConnectAsync();
-            Console.WriteLine("Bot connected");
-            await Task.Delay(-1);
+            return builder.Build();
         }
 
         static IServiceProvider ConfigureServices(IServiceCollection services)
