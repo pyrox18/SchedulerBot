@@ -6,6 +6,7 @@ using DSharpPlus;
 using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Attributes;
 using DSharpPlus.Entities;
+using NodaTime;
 
 namespace SchedulerBot.Client.Commands
 {
@@ -52,7 +53,15 @@ namespace SchedulerBot.Client.Commands
         [Command("timezone"), Description("Change the timezone for the bot.")]
         public async Task Timezone(CommandContext ctx, string timezone)
         {
-            await ctx.RespondAsync($"Changing timezone to {timezone}");
+            var tz = DateTimeZoneProviders.Tzdb.GetZoneOrNull(timezone);
+            if (tz == null)
+            {
+                await ctx.RespondAsync($"Timezone {timezone} does not exist.");
+            }
+            else
+            {
+                await ctx.RespondAsync($"Changing timezone to {timezone}");
+            }
         }
     }
 }
