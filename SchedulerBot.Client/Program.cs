@@ -1,14 +1,16 @@
-﻿using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
-using System;
+﻿using System;
 using System.IO;
 using System.Text;
 using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using DSharpPlus;
 using DSharpPlus.CommandsNext;
 using SchedulerBot.Client.Commands;
-using System.Collections.Generic;
+using SchedulerBot.Data;
+using SchedulerBot.Data.Services;
 
 namespace SchedulerBot.Client
 {
@@ -86,11 +88,23 @@ namespace SchedulerBot.Client
 
         static IServiceProvider ConfigureServices(IServiceCollection services)
         {
+            var connectionString = Configuration.GetConnectionString("SchedulerBotContext");
+
             services.AddLogging(options =>
             {
                 options.AddConfiguration(Configuration.GetSection("Logging"));
                 options.AddConsole();
             });
+
+            services.AddEntityFrameworkNpgsql()
+                .AddDbContext<SchedulerBotContext>(options =>
+                {
+                    options.UseNpgsql(connectionString);
+                });
+
+            services.AddTransient<ICalendarService, CalendarService>()
+                .AddTransient<IEventService, EventService>()
+                .AddTransient<IPermissionService, PermissionService>();
 
             return services.BuildServiceProvider();
         }
