@@ -13,7 +13,8 @@ namespace SchedulerBot.Client.Commands
         [Command("ping"), Description("Pings the bot.")]
         public async Task Ping(CommandContext ctx)
         {
-            await ctx.RespondAsync("Pong!");
+            TimeSpan diff = DateTimeOffset.Now - ctx.Message.Timestamp;
+            await ctx.RespondAsync($"Pong! Time: {diff.Milliseconds}ms");
         }
 
         [Command("prefix"), Description("View the bot's current prefix for your guild.")]
