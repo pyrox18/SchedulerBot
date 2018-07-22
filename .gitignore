@@ -262,3 +262,6 @@ __pycache__/
 
 # App settings and config files
 SchedulerBot.Client/appsettings.*.json
+
+# Visual Studio Code
+.vscode/
