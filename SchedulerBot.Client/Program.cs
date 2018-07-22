@@ -5,9 +5,11 @@ using System;
 using System.IO;
 using System.Text;
 using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore;
 using DSharpPlus;
 using DSharpPlus.CommandsNext;
 using SchedulerBot.Client.Commands;
+using SchedulerBot.Data;
 using System.Collections.Generic;
 
 namespace SchedulerBot.Client
@@ -86,11 +88,19 @@ namespace SchedulerBot.Client
 
         static IServiceProvider ConfigureServices(IServiceCollection services)
         {
+            var connectionString = Configuration.GetConnectionString("SchedulerBotContext");
+
             services.AddLogging(options =>
             {
                 options.AddConfiguration(Configuration.GetSection("Logging"));
                 options.AddConsole();
             });
+
+            services.AddEntityFrameworkNpgsql()
+                .AddDbContext<SchedulerBotContext>(options =>
+                {
+                    options.UseNpgsql(connectionString);
+                });
 
             return services.BuildServiceProvider();
         }

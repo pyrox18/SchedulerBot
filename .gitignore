@@ -260,5 +260,5 @@ paket-files/
 __pycache__/
 *.pyc
 
-# App settings
+# App settings and config files
 SchedulerBot.Client/appsettings.*.json

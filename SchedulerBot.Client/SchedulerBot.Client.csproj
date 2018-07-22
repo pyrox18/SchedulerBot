@@ -9,6 +9,8 @@
     <PackageReference Include="DSharpPlus" Version="4.0.0-beta-00470" />
     <PackageReference Include="DSharpPlus.CommandsNext" Version="4.0.0-beta-00470" />
     <PackageReference Include="DSharpPlus.Interactivity" Version="4.0.0-beta-00470" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="2.1.1" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="2.1.1" />
     <PackageReference Include="Microsoft.Extensions.Configuration" Version="2.1.1" />
     <PackageReference Include="Microsoft.Extensions.Configuration.FileExtensions" Version="2.1.1" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="2.1.1" />
@@ -17,6 +19,11 @@
     <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="2.1.1" />
     <PackageReference Include="Microsoft.Recognizers.Text.DateTime" Version="1.0.8.2" />
     <PackageReference Include="NodaTime" Version="2.3.0" />
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="2.1.1.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\SchedulerBot.Data\SchedulerBot.Data.csproj" />
   </ItemGroup>
 
 </Project>
