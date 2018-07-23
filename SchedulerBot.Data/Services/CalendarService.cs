@@ -47,5 +47,15 @@ namespace SchedulerBot.Data.Services
 
             return prefix.Length;
         }
+
+        public async Task<string> GetCalendarPrefixAsync(ulong calendarId)
+        {
+            var prefix = await _db.Calendars
+                .Where(c => c.Id == calendarId)
+                .Select(c => c.Prefix)
+                .FirstOrDefaultAsync();
+
+            return prefix;
+        }
     }
 }

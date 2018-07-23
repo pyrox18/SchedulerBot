@@ -58,7 +58,8 @@ namespace SchedulerBot.Client
             var commands = Client.UseCommandsNext(new CommandsNextConfiguration
             {
                 StringPrefixes = Configuration.GetSection("Bot").GetSection("Prefixes").Get<string[]>(),
-                PrefixResolver = ResolvePrefix
+                PrefixResolver = ResolvePrefix,
+                Services = ServiceProvider
             });
 
             commands.RegisterCommands<AdminCommands>();

@@ -8,11 +8,16 @@ using DSharpPlus;
 using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Attributes;
 using DSharpPlus.Entities;
+using SchedulerBot.Data.Services;
 
 namespace SchedulerBot.Client.Commands
 {
     public class MiscCommands : BaseCommandModule
     {
+        private readonly ICalendarService _calendarService;
+
+        public MiscCommands(ICalendarService calendarService) => _calendarService = calendarService;
+
         [Command("ping"), Description("Pings the bot.")]
         public async Task Ping(CommandContext ctx)
         {
@@ -23,7 +28,8 @@ namespace SchedulerBot.Client.Commands
         [Command("prefix"), Description("View the bot's current prefix for your guild.")]
         public async Task Prefix(CommandContext ctx)
         {
-            await ctx.RespondAsync("`-`");
+            var prefix = await _calendarService.GetCalendarPrefixAsync(ctx.Guild.Id);
+            await ctx.RespondAsync($"`{prefix}`");
         }
 
         [Command("info"), Description("Get some information about the bot.")]
