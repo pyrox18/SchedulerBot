@@ -55,7 +55,7 @@ namespace SchedulerBot.Client.Commands
         [Command("support"), Description("Get an invite link to the SchedulerBot support server.")]
         public async Task Support(CommandContext ctx)
         {
-            await ctx.RespondAsync("Support link");
+            await ctx.RespondAsync("Click the following link to join the bot's support server. https://discord.gg/CRxRn5X");
         }
 
         [Command("invite"), Description("Get a link to invite the bot to your server.")]
