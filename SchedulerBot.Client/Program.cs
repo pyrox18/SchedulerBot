@@ -14,6 +14,7 @@ using SchedulerBot.Data;
 using SchedulerBot.Data.Models;
 using SchedulerBot.Data.Services;
 using System.Collections.Generic;
+using DSharpPlus.Entities;
 
 namespace SchedulerBot.Client
 {
@@ -46,7 +47,6 @@ namespace SchedulerBot.Client
             ServiceProvider = ConfigureServices(new ServiceCollection());
         
             // Bot
-
             Client = new DiscordClient(new DiscordConfiguration
             {
                 Token = Configuration.GetSection("Bot").GetValue<string>("Token"),
@@ -57,7 +57,8 @@ namespace SchedulerBot.Client
 
             var commands = Client.UseCommandsNext(new CommandsNextConfiguration
             {
-                StringPrefixes = Configuration.GetSection("Bot").GetSection("Prefixes").Get<string[]>()
+                StringPrefixes = Configuration.GetSection("Bot").GetSection("Prefixes").Get<string[]>(),
+                PrefixResolver = ResolvePrefix
             });
 
             commands.RegisterCommands<AdminCommands>();
@@ -148,6 +149,12 @@ namespace SchedulerBot.Client
         {
             var permissionService = ServiceProvider.GetService<IPermissionService>();
             await permissionService.RemoveRolePermissionsAsync(e.Guild.Id, e.Role.Id);
+        }
+
+        private async Task<int> ResolvePrefix(DiscordMessage msg)
+        {
+            var calendarService = ServiceProvider.GetService<ICalendarService>();
+            return await calendarService.ResolveCalendarPrefixAsync(msg.Channel.GuildId, msg.Content);
         }
     }
 }

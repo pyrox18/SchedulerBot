@@ -32,5 +32,20 @@ namespace SchedulerBot.Data.Services
             await _db.SaveChangesAsync();
             return true;
         }
+
+        public async Task<int> ResolveCalendarPrefixAsync(ulong calendarId, string message)
+        {
+            var prefix = await _db.Calendars
+                .Where(c => c.Id == calendarId)
+                .Select(c => c.Prefix)
+                .FirstOrDefaultAsync();
+
+            if (string.IsNullOrEmpty(prefix) || !message.StartsWith(prefix))
+            {
+                return -1;
+            }
+
+            return prefix.Length;
+        }
     }
 }
