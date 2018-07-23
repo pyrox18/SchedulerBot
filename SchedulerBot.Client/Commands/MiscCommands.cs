@@ -61,7 +61,7 @@ namespace SchedulerBot.Client.Commands
         [Command("invite"), Description("Get a link to invite the bot to your server.")]
         public async Task Invite(CommandContext ctx)
         {
-            await ctx.RespondAsync("Invite link");
+            await ctx.RespondAsync("Click the following link to invite the bot to your server. https://goo.gl/E7hLK9");
         }
     }
 }
