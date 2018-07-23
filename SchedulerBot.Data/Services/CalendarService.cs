@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
+using NodaTime;
 using SchedulerBot.Data.Models;
 
 namespace SchedulerBot.Data.Services
@@ -56,6 +57,24 @@ namespace SchedulerBot.Data.Services
                 .FirstOrDefaultAsync();
 
             return prefix;
+        }
+
+        public async Task<bool?> InitialiseCalendar(ulong calendarId, string timezone, ulong defaultChannelId)
+        {
+            var calendar = await _db.Calendars.FirstOrDefaultAsync(c => c.Id == calendarId);
+            if (!string.IsNullOrEmpty(calendar.Timezone))
+            {
+                return null;
+            }
+            var tz = DateTimeZoneProviders.Tzdb.GetZoneOrNull(timezone);
+            if (tz == null)
+            {
+                return false;
+            }
+            calendar.Timezone = timezone;
+            calendar.DefaultChannel = defaultChannelId;
+            await _db.SaveChangesAsync();
+            return true;
         }
     }
 }
