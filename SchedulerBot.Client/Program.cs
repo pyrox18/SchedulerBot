@@ -8,23 +8,28 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using DSharpPlus;
 using DSharpPlus.CommandsNext;
+using DSharpPlus.EventArgs;
 using SchedulerBot.Client.Commands;
 using SchedulerBot.Data;
+using SchedulerBot.Data.Models;
 using SchedulerBot.Data.Services;
+using System.Collections.Generic;
+using DSharpPlus.Entities;
 
 namespace SchedulerBot.Client
 {
     class Program
     {
-        public static IConfigurationRoot Configuration { get; set; }
-        static DiscordClient Client { get; set; }
+        private IConfigurationRoot Configuration { get; set; }
+        private DiscordClient Client { get; set; }
+        private IServiceProvider ServiceProvider { get; set; }
 
         static void Main(string[] args = null)
         {
-            MainAsync(args).ConfigureAwait(false).GetAwaiter().GetResult();
+            new Program().MainAsync(args).ConfigureAwait(false).GetAwaiter().GetResult();
         }
 
-        static async Task MainAsync(string[] args)
+        public async Task MainAsync(string[] args)
         {
             Console.OutputEncoding = Encoding.UTF8;
 
@@ -39,10 +44,9 @@ namespace SchedulerBot.Client
 
             Configuration = Configure(environment);
             
-            var serviceProvider = ConfigureServices(new ServiceCollection());
-
+            ServiceProvider = ConfigureServices(new ServiceCollection());
+        
             // Bot
-
             Client = new DiscordClient(new DiscordConfiguration
             {
                 Token = Configuration.GetSection("Bot").GetValue<string>("Token"),
@@ -53,7 +57,9 @@ namespace SchedulerBot.Client
 
             var commands = Client.UseCommandsNext(new CommandsNextConfiguration
             {
-                StringPrefixes = Configuration.GetSection("Bot").GetSection("Prefixes").Get<string[]>()
+                StringPrefixes = Configuration.GetSection("Bot").GetSection("Prefixes").Get<string[]>(),
+                PrefixResolver = ResolvePrefix,
+                Services = ServiceProvider
             });
 
             commands.RegisterCommands<AdminCommands>();
@@ -63,13 +69,19 @@ namespace SchedulerBot.Client
             commands.RegisterCommands<PermissionsCommands>();
             commands.RegisterCommands<SettingsCommands>();
 
+            // Register event handlers
+            Client.GuildCreated += OnGuildCreate;
+            Client.GuildDeleted += OnGuildDelete;
+            Client.GuildMemberRemoved += OnGuildMemberRemove;
+            Client.GuildRoleDeleted += OnGuildRoleDelete;
+
             Console.WriteLine("Connecting...");
             await Client.ConnectAsync();
             Console.WriteLine("Bot connected");
             await Task.Delay(-1);
         }
 
-        static IConfigurationRoot Configure(string environment)
+        private IConfigurationRoot Configure(string environment)
         {
             var builder = new ConfigurationBuilder();
             if (environment == "Development")
@@ -86,7 +98,7 @@ namespace SchedulerBot.Client
             return builder.Build();
         }
 
-        static IServiceProvider ConfigureServices(IServiceCollection services)
+        private IServiceProvider ConfigureServices(IServiceCollection services)
         {
             var connectionString = Configuration.GetConnectionString("SchedulerBotContext");
 
@@ -107,6 +119,43 @@ namespace SchedulerBot.Client
                 .AddTransient<IPermissionService, PermissionService>();
 
             return services.BuildServiceProvider();
+        }
+
+        private async Task OnGuildCreate(GuildCreateEventArgs e)
+        {
+            var calendar = new Calendar
+            {
+                Id = e.Guild.Id,
+                Events = new List<Event>(),
+                Prefix = Configuration.GetSection("Bot").GetSection("Prefixes").Get<string[]>()[0]
+            };
+
+            var calendarService = ServiceProvider.GetService<ICalendarService>();
+            await calendarService.CreateCalendarAsync(calendar);
+        }
+
+        private async Task OnGuildDelete(GuildDeleteEventArgs e)
+        {
+            var calendarService = ServiceProvider.GetService<ICalendarService>();
+            await calendarService.DeleteCalendarAsync(e.Guild.Id);
+        }
+
+        private async Task OnGuildMemberRemove(GuildMemberRemoveEventArgs e)
+        {
+            var permissionService = ServiceProvider.GetService<IPermissionService>();
+            await permissionService.RemoveUserPermissionsAsync(e.Guild.Id, e.Member.Id);
+        }
+
+        private async Task OnGuildRoleDelete(GuildRoleDeleteEventArgs e)
+        {
+            var permissionService = ServiceProvider.GetService<IPermissionService>();
+            await permissionService.RemoveRolePermissionsAsync(e.Guild.Id, e.Role.Id);
+        }
+
+        private async Task<int> ResolvePrefix(DiscordMessage msg)
+        {
+            var calendarService = ServiceProvider.GetService<ICalendarService>();
+            return await calendarService.ResolveCalendarPrefixAsync(msg.Channel.GuildId, msg.Content);
         }
     }
 }
