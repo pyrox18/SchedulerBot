@@ -124,7 +124,8 @@ namespace SchedulerBot.Client
             var calendar = new Calendar
             {
                 Id = e.Guild.Id,
-                Events = new List<Event>()
+                Events = new List<Event>(),
+                Prefix = Configuration.GetSection("Bot").GetSection("Prefixes").Get<string[]>()[0]
             };
 
             var calendarService = ServiceProvider.GetService<ICalendarService>();
