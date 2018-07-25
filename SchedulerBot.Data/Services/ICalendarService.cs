@@ -13,5 +13,6 @@ namespace SchedulerBot.Data.Services
         Task<int> ResolveCalendarPrefixAsync(ulong calendarId, string message);
         Task<string> GetCalendarPrefixAsync(ulong calendarId);
         Task<bool?> InitialiseCalendar(ulong calendarId, string timezone, ulong defaultChannelId);
+        Task<Calendar> TryGetCalendarAsync(ulong calendarId);
     }
 }

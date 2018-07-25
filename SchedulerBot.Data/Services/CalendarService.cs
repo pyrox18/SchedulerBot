@@ -76,5 +76,10 @@ namespace SchedulerBot.Data.Services
             await _db.SaveChangesAsync();
             return true;
         }
+
+        public async Task<Calendar> TryGetCalendarAsync(ulong calendarId)
+        {
+            return await _db.Calendars.FirstOrDefaultAsync(c => c.Id == calendarId);
+        }
     }
 }

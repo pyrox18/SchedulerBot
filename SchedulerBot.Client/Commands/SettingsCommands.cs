@@ -7,6 +7,9 @@ using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Attributes;
 using DSharpPlus.Entities;
 using NodaTime;
+using SchedulerBot.Client.Extensions;
+using SchedulerBot.Data.Models;
+using SchedulerBot.Data.Services;
 
 namespace SchedulerBot.Client.Commands
 {
@@ -14,10 +17,30 @@ namespace SchedulerBot.Client.Commands
     [Description("Change settings for the bot.")]
     public class SettingsCommands : BaseCommandModule
     {
+        private readonly ICalendarService _calendarService;
+
+        public SettingsCommands(ICalendarService calendarService) => _calendarService = calendarService;
+
         [GroupCommand]
         public async Task Settings(CommandContext ctx)
         {
-            await ctx.RespondAsync("Settings");
+            var calendar = await _calendarService.TryGetCalendarAsync(ctx.Guild.Id);
+            var embed = new DiscordEmbedBuilder
+            {
+                Author = new DiscordEmbedBuilder.EmbedAuthor
+                {
+                    Name = "SchedulerBot",
+                    IconUrl = "https://cdn.discordapp.com/avatars/339019867325726722/e5fca7dbae7156e05c013766fa498fe1.png"
+                },
+                Color = new DiscordColor(211, 255, 219),
+                Description = "Run `settings <setting>` to view more details. e.g. `settings prefix`",
+                Title = "Settings"
+            };
+            embed.AddField("prefix", $"Current value: `{calendar.Prefix}`", true);
+            embed.AddField("defaultchannel", $"Current value: {calendar.DefaultChannel.AsChannelMention()}", true);
+            embed.AddField("timezone", $"Current value: {calendar.Timezone}", true);
+
+            await ctx.RespondAsync(embed: embed);
         }
 
         [Command("prefix"), Description("View the bot's prefix.")]
