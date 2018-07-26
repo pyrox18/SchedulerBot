@@ -1,9 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
+using Newtonsoft.Json;
 using NodaTime;
 using SchedulerBot.Data.Models;
 
@@ -12,11 +14,37 @@ namespace SchedulerBot.Data.Services
     public class CalendarService : ICalendarService
     {
         private readonly SchedulerBotContext _db;
+        private readonly string _defaultPrefix;
 
-        public CalendarService(SchedulerBotContext context) => _db = context;
+        public CalendarService(SchedulerBotContext context)
+        {
+            _db = context;
+
+            string environment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT");
+
+            var json = "";
+            using (var fs = File.OpenRead($"appsettings.{environment}.json"))
+            using (var sr = new StreamReader(fs, new UTF8Encoding(false)))
+                json = sr.ReadToEnd();
+
+            var config = JsonConvert.DeserializeAnonymousType(json, new
+            {
+                Bot = new
+                {
+                    Prefixes = new string[] { }
+                }
+            });
+
+            _defaultPrefix = config.Bot.Prefixes[0];
+        }
 
         public async Task<Calendar> CreateCalendarAsync(Calendar calendar)
         {
+            if (string.IsNullOrEmpty(calendar.Prefix))
+            {
+                calendar.Prefix = _defaultPrefix;
+            }
+            
             await _db.Calendars.AddAsync(calendar);
             await _db.SaveChangesAsync();
 
@@ -116,6 +144,14 @@ namespace SchedulerBot.Data.Services
         public async Task<bool?> InitialiseCalendar(ulong calendarId, string timezone, ulong defaultChannelId)
         {
             var calendar = await _db.Calendars.FirstOrDefaultAsync(c => c.Id == calendarId);
+            if (calendar == null)
+            {
+                await CreateCalendarAsync(new Calendar
+                {
+                    Id = calendarId
+                });
+            }
+
             if (!string.IsNullOrEmpty(calendar.Timezone))
             {
                 return null;
