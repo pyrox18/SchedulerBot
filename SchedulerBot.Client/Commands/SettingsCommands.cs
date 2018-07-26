@@ -73,7 +73,21 @@ namespace SchedulerBot.Client.Commands
         [Command("defaultchannel"), Description("View the default channel that the bot sends messages to.")]
         public async Task DefaultChannel(CommandContext ctx)
         {
-            await ctx.RespondAsync("Default channel");
+            var defaultChannel = await _calendarService.GetCalendarDefaultChannelAsync(ctx.Guild.Id);
+            var embed = new DiscordEmbedBuilder
+            {
+                Author = new DiscordEmbedBuilder.EmbedAuthor
+                {
+                    Name = "SchedulerBot",
+                    IconUrl = "https://cdn.discordapp.com/avatars/339019867325726722/e5fca7dbae7156e05c013766fa498fe1.png"
+                },
+                Color = new DiscordColor(211, 255, 219),
+                Description = "Run `settings defaultchannel #newchannel` to change the default channel. e.g. `settings defaultchannel #general`",
+                Title = "Settings: Default Channel"
+            };
+            embed.AddField("Current Value", $"{defaultChannel.AsChannelMention()}", true);
+
+            await ctx.RespondAsync(embed: embed);
         }
 
         [Command("defaultchannel"), Description("Set the default channel that the bot sends messages to.")]
