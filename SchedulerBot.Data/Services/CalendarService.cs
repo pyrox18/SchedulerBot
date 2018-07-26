@@ -23,7 +23,13 @@ namespace SchedulerBot.Data.Services
             string environment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT");
 
             var json = "";
-            using (var fs = File.OpenRead($"appsettings.{environment}.json"))
+            var filePath = $"appsettings.{environment}.json";
+            if (environment == "Development")
+            {
+                filePath = string.Format("..{0}..{0}..{0}{1}", Path.DirectorySeparatorChar, filePath);
+            }
+
+            using (var fs = File.OpenRead(filePath))
             using (var sr = new StreamReader(fs, new UTF8Encoding(false)))
                 json = sr.ReadToEnd();
 
@@ -68,6 +74,11 @@ namespace SchedulerBot.Data.Services
                 .Where(c => c.Id == calendarId)
                 .Select(c => c.Prefix)
                 .FirstOrDefaultAsync();
+
+            if (string.IsNullOrEmpty(prefix) && message.StartsWith(_defaultPrefix))
+            {
+                return _defaultPrefix.Length;
+            }
 
             if (string.IsNullOrEmpty(prefix) || !message.StartsWith(prefix))
             {
