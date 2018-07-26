@@ -59,6 +59,15 @@ namespace SchedulerBot.Data.Services
             return prefix;
         }
 
+        public async Task<string> UpdateCalendarPrefixAsync(ulong calendarId, string newPrefix)
+        {
+            var calendar = await _db.Calendars.FirstOrDefaultAsync(c => c.Id == calendarId);
+            calendar.Prefix = newPrefix;
+
+            await _db.SaveChangesAsync();
+            return calendar.Prefix;
+        }
+
         public async Task<bool?> InitialiseCalendar(ulong calendarId, string timezone, ulong defaultChannelId)
         {
             var calendar = await _db.Calendars.FirstOrDefaultAsync(c => c.Id == calendarId);

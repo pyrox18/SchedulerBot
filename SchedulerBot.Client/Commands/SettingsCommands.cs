@@ -66,7 +66,8 @@ namespace SchedulerBot.Client.Commands
         [Command("prefix"), Description("Change the bot's prefix.")]
         public async Task Prefix(CommandContext ctx, string prefix)
         {
-            await ctx.RespondAsync($"Changing prefix to {prefix}");
+            string newPrefix = await _calendarService.UpdateCalendarPrefixAsync(ctx.Guild.Id, prefix);
+            await ctx.RespondAsync($"Prefix set to `{newPrefix}`.");
         }
 
         [Command("defaultchannel"), Description("View the default channel that the bot sends messages to.")]
