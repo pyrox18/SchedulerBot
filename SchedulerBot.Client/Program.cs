@@ -113,9 +113,9 @@ namespace SchedulerBot.Client
                     options.UseNpgsql(connectionString);
                 });
 
-            services.AddTransient<ICalendarService, CalendarService>()
-                .AddTransient<IEventService, EventService>()
-                .AddTransient<IPermissionService, PermissionService>();
+            services.AddSingleton<ICalendarService, CalendarService>()
+                .AddSingleton<IEventService, EventService>()
+                .AddSingleton<IPermissionService, PermissionService>();
 
             return services.BuildServiceProvider();
         }
