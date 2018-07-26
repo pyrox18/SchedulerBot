@@ -78,6 +78,15 @@ namespace SchedulerBot.Data.Services
             return defaultChannel;
         }
 
+        public async Task<ulong> UpdateCalendarDefaultChannelAsync(ulong calendarId, ulong newDefaultChannel)
+        {
+            var calendar = await _db.Calendars.FirstOrDefaultAsync(c => c.Id == calendarId);
+            calendar.DefaultChannel = newDefaultChannel;
+
+            await _db.SaveChangesAsync();
+            return calendar.DefaultChannel;
+        }
+
         public async Task<bool?> InitialiseCalendar(ulong calendarId, string timezone, ulong defaultChannelId)
         {
             var calendar = await _db.Calendars.FirstOrDefaultAsync(c => c.Id == calendarId);

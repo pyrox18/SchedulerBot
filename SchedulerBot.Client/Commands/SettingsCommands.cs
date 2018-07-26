@@ -93,7 +93,8 @@ namespace SchedulerBot.Client.Commands
         [Command("defaultchannel"), Description("Set the default channel that the bot sends messages to.")]
         public async Task DefaultChannel(CommandContext ctx, DiscordChannel channel)
         {
-            await ctx.RespondAsync($"Changing default channel to {channel.Mention}");
+            ulong defaultChannel = await _calendarService.UpdateCalendarDefaultChannelAsync(ctx.Guild.Id, channel.Id);
+            await ctx.RespondAsync($"Updated default channel to {defaultChannel.AsChannelMention()}.");
         }
 
         [Command("timezone"), Description("View the timezone for the bot.")]
