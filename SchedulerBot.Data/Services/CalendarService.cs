@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
+using NodaTime;
 using SchedulerBot.Data.Models;
 
 namespace SchedulerBot.Data.Services
@@ -56,6 +57,83 @@ namespace SchedulerBot.Data.Services
                 .FirstOrDefaultAsync();
 
             return prefix;
+        }
+
+        public async Task<string> UpdateCalendarPrefixAsync(ulong calendarId, string newPrefix)
+        {
+            var calendar = await _db.Calendars.FirstOrDefaultAsync(c => c.Id == calendarId);
+            calendar.Prefix = newPrefix;
+
+            await _db.SaveChangesAsync();
+            return calendar.Prefix;
+        }
+
+        public async Task<ulong> GetCalendarDefaultChannelAsync(ulong calendarId)
+        {
+            var defaultChannel = await _db.Calendars
+                .Where(c => c.Id == calendarId)
+                .Select(c => c.DefaultChannel)
+                .FirstOrDefaultAsync();
+
+            return defaultChannel;
+        }
+
+        public async Task<ulong> UpdateCalendarDefaultChannelAsync(ulong calendarId, ulong newDefaultChannel)
+        {
+            var calendar = await _db.Calendars.FirstOrDefaultAsync(c => c.Id == calendarId);
+            calendar.DefaultChannel = newDefaultChannel;
+
+            await _db.SaveChangesAsync();
+            return calendar.DefaultChannel;
+        }
+
+        public async Task<string> GetCalendarTimezoneAsync(ulong calendarId)
+        {
+            var timezone = await _db.Calendars
+                .Where(c => c.Id == calendarId)
+                .Select(c => c.Timezone)
+                .FirstOrDefaultAsync();
+
+            return timezone;
+        }
+
+        public async Task<string> UpdateCalendarTimezoneAsync(ulong calendarId, string newTimezone)
+        {
+            // TODO: add checking for events rolling into the past on timezone change
+            var tz = DateTimeZoneProviders.Tzdb.GetZoneOrNull(newTimezone);
+            if (tz == null)
+            {
+                throw new InvalidTimeZoneException("Invalid TZ timezone");
+            }
+
+            var calendar = await _db.Calendars.FirstOrDefaultAsync(c => c.Id == calendarId);
+            calendar.Timezone = newTimezone;
+
+            await _db.SaveChangesAsync();
+            return calendar.Timezone;
+        }
+
+        public async Task<bool?> InitialiseCalendar(ulong calendarId, string timezone, ulong defaultChannelId)
+        {
+            var calendar = await _db.Calendars.FirstOrDefaultAsync(c => c.Id == calendarId);
+            if (!string.IsNullOrEmpty(calendar.Timezone))
+            {
+                return null;
+            }
+            var tz = DateTimeZoneProviders.Tzdb.GetZoneOrNull(timezone);
+            if (tz == null)
+            {
+                return false;
+            }
+            calendar.Timezone = timezone;
+            calendar.DefaultChannel = defaultChannelId;
+            await _db.SaveChangesAsync();
+            return true;
+        }
+
+        public async Task<Calendar> TryGetCalendarAsync(ulong calendarId)
+        {
+            return await _db.Calendars.FirstOrDefaultAsync(c => c.Id == calendarId);
         }
     }
 }
