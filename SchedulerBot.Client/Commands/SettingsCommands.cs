@@ -46,7 +46,21 @@ namespace SchedulerBot.Client.Commands
         [Command("prefix"), Description("View the bot's prefix.")]
         public async Task Prefix(CommandContext ctx)
         {
-            await ctx.RespondAsync("`-`");
+            var prefix = await _calendarService.GetCalendarPrefixAsync(ctx.Guild.Id);
+            var embed = new DiscordEmbedBuilder
+            {
+                Author = new DiscordEmbedBuilder.EmbedAuthor
+                {
+                    Name = "SchedulerBot",
+                    IconUrl = "https://cdn.discordapp.com/avatars/339019867325726722/e5fca7dbae7156e05c013766fa498fe1.png"
+                },
+                Color = new DiscordColor(211, 255, 219),
+                Description = "Run `settings prefix <new prefix>` to change the prefix. e.g. `settings prefix ++`",
+                Title = "Settings: Prefix"
+            };
+            embed.AddField("Current Value", $"`{prefix}`", true);
+
+            await ctx.RespondAsync(embed: embed);
         }
 
         [Command("prefix"), Description("Change the bot's prefix.")]
