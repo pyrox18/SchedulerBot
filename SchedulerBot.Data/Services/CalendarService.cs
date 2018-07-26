@@ -1,10 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
+using Newtonsoft.Json;
 using NodaTime;
+using SchedulerBot.Data.Exceptions;
 using SchedulerBot.Data.Models;
 
 namespace SchedulerBot.Data.Services
@@ -12,8 +15,35 @@ namespace SchedulerBot.Data.Services
     public class CalendarService : ICalendarService
     {
         private readonly SchedulerBotContext _db;
+        private readonly string _defaultPrefix;
 
-        public CalendarService(SchedulerBotContext context) => _db = context;
+        public CalendarService(SchedulerBotContext context)
+        {
+            _db = context;
+
+            string environment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT");
+
+            var json = "";
+            var filePath = $"appsettings.{environment}.json";
+            if (environment == "Development")
+            {
+                filePath = string.Format("..{0}..{0}..{0}{1}", Path.DirectorySeparatorChar, filePath);
+            }
+
+            using (var fs = File.OpenRead(filePath))
+            using (var sr = new StreamReader(fs, new UTF8Encoding(false)))
+                json = sr.ReadToEnd();
+
+            var config = JsonConvert.DeserializeAnonymousType(json, new
+            {
+                Bot = new
+                {
+                    Prefixes = new string[] { }
+                }
+            });
+
+            _defaultPrefix = config.Bot.Prefixes[0];
+        }
 
         public async Task<Calendar> CreateCalendarAsync(Calendar calendar)
         {
@@ -41,6 +71,11 @@ namespace SchedulerBot.Data.Services
                 .Select(c => c.Prefix)
                 .FirstOrDefaultAsync();
 
+            if (string.IsNullOrEmpty(prefix) && message.StartsWith(_defaultPrefix))
+            {
+                return _defaultPrefix.Length;
+            }
+
             if (string.IsNullOrEmpty(prefix) || !message.StartsWith(prefix))
             {
                 return -1;
@@ -62,8 +97,12 @@ namespace SchedulerBot.Data.Services
         public async Task<string> UpdateCalendarPrefixAsync(ulong calendarId, string newPrefix)
         {
             var calendar = await _db.Calendars.FirstOrDefaultAsync(c => c.Id == calendarId);
-            calendar.Prefix = newPrefix;
+            if (calendar == null)
+            {
+                throw new CalendarNotFoundException();
+            }
 
+            calendar.Prefix = newPrefix;
             await _db.SaveChangesAsync();
             return calendar.Prefix;
         }
@@ -81,8 +120,12 @@ namespace SchedulerBot.Data.Services
         public async Task<ulong> UpdateCalendarDefaultChannelAsync(ulong calendarId, ulong newDefaultChannel)
         {
             var calendar = await _db.Calendars.FirstOrDefaultAsync(c => c.Id == calendarId);
-            calendar.DefaultChannel = newDefaultChannel;
+            if (calendar == null)
+            {
+                throw new CalendarNotFoundException();
+            }
 
+            calendar.DefaultChannel = newDefaultChannel;
             await _db.SaveChangesAsync();
             return calendar.DefaultChannel;
         }
@@ -107,8 +150,12 @@ namespace SchedulerBot.Data.Services
             }
 
             var calendar = await _db.Calendars.FirstOrDefaultAsync(c => c.Id == calendarId);
-            calendar.Timezone = newTimezone;
+            if (calendar == null)
+            {
+                throw new CalendarNotFoundException();
+            }
 
+            calendar.Timezone = newTimezone;
             await _db.SaveChangesAsync();
             return calendar.Timezone;
         }
@@ -116,6 +163,16 @@ namespace SchedulerBot.Data.Services
         public async Task<bool?> InitialiseCalendar(ulong calendarId, string timezone, ulong defaultChannelId)
         {
             var calendar = await _db.Calendars.FirstOrDefaultAsync(c => c.Id == calendarId);
+            if (calendar == null)
+            {
+                calendar = await CreateCalendarAsync(new Calendar
+                {
+                    Id = calendarId,
+                    Prefix = _defaultPrefix,
+                    Events = new List<Event>()
+                });
+            }
+
             if (!string.IsNullOrEmpty(calendar.Timezone))
             {
                 return null;
