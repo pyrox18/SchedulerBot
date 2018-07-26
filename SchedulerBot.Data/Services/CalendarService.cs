@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
 using NodaTime;
+using SchedulerBot.Data.Exceptions;
 using SchedulerBot.Data.Models;
 
 namespace SchedulerBot.Data.Services
@@ -96,8 +97,12 @@ namespace SchedulerBot.Data.Services
         public async Task<string> UpdateCalendarPrefixAsync(ulong calendarId, string newPrefix)
         {
             var calendar = await _db.Calendars.FirstOrDefaultAsync(c => c.Id == calendarId);
-            calendar.Prefix = newPrefix;
+            if (calendar == null)
+            {
+                throw new CalendarNotFoundException();
+            }
 
+            calendar.Prefix = newPrefix;
             await _db.SaveChangesAsync();
             return calendar.Prefix;
         }
@@ -115,8 +120,12 @@ namespace SchedulerBot.Data.Services
         public async Task<ulong> UpdateCalendarDefaultChannelAsync(ulong calendarId, ulong newDefaultChannel)
         {
             var calendar = await _db.Calendars.FirstOrDefaultAsync(c => c.Id == calendarId);
-            calendar.DefaultChannel = newDefaultChannel;
+            if (calendar == null)
+            {
+                throw new CalendarNotFoundException();
+            }
 
+            calendar.DefaultChannel = newDefaultChannel;
             await _db.SaveChangesAsync();
             return calendar.DefaultChannel;
         }
@@ -141,8 +150,12 @@ namespace SchedulerBot.Data.Services
             }
 
             var calendar = await _db.Calendars.FirstOrDefaultAsync(c => c.Id == calendarId);
-            calendar.Timezone = newTimezone;
+            if (calendar == null)
+            {
+                throw new CalendarNotFoundException();
+            }
 
+            calendar.Timezone = newTimezone;
             await _db.SaveChangesAsync();
             return calendar.Timezone;
         }

@@ -8,6 +8,7 @@ using DSharpPlus.CommandsNext.Attributes;
 using DSharpPlus.Entities;
 using NodaTime;
 using SchedulerBot.Client.Extensions;
+using SchedulerBot.Data.Exceptions;
 using SchedulerBot.Data.Models;
 using SchedulerBot.Data.Services;
 
@@ -25,6 +26,11 @@ namespace SchedulerBot.Client.Commands
         public async Task Settings(CommandContext ctx)
         {
             var calendar = await _calendarService.TryGetCalendarAsync(ctx.Guild.Id);
+            if (calendar == null)
+            {
+                await ctx.RespondAsync("Calendar not initialised. Run `init <timezone>` to initialise the calendar.");
+                return;
+            }
             var embed = new DiscordEmbedBuilder
             {
                 Author = new DiscordEmbedBuilder.EmbedAuthor
@@ -47,6 +53,11 @@ namespace SchedulerBot.Client.Commands
         public async Task Prefix(CommandContext ctx)
         {
             var prefix = await _calendarService.GetCalendarPrefixAsync(ctx.Guild.Id);
+            if (string.IsNullOrEmpty(prefix))
+            {
+                await ctx.RespondAsync("Calendar not initialised. Run `init <timezone>` to initialise the calendar.");
+                return;
+            }
             var embed = new DiscordEmbedBuilder
             {
                 Author = new DiscordEmbedBuilder.EmbedAuthor
@@ -66,7 +77,17 @@ namespace SchedulerBot.Client.Commands
         [Command("prefix"), Description("Change the bot's prefix.")]
         public async Task Prefix(CommandContext ctx, string prefix)
         {
-            string newPrefix = await _calendarService.UpdateCalendarPrefixAsync(ctx.Guild.Id, prefix);
+            string newPrefix = string.Empty;
+            try
+            {
+                newPrefix = await _calendarService.UpdateCalendarPrefixAsync(ctx.Guild.Id, prefix);
+            }
+            catch (CalendarNotFoundException)
+            {
+                await ctx.RespondAsync("Calendar not initialised. Run `init <timezone>` to initialise the calendar.");
+                return;
+            }
+
             await ctx.RespondAsync($"Prefix set to `{newPrefix}`.");
         }
 
@@ -74,6 +95,12 @@ namespace SchedulerBot.Client.Commands
         public async Task DefaultChannel(CommandContext ctx)
         {
             var defaultChannel = await _calendarService.GetCalendarDefaultChannelAsync(ctx.Guild.Id);
+            if (defaultChannel == 0)
+            {
+                await ctx.RespondAsync("Calendar not initialised. Run `init <timezone>` to initialise the calendar.");
+                return;
+            }
+
             var embed = new DiscordEmbedBuilder
             {
                 Author = new DiscordEmbedBuilder.EmbedAuthor
@@ -93,7 +120,16 @@ namespace SchedulerBot.Client.Commands
         [Command("defaultchannel"), Description("Set the default channel that the bot sends messages to.")]
         public async Task DefaultChannel(CommandContext ctx, DiscordChannel channel)
         {
-            ulong defaultChannel = await _calendarService.UpdateCalendarDefaultChannelAsync(ctx.Guild.Id, channel.Id);
+            ulong defaultChannel = 0;
+            try
+            {
+                defaultChannel = await _calendarService.UpdateCalendarDefaultChannelAsync(ctx.Guild.Id, channel.Id);
+            }
+            catch (CalendarNotFoundException)
+            {
+                await ctx.RespondAsync("Calendar not initialised. Run `init <timezone>` to initialise the calendar.");
+                return;
+            }
             await ctx.RespondAsync($"Updated default channel to {defaultChannel.AsChannelMention()}.");
         }
 
@@ -101,6 +137,12 @@ namespace SchedulerBot.Client.Commands
         public async Task Timezone(CommandContext ctx)
         {
             var timezone = await _calendarService.GetCalendarTimezoneAsync(ctx.Guild.Id);
+            if (string.IsNullOrEmpty(timezone))
+            {
+                await ctx.RespondAsync("Calendar not initialised. Run `init <timezone>` to initialise the calendar.");
+                return;
+            }
+
             var embed = new DiscordEmbedBuilder
             {
                 Author = new DiscordEmbedBuilder.EmbedAuthor
@@ -129,6 +171,11 @@ namespace SchedulerBot.Client.Commands
             catch (InvalidTimeZoneException)
             {
                 await ctx.RespondAsync($"Timezone not found. See https://goo.gl/NzNMon under the TZ column for a list of valid timezones.");
+                return;
+            }
+            catch (CalendarNotFoundException)
+            {
+                await ctx.RespondAsync("Calendar not initialised. Run `init <timezone>` to initialise the calendar.");
                 return;
             }
 
