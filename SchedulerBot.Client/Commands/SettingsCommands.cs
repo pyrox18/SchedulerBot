@@ -100,7 +100,21 @@ namespace SchedulerBot.Client.Commands
         [Command("timezone"), Description("View the timezone for the bot.")]
         public async Task Timezone(CommandContext ctx)
         {
-            await ctx.RespondAsync("Timezone");
+            var timezone = await _calendarService.GetCalendarTimezoneAsync(ctx.Guild.Id);
+            var embed = new DiscordEmbedBuilder
+            {
+                Author = new DiscordEmbedBuilder.EmbedAuthor
+                {
+                    Name = "SchedulerBot",
+                    IconUrl = "https://cdn.discordapp.com/avatars/339019867325726722/e5fca7dbae7156e05c013766fa498fe1.png"
+                },
+                Color = new DiscordColor(211, 255, 219),
+                Description = "Run `settings timezone <new timezone>` to change the timezone. e.g. `settings timezone America/Los_Angeles`\nSee https://goo.gl/NzNMon under the TZ column for a list of valid timezones.",
+                Title = "Settings: Timezone"
+            };
+            embed.AddField("Current Value", $"{timezone}", true);
+
+            await ctx.RespondAsync(embed: embed);
         }
 
         [Command("timezone"), Description("Change the timezone for the bot.")]

@@ -87,6 +87,16 @@ namespace SchedulerBot.Data.Services
             return calendar.DefaultChannel;
         }
 
+        public async Task<string> GetCalendarTimezoneAsync(ulong calendarId)
+        {
+            var timezone = await _db.Calendars
+                .Where(c => c.Id == calendarId)
+                .Select(c => c.Timezone)
+                .FirstOrDefaultAsync();
+
+            return timezone;
+        }
+
         public async Task<bool?> InitialiseCalendar(ulong calendarId, string timezone, ulong defaultChannelId)
         {
             var calendar = await _db.Calendars.FirstOrDefaultAsync(c => c.Id == calendarId);
