@@ -16,6 +16,7 @@ namespace SchedulerBot.Data.Services
         Task<ulong> GetCalendarDefaultChannelAsync(ulong calendarId);
         Task<ulong> UpdateCalendarDefaultChannelAsync(ulong calendarId, ulong newDefaultChannel);
         Task<string> GetCalendarTimezoneAsync(ulong calendarId);
+        Task<string> UpdateCalendarTimezoneAsync(ulong calendarId, string newTimezone);
         Task<bool?> InitialiseCalendar(ulong calendarId, string timezone, ulong defaultChannelId);
         Task<Calendar> TryGetCalendarAsync(ulong calendarId);
     }

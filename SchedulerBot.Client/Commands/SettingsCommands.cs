@@ -120,15 +120,19 @@ namespace SchedulerBot.Client.Commands
         [Command("timezone"), Description("Change the timezone for the bot.")]
         public async Task Timezone(CommandContext ctx, string timezone)
         {
-            var tz = DateTimeZoneProviders.Tzdb.GetZoneOrNull(timezone);
-            if (tz == null)
+            string tz = string.Empty;
+
+            try
             {
-                await ctx.RespondAsync($"Timezone {timezone} does not exist.");
+                tz = await _calendarService.UpdateCalendarTimezoneAsync(ctx.Guild.Id, timezone);
             }
-            else
+            catch (InvalidTimeZoneException)
             {
-                await ctx.RespondAsync($"Changing timezone to {timezone}");
+                await ctx.RespondAsync($"Timezone not found. See https://goo.gl/NzNMon under the TZ column for a list of valid timezones.");
+                return;
             }
+
+            await ctx.RespondAsync($"Updated timezone to {tz}.");
         }
     }
 }
