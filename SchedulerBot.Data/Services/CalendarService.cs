@@ -46,11 +46,6 @@ namespace SchedulerBot.Data.Services
 
         public async Task<Calendar> CreateCalendarAsync(Calendar calendar)
         {
-            if (string.IsNullOrEmpty(calendar.Prefix))
-            {
-                calendar.Prefix = _defaultPrefix;
-            }
-            
             await _db.Calendars.AddAsync(calendar);
             await _db.SaveChangesAsync();
 
@@ -157,9 +152,11 @@ namespace SchedulerBot.Data.Services
             var calendar = await _db.Calendars.FirstOrDefaultAsync(c => c.Id == calendarId);
             if (calendar == null)
             {
-                await CreateCalendarAsync(new Calendar
+                calendar = await CreateCalendarAsync(new Calendar
                 {
-                    Id = calendarId
+                    Id = calendarId,
+                    Prefix = _defaultPrefix,
+                    Events = new List<Event>()
                 });
             }
 
