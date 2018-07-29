@@ -35,6 +35,12 @@ namespace SchedulerBot.Client.Commands
         public async Task Create(CommandContext ctx, params string[] args)
         {
             var timezone = await _calendarService.GetCalendarTimezoneAsync(ctx.Guild.Id);
+            if (string.IsNullOrEmpty(timezone))
+            {
+                await ctx.RespondAsync("Calendar not initialised. Run `init <timezone>` to initialise the calendar.");
+                return;
+            }
+
             Event evt;
             try
             {
@@ -56,7 +62,16 @@ namespace SchedulerBot.Client.Commands
                 return;
             }
 
-            var savedEvent = await _eventService.CreateEventAsync(ctx.Guild.Id, evt);
+            Event savedEvent;
+            try
+            {
+                savedEvent = await _eventService.CreateEventAsync(ctx.Guild.Id, evt);
+            }
+            catch (CalendarNotFoundException)
+            {
+                await ctx.RespondAsync("Calendar not initialised. Run `init <timezone>` to initialise the calendar.");
+                return;
+            }
             var embed = EventEmbedFactory.GetCreateEventEmbed(savedEvent);
 
             await ctx.RespondAsync("New event created.", embed: embed);
