@@ -8,5 +8,6 @@ namespace SchedulerBot.Data.Services
     public interface IEventService
     {
         Task<Event> CreateEventAsync(ulong calendarId, Event evt);
+        Task<List<Event>> GetEventsAsync(ulong calendarId);
     }
 }

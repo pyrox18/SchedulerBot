@@ -11,8 +11,10 @@ using DSharpPlus.CommandsNext.Attributes;
 using SchedulerBot.Client.EmbedFactories;
 using SchedulerBot.Client.Exceptions;
 using SchedulerBot.Client.Parsers;
+using SchedulerBot.Data.Exceptions;
 using SchedulerBot.Data.Models;
 using SchedulerBot.Data.Services;
+using System.Globalization;
 
 namespace SchedulerBot.Client.Commands
 {
@@ -63,7 +65,74 @@ namespace SchedulerBot.Client.Commands
         [Command("list"), Description("Lists all events.")]
         public async Task List(CommandContext ctx)
         {
-            await ctx.RespondAsync("Event list");
+            List<Event> events;
+            try
+            {
+                events = await _eventService.GetEventsAsync(ctx.Guild.Id);
+            }
+            catch (CalendarNotFoundException)
+            {
+                await ctx.RespondAsync("Calendar not initialised. Run `init <timezone>` to initialise the calendar.");
+                return;
+            }
+
+            StringBuilder sb = new StringBuilder();
+            sb.AppendLine("```css");
+
+            if (events.Count < 1)
+            {
+                sb.AppendLine("No events found!");
+            }
+            else
+            {
+                int i = 0;
+                bool activeEventHeaderWritten = false;
+                DateTimeOffset now = DateTimeOffset.Now;
+
+                while (i < events.Count && events[i].StartTimestamp <= now)
+                {
+                    if (!activeEventHeaderWritten)
+                    {
+                        sb.AppendLine("[Active Events]");
+                        sb.AppendLine();
+                        activeEventHeaderWritten = true;
+                    }
+                    sb.AppendLine($"{i + 1}: {events[i].Name} /* {events[i].StartTimestamp.ToString("ddd d MMM yyyy h:mm:ss tt zzz", CultureInfo.InvariantCulture)} to {events[i].EndTimestamp.ToString("ddd d MMM yyyy h:mm:ss tt zzz", CultureInfo.InvariantCulture)} */");
+                    if (!string.IsNullOrEmpty(events[i].Description))
+                    {
+                        sb.AppendLine($"    # {events[i].Description}");
+                    }
+                    if (events[i].Repeat != RepeatType.None)
+                    {
+                        sb.AppendLine($"    # Repeat: {events[i].Repeat}");
+                    }
+
+                    i++;
+                }
+                if (i < events.Count)
+                {
+                    sb.AppendLine();
+                    sb.AppendLine("[Upcoming Events]");
+                    sb.AppendLine();
+                }
+                while (i < events.Count)
+                {
+                    sb.AppendLine($"{i + 1}: {events[i].Name} /* {events[i].StartTimestamp.ToString("ddd d MMM yyyy h:mm:ss tt zzz", CultureInfo.InvariantCulture)} to {events[i].EndTimestamp.ToString("ddd d MMM yyyy h:mm:ss tt zzz", CultureInfo.InvariantCulture)} */");
+                    if (!string.IsNullOrEmpty(events[i].Description))
+                    {
+                        sb.AppendLine($"    # {events[i].Description}");
+                    }
+                    if (events[i].Repeat != RepeatType.None)
+                    {
+                        sb.AppendLine($"    # Repeat: {events[i].Repeat}");
+                    }
+
+                    i++;
+                }
+            }
+            sb.AppendLine("```");
+
+            await ctx.RespondAsync(sb.ToString());
         }
 
         [Command("update"), Description("Update an event.")]

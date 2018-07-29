@@ -29,5 +29,18 @@ namespace SchedulerBot.Data.Services
             await _db.SaveChangesAsync();
             return evt;
         }
+
+        public async Task<List<Event>> GetEventsAsync(ulong calendarId)
+        {
+            var isCalendarExists = await _db.Calendars.AnyAsync(c => c.Id == calendarId);
+            if (!isCalendarExists)
+            {
+                throw new CalendarNotFoundException();
+            }
+            
+            return await _db.Calendars
+                .Select(c => c.Events)
+                .FirstOrDefaultAsync();
+        }
     }
 }
