@@ -157,9 +157,32 @@ namespace SchedulerBot.Client.Commands
         }
 
         [Command("delete"), Description("Delete an event.")]
-        public async Task Delete(CommandContext ctx, uint index)
+        public async Task Delete(CommandContext ctx, int index)
         {
-            await ctx.RespondAsync($"Deleting event {index}");
+            Event deletedEvent;
+            try
+            {
+                deletedEvent = await _eventService.DeleteEventAsync(ctx.Guild.Id, index);
+            }
+            catch (ArgumentOutOfRangeException)
+            {
+                await ctx.RespondAsync("Event index must be greater than 0.");
+                return;
+            }
+            catch (CalendarNotFoundException)
+            {
+                await ctx.RespondAsync("Calendar not initialised. Run `init <timezone>` to initialise the calendar.");
+                return;
+            }
+
+            if (deletedEvent == null)
+            {
+                await ctx.RespondAsync("Event not found.");
+                return;
+            }
+
+            var embed = EventEmbedFactory.GetDeleteEventEmbed(deletedEvent);
+            await ctx.RespondAsync("Deleted event.", embed: embed);
         }
     }
 }

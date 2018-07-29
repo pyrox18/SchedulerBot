@@ -42,5 +42,29 @@ namespace SchedulerBot.Data.Services
                 .Select(c => c.Events)
                 .FirstOrDefaultAsync();
         }
+
+        public async Task<Event> DeleteEventAsync(ulong calendarId, int index)
+        {
+            if (index <= 0)
+            {
+                throw new ArgumentOutOfRangeException("Index must be greater than 0");
+            }
+
+            var isCalendarExists = await _db.Calendars.AnyAsync(c => c.Id == calendarId);
+            if (!isCalendarExists)
+            {
+                throw new CalendarNotFoundException();
+            }
+
+            var events = await _db.Calendars
+                .Where(c => c.Id == calendarId)
+                .Select(c => c.Events)
+                .FirstOrDefaultAsync();
+
+            var deletedEvent = events[index];
+            events.RemoveAt(index);
+            await _db.SaveChangesAsync();
+            return deletedEvent;
+        }
     }
 }
