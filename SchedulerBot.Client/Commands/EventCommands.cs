@@ -159,14 +159,19 @@ namespace SchedulerBot.Client.Commands
         [Command("delete"), Description("Delete an event.")]
         public async Task Delete(CommandContext ctx, int index)
         {
+            if (index <= 0)
+            {
+                await ctx.RespondAsync("Event index must be greater than 0.");
+                return;
+            }
             Event deletedEvent;
             try
             {
-                deletedEvent = await _eventService.DeleteEventAsync(ctx.Guild.Id, index);
+                deletedEvent = await _eventService.DeleteEventAsync(ctx.Guild.Id, index - 1);
             }
             catch (ArgumentOutOfRangeException)
             {
-                await ctx.RespondAsync("Event index must be greater than 0.");
+                await ctx.RespondAsync("Event not found.");
                 return;
             }
             catch (CalendarNotFoundException)

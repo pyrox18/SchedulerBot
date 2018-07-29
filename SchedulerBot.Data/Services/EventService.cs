@@ -46,7 +46,7 @@ namespace SchedulerBot.Data.Services
 
         public async Task<Event> DeleteEventAsync(ulong calendarId, int index)
         {
-            if (index <= 0)
+            if (index < 0)
             {
                 throw new ArgumentOutOfRangeException("Index must be greater than 0");
             }
@@ -63,7 +63,7 @@ namespace SchedulerBot.Data.Services
                 .FirstOrDefaultAsync();
 
             var deletedEvent = events[index];
-            events.RemoveAt(index);
+            _db.Events.Remove(deletedEvent);
             await _db.SaveChangesAsync();
             return deletedEvent;
         }
