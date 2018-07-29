@@ -39,6 +39,7 @@ namespace SchedulerBot.Data.Services
             }
             
             return await _db.Calendars
+                .Where(c => c.Id == calendarId)
                 .Select(c => c.Events)
                 .FirstOrDefaultAsync();
         }
