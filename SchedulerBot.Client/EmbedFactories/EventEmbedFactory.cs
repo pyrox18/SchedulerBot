@@ -48,5 +48,13 @@ namespace SchedulerBot.Client.EmbedFactories
             embed.Color = _deleteEventColour;
             return embed.Build();
         }
+
+        public static DiscordEmbed GetUpdateEventEmbed(Event evt)
+        {
+            var embed = _getBaseEmbed(evt);
+            embed.Title = "Update Event";
+            embed.Color = _updateEventColour;
+            return embed.Build();
+        }
     }
 }

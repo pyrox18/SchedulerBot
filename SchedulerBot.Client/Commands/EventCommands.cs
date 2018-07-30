@@ -151,9 +151,57 @@ namespace SchedulerBot.Client.Commands
         }
 
         [Command("update"), Description("Update an event.")]
-        public async Task Update(CommandContext ctx, uint index, [RemainingText] string args)
+        public async Task Update(CommandContext ctx, int index, [RemainingText] string args)
         {
-            await ctx.RespondAsync($"Updating event {index} with args {args}");
+            if (index <= 0)
+            {
+                await ctx.RespondAsync("Event index must be greater than 0.");
+                return;
+            }
+
+            var timezone = await _calendarService.GetCalendarTimezoneAsync(ctx.Guild.Id);
+            if (string.IsNullOrEmpty(timezone))
+            {
+                await ctx.RespondAsync("Calendar not initialised. Run `init <timezone>` to initialise the calendar.");
+                return;
+            }
+
+            Event evt;
+            try
+            {
+                evt = await _eventService.GetEventByIndexAsync(ctx.Guild.Id, index - 1);
+            }
+            catch (ArgumentOutOfRangeException)
+            {
+                await ctx.RespondAsync("Event not found.");
+                return;
+            }
+
+            Event updatedEvent;
+            try
+            {
+                updatedEvent = EventParser.ParseUpdateEvent(evt, args, timezone);
+            }
+            catch (DateTimeInPastException)
+            {
+                await ctx.RespondAsync("Cannot create an event that starts or ends in the past.");
+                return;
+            }
+            catch (EventEndBeforeStartException)
+            {
+                await ctx.RespondAsync("Cannot create an event that ends before it starts.");
+                return;
+            }
+            catch (EventParseException)
+            {
+                await ctx.RespondAsync("Failed to parse event data.");
+                return;
+            }
+
+            Event savedEvent = await _eventService.UpdateEventAsync(evt);
+            var embed = EventEmbedFactory.GetUpdateEventEmbed(savedEvent);
+
+            await ctx.RespondAsync("Updated event.", embed: embed);
         }
 
         [Command("delete"), Description("Delete an event.")]

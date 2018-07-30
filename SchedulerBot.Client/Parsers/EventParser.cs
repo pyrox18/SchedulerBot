@@ -30,6 +30,23 @@ namespace SchedulerBot.Client.Parsers
             return evt;
         }
 
+        public static Event ParseUpdateEvent(Event evt, string[] args, string timezone)
+        {
+            var bodyString = ParseEventInputBody(args);
+            ParseEventInputFlags(args, ref evt);
+            if (!string.IsNullOrEmpty(bodyString))
+            {
+                ParseEventTimestamps(bodyString, timezone, ref evt);
+            }
+
+            return evt;
+        }
+
+        public static Event ParseUpdateEvent(Event evt, string args, string timezone)
+        {
+            return ParseUpdateEvent(evt, args.Split(' '), timezone);
+        }
+
         private static string ParseEventInputBody(string[] args)
         {
             var body = new List<string>();
@@ -77,8 +94,14 @@ namespace SchedulerBot.Client.Parsers
                                 case "m":
                                     evt.Repeat = RepeatType.Monthly;
                                     break;
-                                default:
+                                case "n":
                                     evt.Repeat = RepeatType.None;
+                                    break;
+                                default:
+                                    if (evt.Repeat != RepeatType.Daily && evt.Repeat != RepeatType.Weekly && evt.Repeat != RepeatType.Monthly)
+                                    {
+                                        evt.Repeat = RepeatType.None;
+                                    }
                                     break;
                             }
                             break;

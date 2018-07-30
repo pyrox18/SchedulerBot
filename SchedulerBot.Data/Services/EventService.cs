@@ -67,5 +67,40 @@ namespace SchedulerBot.Data.Services
             await _db.SaveChangesAsync();
             return deletedEvent;
         }
+
+        public async Task<Event> GetEventByIndexAsync(ulong calendarId, int index)
+        {
+            if (index < 0)
+            {
+                throw new ArgumentOutOfRangeException("Index must be greater than 0");
+            }
+
+            var isCalendarExists = await _db.Calendars.AnyAsync(c => c.Id == calendarId);
+            if (!isCalendarExists)
+            {
+                throw new CalendarNotFoundException();
+            }
+
+            var events = await _db.Calendars
+                .Where(c => c.Id == calendarId)
+                .Select(c => c.Events)
+                .FirstOrDefaultAsync();
+
+            var evt = events[index];
+            return evt;
+        }
+
+        public async Task<Event> UpdateEventAsync(Event evt)
+        {
+            var eventInDb = await _db.Events.FirstOrDefaultAsync(e => e.Id == evt.Id);
+            eventInDb.Name = evt.Name;
+            eventInDb.StartTimestamp = evt.StartTimestamp;
+            eventInDb.EndTimestamp = evt.EndTimestamp;
+            eventInDb.Description = evt.Description;
+            eventInDb.Repeat = evt.Repeat;
+
+            await _db.SaveChangesAsync();
+            return eventInDb;
+        }
     }
 }
