@@ -7,6 +7,7 @@ namespace SchedulerBot.Data.Models
     public class Event
     {
         public Guid Id { get; set; }
+        public Calendar Calendar { get; set; }
         public string Name { get; set; }
         public string Description { get; set; }
         public DateTimeOffset StartTimestamp { get; set; }
