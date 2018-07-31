@@ -44,8 +44,25 @@ namespace SchedulerBot.Client.Scheduler
             await Scheduler.Shutdown();
         }
 
+        public async Task PollAndScheduleEvents(DiscordClient client)
+        {
+            var calendarIds = client.Guilds.Keys;
+            var events = await _eventService.GetEventsInHourIntervalAsync(2);
+
+            foreach (var evt in events)
+            {
+                await ScheduleEvent(evt, client, evt.Calendar.DefaultChannel);
+            }
+        }
+
         public async Task ScheduleEvent(Event evt, DiscordClient client, ulong channelId)
         {
+            if (await Scheduler.CheckExists(new TriggerKey(evt.Id.ToString(), "eventNotifications"))
+                || evt.StartTimestamp < DateTimeOffset.Now.AddHours(2))
+            {
+                return;
+            }
+
             var channel = await client.GetChannelAsync(channelId);
             var notifyJobDataMap = new JobDataMap
             {

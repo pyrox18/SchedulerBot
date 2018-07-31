@@ -2,6 +2,7 @@
 using System.IO;
 using System.Text;
 using System.Threading.Tasks;
+using System.Timers;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -43,11 +44,14 @@ namespace SchedulerBot.Client
 
             Console.WriteLine($"Environment: {environment}");
 
+            Console.WriteLine("Reading configuration file...");
             Configuration = Configure(environment);
             
+            Console.WriteLine("Configuring services...");
             ServiceProvider = ConfigureServices(new ServiceCollection());
-        
+
             // Bot
+            Console.WriteLine("Initialising client...");
             Client = new DiscordClient(new DiscordConfiguration
             {
                 Token = Configuration.GetSection("Bot").GetValue<string>("Token"),
@@ -56,12 +60,14 @@ namespace SchedulerBot.Client
                 LogLevel = DSharpPlus.LogLevel.Debug,
             });
 
+            Console.WriteLine("Initialising commands module...");
             var commands = Client.UseCommandsNext(new CommandsNextConfiguration
             {
                 PrefixResolver = ResolvePrefix,
                 Services = ServiceProvider
             });
 
+            Console.WriteLine("Registering commands...");
             commands.RegisterCommands<AdminCommands>();
             commands.RegisterCommands<EventCommands>();
             commands.RegisterCommands<InitializerCommands>();
@@ -70,6 +76,7 @@ namespace SchedulerBot.Client
             commands.RegisterCommands<SettingsCommands>();
 
             // Register event handlers
+            Console.WriteLine("Registering event handlers...");
             Client.GuildCreated += OnGuildCreate;
             Client.GuildDeleted += OnGuildDelete;
             Client.GuildMemberRemoved += OnGuildMemberRemove;
@@ -77,7 +84,20 @@ namespace SchedulerBot.Client
 
             // Start event scheduler
             var scheduler = ServiceProvider.GetService<IEventScheduler>();
+            Console.WriteLine("Starting event scheduler...");
             await scheduler.Start();
+
+            Console.WriteLine("Starting initial event poll...");
+            await PollAndScheduleEvents();
+            Console.WriteLine("Polling completed.");
+            Console.WriteLine("Starting poll timer...");
+            Timer t = new Timer(60 * 60 * 1000)
+            {
+                AutoReset = true
+            };
+            t.Elapsed += new ElapsedEventHandler(PollerTimerElapsed);
+            t.Start();
+            Console.WriteLine("Timer started.");
 
             Console.WriteLine("Connecting...");
             await Client.ConnectAsync();
@@ -165,6 +185,17 @@ namespace SchedulerBot.Client
         {
             var calendarService = ServiceProvider.GetService<ICalendarService>();
             return await calendarService.ResolveCalendarPrefixAsync(msg.Channel.GuildId, msg.Content);
+        }
+
+        private async void PollerTimerElapsed(object sender, ElapsedEventArgs e)
+        {
+            await PollAndScheduleEvents();
+        }
+
+        private async Task PollAndScheduleEvents()
+        {
+            var eventScheduler = ServiceProvider.GetService<IEventScheduler>();
+            await eventScheduler.PollAndScheduleEvents(Client);
         }
     }
 }

@@ -136,5 +136,15 @@ namespace SchedulerBot.Data.Services
             await _db.SaveChangesAsync();
             return evt;
         }
+
+        public async Task<List<Event>> GetEventsInHourIntervalAsync(double hours)
+        {
+            var events = await _db.Events
+                .Include(e => e.Calendar)
+                .Where(e => e.StartTimestamp <= DateTimeOffset.Now.AddHours(hours))
+                .ToListAsync();
+
+            return events;
+        }
     }
 }

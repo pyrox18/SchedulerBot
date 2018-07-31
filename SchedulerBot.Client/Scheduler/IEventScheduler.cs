@@ -10,6 +10,7 @@ namespace SchedulerBot.Client.Scheduler
     {
         Task Start();
         Task Shutdown();
+        Task PollAndScheduleEvents(DiscordClient client);
         Task ScheduleEvent(Event evt, DiscordClient client, ulong channelId);
         Task UnscheduleEvent(Event evt);
         Task UnscheduleEvent(Guid eventId);
