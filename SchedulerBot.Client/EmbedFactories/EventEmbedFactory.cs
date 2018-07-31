@@ -56,5 +56,13 @@ namespace SchedulerBot.Client.EmbedFactories
             embed.Color = _updateEventColour;
             return embed.Build();
         }
+
+        public static DiscordEmbed GetNotifyEventEmbed(Event evt)
+        {
+            var embed = _getBaseEmbed(evt);
+            embed.Title = "Event starting now!";
+            embed.Color = _notifyEventColour;
+            return embed.Build();
+        }
     }
 }

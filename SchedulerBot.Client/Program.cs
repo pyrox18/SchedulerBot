@@ -15,6 +15,7 @@ using SchedulerBot.Data.Models;
 using SchedulerBot.Data.Services;
 using System.Collections.Generic;
 using DSharpPlus.Entities;
+using SchedulerBot.Client.Scheduler;
 
 namespace SchedulerBot.Client
 {
@@ -74,10 +75,16 @@ namespace SchedulerBot.Client
             Client.GuildMemberRemoved += OnGuildMemberRemove;
             Client.GuildRoleDeleted += OnGuildRoleDelete;
 
+            // Start event scheduler
+            var scheduler = ServiceProvider.GetService<IEventScheduler>();
+            await scheduler.Start();
+
             Console.WriteLine("Connecting...");
             await Client.ConnectAsync();
             Console.WriteLine("Bot connected");
             await Task.Delay(-1);
+
+            await scheduler.Shutdown();
         }
 
         private IConfigurationRoot Configure(string environment)
@@ -116,6 +123,9 @@ namespace SchedulerBot.Client
             services.AddSingleton<ICalendarService, CalendarService>()
                 .AddSingleton<IEventService, EventService>()
                 .AddSingleton<IPermissionService, PermissionService>();
+
+            // Scheduler service
+            services.AddSingleton<IEventScheduler, EventScheduler>();
 
             return services.BuildServiceProvider();
         }

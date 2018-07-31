@@ -10,7 +10,9 @@ namespace SchedulerBot.Data.Services
         Task<Event> CreateEventAsync(ulong calendarId, Event evt);
         Task<List<Event>> GetEventsAsync(ulong calendarId);
         Task<Event> DeleteEventAsync(ulong calendarId, int index);
+        Task<Event> DeleteEventAsync(Guid eventId);
         Task<Event> GetEventByIndexAsync(ulong calendarId, int index);
         Task<Event> UpdateEventAsync(Event evt);
+        Task<Event> ApplyRepeatAsync(Guid eventId);
     }
 }

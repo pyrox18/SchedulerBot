@@ -15,6 +15,7 @@ using SchedulerBot.Data.Exceptions;
 using SchedulerBot.Data.Models;
 using SchedulerBot.Data.Services;
 using System.Globalization;
+using SchedulerBot.Client.Scheduler;
 
 namespace SchedulerBot.Client.Commands
 {
@@ -24,11 +25,13 @@ namespace SchedulerBot.Client.Commands
     {
         private readonly ICalendarService _calendarService;
         private readonly IEventService _eventService;
+        private readonly IEventScheduler _eventScheduler;
 
-        public EventCommands(ICalendarService calendarService, IEventService eventService)
+        public EventCommands(ICalendarService calendarService, IEventService eventService, IEventScheduler eventScheduler)
         {
             _calendarService = calendarService;
             _eventService = eventService;
+            _eventScheduler = eventScheduler;
         }
 
         [GroupCommand, Description("Create an event.")]
@@ -72,8 +75,11 @@ namespace SchedulerBot.Client.Commands
                 await ctx.RespondAsync("Calendar not initialised. Run `init <timezone>` to initialise the calendar.");
                 return;
             }
-            var embed = EventEmbedFactory.GetCreateEventEmbed(savedEvent);
 
+            var defaultChannelId = await _calendarService.GetCalendarDefaultChannelAsync(ctx.Guild.Id);
+            await _eventScheduler.ScheduleEvent(savedEvent, ctx.Client, defaultChannelId);
+
+            var embed = EventEmbedFactory.GetCreateEventEmbed(savedEvent);
             await ctx.RespondAsync("New event created.", embed: embed);
         }
 
@@ -199,8 +205,10 @@ namespace SchedulerBot.Client.Commands
             }
 
             Event savedEvent = await _eventService.UpdateEventAsync(evt);
-            var embed = EventEmbedFactory.GetUpdateEventEmbed(savedEvent);
+            var defaultChannelId = await _calendarService.GetCalendarDefaultChannelAsync(ctx.Guild.Id);
+            await _eventScheduler.RescheduleEvent(evt, ctx.Client, defaultChannelId);
 
+            var embed = EventEmbedFactory.GetUpdateEventEmbed(savedEvent);
             await ctx.RespondAsync("Updated event.", embed: embed);
         }
 
@@ -233,6 +241,8 @@ namespace SchedulerBot.Client.Commands
                 await ctx.RespondAsync("Event not found.");
                 return;
             }
+
+            await _eventScheduler.UnscheduleEvent(deletedEvent);
 
             var embed = EventEmbedFactory.GetDeleteEventEmbed(deletedEvent);
             await ctx.RespondAsync("Deleted event.", embed: embed);

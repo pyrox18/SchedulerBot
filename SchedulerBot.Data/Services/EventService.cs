@@ -68,6 +68,14 @@ namespace SchedulerBot.Data.Services
             return deletedEvent;
         }
 
+        public async Task<Event> DeleteEventAsync(Guid eventId)
+        {
+            var evt = await _db.Events.FirstOrDefaultAsync(e => e.Id == eventId);
+            _db.Events.Remove(evt);
+            await _db.SaveChangesAsync();
+            return evt;
+        }
+
         public async Task<Event> GetEventByIndexAsync(ulong calendarId, int index)
         {
             if (index < 0)
@@ -101,6 +109,32 @@ namespace SchedulerBot.Data.Services
 
             await _db.SaveChangesAsync();
             return eventInDb;
+        }
+
+        public async Task<Event> ApplyRepeatAsync(Guid eventId)
+        {
+            var evt = await _db.Events.FirstOrDefaultAsync(e => e.Id == eventId);
+            switch (evt.Repeat)
+            {
+                case RepeatType.Daily:
+                    evt.StartTimestamp = evt.StartTimestamp.AddDays(1);
+                    evt.EndTimestamp = evt.EndTimestamp.AddDays(1);
+                    break;
+                case RepeatType.Weekly:
+                    evt.StartTimestamp = evt.StartTimestamp.AddDays(7);
+                    evt.EndTimestamp = evt.EndTimestamp.AddDays(7);
+                    break;
+                case RepeatType.Monthly:
+                    evt.StartTimestamp = evt.StartTimestamp.AddMonths(1);
+                    evt.EndTimestamp = evt.EndTimestamp.AddMonths(1);
+                    break;
+                case RepeatType.None:
+                default:
+                    break;
+            }
+
+            await _db.SaveChangesAsync();
+            return evt;
         }
     }
 }
