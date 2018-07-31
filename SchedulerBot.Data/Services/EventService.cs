@@ -37,11 +37,13 @@ namespace SchedulerBot.Data.Services
             {
                 throw new CalendarNotFoundException();
             }
-            
-            return await _db.Calendars
+
+            var events = await _db.Calendars
                 .Where(c => c.Id == calendarId)
                 .Select(c => c.Events)
                 .FirstOrDefaultAsync();
+
+            return events.OrderBy(e => e.StartTimestamp).ToList();
         }
 
         public async Task<Event> DeleteEventAsync(ulong calendarId, int index)
@@ -61,6 +63,7 @@ namespace SchedulerBot.Data.Services
                 .Where(c => c.Id == calendarId)
                 .Select(c => c.Events)
                 .FirstOrDefaultAsync();
+            events = events.OrderBy(e => e.StartTimestamp).ToList();
 
             var deletedEvent = events[index];
             _db.Events.Remove(deletedEvent);
@@ -93,6 +96,7 @@ namespace SchedulerBot.Data.Services
                 .Where(c => c.Id == calendarId)
                 .Select(c => c.Events)
                 .FirstOrDefaultAsync();
+            events = events.OrderBy(e => e.StartTimestamp).ToList();
 
             var evt = events[index];
             return evt;
