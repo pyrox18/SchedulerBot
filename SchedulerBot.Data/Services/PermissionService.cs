@@ -162,5 +162,41 @@ namespace SchedulerBot.Data.Services
             existingPermission.IsDenied = false;
             return existingPermission;
         }
+
+        public async Task<List<Permission>> GetPermissionsForNodeAsync(ulong calendarId, string node)
+        {
+            var nodes = Enum.GetNames(typeof(PermissionNode));
+            var actualNode = nodes.FirstOrDefault(n => n.ToLower() == node.ToLower());
+            if (string.IsNullOrEmpty(actualNode))
+            {
+                throw new PermissionNodeNotFoundException();
+            }
+
+            var permissions = await _db.Permissions
+                .Where(p => p.Calendar.Id == calendarId && p.Node == Enum.Parse<PermissionNode>(actualNode))
+                .ToListAsync();
+
+            return permissions;
+        }
+
+        public async Task<List<Permission>> GetPermissionsForRoleAsync(ulong calendarId, ulong roleId)
+        {
+            var permissions = await _db.Permissions
+                .Where(p => p.Calendar.Id == calendarId && p.Type == PermissionType.Role && p.TargetId == roleId)
+                .OrderBy(p => p.Node)
+                .ToListAsync();
+
+            return permissions;
+        }
+
+        public async Task<List<Permission>> GetPermissionsForUserAsync(ulong calendarId, ulong userId)
+        {
+            var permissions = await _db.Permissions
+                .Where(p => p.Calendar.Id == calendarId && p.Type == PermissionType.User && p.TargetId == userId)
+                .OrderBy(p => p.Node)
+                .ToListAsync();
+
+            return permissions;
+        }
     }
 }
