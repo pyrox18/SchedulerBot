@@ -5,6 +5,10 @@ using System.Threading.Tasks;
 using DSharpPlus;
 using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Attributes;
+using DSharpPlus.Entities;
+using SchedulerBot.Client.Extensions;
+using SchedulerBot.Data.Exceptions;
+using SchedulerBot.Data.Models;
 using SchedulerBot.Data.Services;
 
 namespace SchedulerBot.Client.Commands
@@ -23,10 +27,36 @@ namespace SchedulerBot.Client.Commands
             await ctx.RespondAsync($"Allowing permissions: {args}");
         }
 
-        [Command("deny"), Description("Denies a certain role or user from using a certain command.")]
-        public async Task Deny(CommandContext ctx, string args)
+        [Command("deny"), Description("Denies a certain role from using a certain command.")]
+        public async Task DenyRole(CommandContext ctx, string node, DiscordRole role)
         {
-            await ctx.RespondAsync($"Denying permissions: {args}");
+            Permission permission;
+            try
+            {
+                permission = await _permissionService.DenyNodeForRoleAsync(ctx.Guild.Id, role.Id, node);
+            }
+            catch (PermissionNodeNotFoundException)
+            {
+                await ctx.RespondAsync("Permission node not found.");
+                return;
+            }
+            await ctx.RespondAsync($"Denied permission {permission.Node} for role {role.Name}.");
+        }
+
+        [Command("deny"), Description("Denies a certain user from using a certain command.")]
+        public async Task DenyUser(CommandContext ctx, string node, DiscordMember user)
+        {
+            Permission permission;
+            try
+            {
+                permission = await _permissionService.DenyNodeForUserAsync(ctx.Guild.Id, user.Id, node);
+            }
+            catch (PermissionNodeNotFoundException)
+            {
+                await ctx.RespondAsync("Permission node not found.");
+                return;
+            }
+            await ctx.RespondAsync($"Denied permission {permission.Node} for user {user.GetUsernameAndDiscriminator()}.");
         }
 
         [Command("show"), Description("Shows current permission settings for a node, role or user.")]

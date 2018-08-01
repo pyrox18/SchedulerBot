@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
+using SchedulerBot.Data.Models;
 
 namespace SchedulerBot.Data.Services
 {
@@ -10,5 +11,7 @@ namespace SchedulerBot.Data.Services
         List<string> GetPermissionNodes();
         Task<bool> RemoveUserPermissionsAsync(ulong calendarId, ulong userId);
         Task<bool> RemoveRolePermissionsAsync(ulong calendarId, ulong roleId);
+        Task<Permission> DenyNodeForRoleAsync(ulong calendarId, ulong roleId, string node);
+        Task<Permission> DenyNodeForUserAsync(ulong calendarId, ulong userId, string node);
     }
 }
