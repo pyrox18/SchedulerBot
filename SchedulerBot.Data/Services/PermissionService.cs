@@ -102,5 +102,65 @@ namespace SchedulerBot.Data.Services
             await _db.SaveChangesAsync();
             return permission;
         }
+
+        public async Task<Permission> AllowNodeForRoleAsync(ulong calendarId, ulong roleId, string node)
+        {
+            var nodes = Enum.GetNames(typeof(PermissionNode));
+            var actualNode = nodes.FirstOrDefault(n => n.ToLower() == node.ToLower());
+            if (string.IsNullOrEmpty(actualNode))
+            {
+                throw new PermissionNodeNotFoundException();
+            }
+
+            var existingPermission = await _db.Permissions
+                .FirstOrDefaultAsync(
+                    p => p.Calendar.Id == calendarId 
+                    && p.Type == PermissionType.Role
+                    && p.Node == Enum.Parse<PermissionNode>(actualNode) 
+                    && p.TargetId == roleId
+                );
+
+            if (existingPermission == null)
+            {
+                existingPermission.Node = Enum.Parse<PermissionNode>(actualNode);
+                existingPermission.IsDenied = false;
+                return existingPermission;
+            }
+
+            _db.Permissions.Remove(existingPermission);
+            await _db.SaveChangesAsync();
+            existingPermission.IsDenied = false;
+            return existingPermission;
+        }
+
+        public async Task<Permission> AllowNodeForUserAsync(ulong calendarId, ulong userId, string node)
+        {
+            var nodes = Enum.GetNames(typeof(PermissionNode));
+            var actualNode = nodes.FirstOrDefault(n => n.ToLower() == node.ToLower());
+            if (string.IsNullOrEmpty(actualNode))
+            {
+                throw new PermissionNodeNotFoundException();
+            }
+
+            var existingPermission = await _db.Permissions
+                .FirstOrDefaultAsync(
+                    p => p.Calendar.Id == calendarId 
+                    && p.Type == PermissionType.User
+                    && p.Node == Enum.Parse<PermissionNode>(actualNode) 
+                    && p.TargetId == userId
+                );
+
+            if (existingPermission == null)
+            {
+                existingPermission.Node = Enum.Parse<PermissionNode>(actualNode);
+                existingPermission.IsDenied = false;
+                return existingPermission;
+            }
+
+            _db.Permissions.Remove(existingPermission);
+            await _db.SaveChangesAsync();
+            existingPermission.IsDenied = false;
+            return existingPermission;
+        }
     }
 }

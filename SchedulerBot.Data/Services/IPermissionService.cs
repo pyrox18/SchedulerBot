@@ -13,5 +13,7 @@ namespace SchedulerBot.Data.Services
         Task<bool> RemoveRolePermissionsAsync(ulong calendarId, ulong roleId);
         Task<Permission> DenyNodeForRoleAsync(ulong calendarId, ulong roleId, string node);
         Task<Permission> DenyNodeForUserAsync(ulong calendarId, ulong userId, string node);
+        Task<Permission> AllowNodeForRoleAsync(ulong calendarId, ulong roleId, string node);
+        Task<Permission> AllowNodeForUserAsync(ulong calendarId, ulong userId, string node);
     }
 }

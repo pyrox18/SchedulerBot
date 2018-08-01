@@ -21,14 +21,40 @@ namespace SchedulerBot.Client.Commands
 
         public PermissionsCommands(IPermissionService permissionService) => _permissionService = permissionService;
 
-        [Command("allow"), Description("Allows a certain role or user to use a certain command.")]
-        public async Task Allow(CommandContext ctx, string args)
+        [Command("allow"), Description("Allows a certain role to use a certain command.")]
+        public async Task Allow(CommandContext ctx, string node, DiscordRole role)
         {
-            await ctx.RespondAsync($"Allowing permissions: {args}");
+            Permission permission;
+            try
+            {
+                permission = await _permissionService.AllowNodeForRoleAsync(ctx.Guild.Id, role.Id, node);
+            }
+            catch (PermissionNodeNotFoundException)
+            {
+                await ctx.RespondAsync("Permission node not found.");
+                return;
+            }
+            await ctx.RespondAsync($"Allowed permission {permission.Node} for role {role.Name}.");
+        }
+
+        [Command("allow"), Description("Allows a certain user to use a certain command.")]
+        public async Task Allow(CommandContext ctx, string node, DiscordMember user)
+        {
+            Permission permission;
+            try
+            {
+                permission = await _permissionService.AllowNodeForUserAsync(ctx.Guild.Id, user.Id, node);
+            }
+            catch (PermissionNodeNotFoundException)
+            {
+                await ctx.RespondAsync("Permission node not found.");
+                return;
+            }
+            await ctx.RespondAsync($"Allowed permission {permission.Node} for user {user.GetUsernameAndDiscriminator()}.");
         }
 
         [Command("deny"), Description("Denies a certain role from using a certain command.")]
-        public async Task DenyRole(CommandContext ctx, string node, DiscordRole role)
+        public async Task Deny(CommandContext ctx, string node, DiscordRole role)
         {
             Permission permission;
             try
@@ -44,7 +70,7 @@ namespace SchedulerBot.Client.Commands
         }
 
         [Command("deny"), Description("Denies a certain user from using a certain command.")]
-        public async Task DenyUser(CommandContext ctx, string node, DiscordMember user)
+        public async Task Deny(CommandContext ctx, string node, DiscordMember user)
         {
             Permission permission;
             try
