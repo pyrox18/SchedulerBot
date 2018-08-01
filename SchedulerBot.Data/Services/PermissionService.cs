@@ -14,6 +14,11 @@ namespace SchedulerBot.Data.Services
 
         public PermissionService(SchedulerBotContext context) => _db = context;
 
+        public List<string> GetPermissionNodes()
+        {
+            return new List<string>(Enum.GetNames(typeof(PermissionNode)));
+        }
+
         public async Task<bool> RemoveUserPermissionsAsync(ulong calendarId, ulong userId)
         {
             var permissions = await _db.Permissions

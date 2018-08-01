@@ -5,13 +5,18 @@ using System.Threading.Tasks;
 using DSharpPlus;
 using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Attributes;
+using SchedulerBot.Data.Services;
 
 namespace SchedulerBot.Client.Commands
 {
     [Group("perms")] 
     [Description("View and modify permissions for other commands.")]
     public class PermissionsCommands : BaseCommandModule
-    { 
+    {
+        private readonly IPermissionService _permissionService;
+
+        public PermissionsCommands(IPermissionService permissionService) => _permissionService = permissionService;
+
         [Command("allow"), Description("Allows a certain role or user to use a certain command.")]
         public async Task Allow(CommandContext ctx, string args)
         {
@@ -33,7 +38,16 @@ namespace SchedulerBot.Client.Commands
         [Command("nodes"), Description("Lists all available permission nodes.")]
         public async Task Nodes(CommandContext ctx)
         {
-            await ctx.RespondAsync("Nodes");
+            var nodes = _permissionService.GetPermissionNodes();
+            var sb = new StringBuilder();
+            sb.AppendLine("```css");
+            foreach (var node in nodes)
+            {
+                sb.AppendLine(node);
+            }
+            sb.AppendLine("```");
+
+            await ctx.RespondAsync(sb.ToString());
         }
     }
 }
