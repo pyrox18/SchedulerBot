@@ -86,6 +86,7 @@ namespace SchedulerBot.Client
             Client.GuildDeleted += OnGuildDelete;
             Client.GuildMemberRemoved += OnGuildMemberRemove;
             Client.GuildRoleDeleted += OnGuildRoleDelete;
+            commands.CommandErrored += OnCommandError;
 
             // Start event scheduler
             var scheduler = ServiceProvider.GetService<IEventScheduler>();
@@ -199,6 +200,20 @@ namespace SchedulerBot.Client
         {
             var permissionService = ServiceProvider.GetService<IPermissionService>();
             await permissionService.RemoveRolePermissionsAsync(e.Guild.Id, e.Role.Id);
+        }
+
+        private async Task OnCommandError(CommandErrorEventArgs e)
+        {
+            var logger = ServiceProvider.GetService<ILogger<Program>>();
+            var errorId = Guid.NewGuid();
+            logger.LogError($"{errorId}: {e.Exception.Message}\n{e.Exception.StackTrace}");
+            var sb = new StringBuilder();
+            sb.AppendLine("An error has occurred. Please report this in the support server using the `support` command.");
+            sb.AppendLine($"Error event ID: {errorId}");
+            sb.AppendLine("```");
+            sb.AppendLine($"{e.Exception.Message}");
+            sb.AppendLine("```");
+            await e.Context.RespondAsync(sb.ToString());
         }
 
         private async Task<int> ResolvePrefix(DiscordMessage msg)
