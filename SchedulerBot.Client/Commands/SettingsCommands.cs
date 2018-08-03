@@ -9,6 +9,7 @@ using DSharpPlus.Entities;
 using NodaTime;
 using SchedulerBot.Client.Attributes;
 using SchedulerBot.Client.Extensions;
+using SchedulerBot.Client.Scheduler;
 using SchedulerBot.Data.Exceptions;
 using SchedulerBot.Data.Models;
 using SchedulerBot.Data.Services;
@@ -20,12 +21,16 @@ namespace SchedulerBot.Client.Commands
     public class SettingsCommands : BaseCommandModule
     {
         private readonly ICalendarService _calendarService;
+        private readonly IEventService _eventService;
         private readonly IPermissionService _permissionService;
+        private readonly IEventScheduler _eventScheduler;
 
-        public SettingsCommands(ICalendarService calendarService, IPermissionService permissionService)
+        public SettingsCommands(ICalendarService calendarService, IEventService eventService, IPermissionService permissionService, IEventScheduler eventScheduler)
         {
             _calendarService = calendarService;
+            _eventService = eventService;
             _permissionService = permissionService;
+            _eventScheduler = eventScheduler;
         }
 
         [GroupCommand]
@@ -164,6 +169,13 @@ namespace SchedulerBot.Client.Commands
                 await ctx.RespondAsync("Calendar not initialised. Run `init <timezone>` to initialise the calendar.");
                 return;
             }
+
+            var events = await _eventService.GetEventsAsync(ctx.Guild.Id);
+            foreach (var evt in events)
+            {
+                await _eventScheduler.RescheduleEvent(evt, ctx.Client, defaultChannel);
+            }
+
             await ctx.RespondAsync($"Updated default channel to {defaultChannel.AsChannelMention()}.");
         }
 
