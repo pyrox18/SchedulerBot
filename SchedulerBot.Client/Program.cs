@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
 using System.Text;
@@ -12,13 +13,15 @@ using DSharpPlus;
 using DSharpPlus.CommandsNext;
 using DSharpPlus.Entities;
 using DSharpPlus.EventArgs;
+using NLog.Extensions.Logging;
+using SharpRaven;
+using SharpRaven.Data;
 using SchedulerBot.Client.Commands;
+using SchedulerBot.Client.Extensions;
+using SchedulerBot.Client.Scheduler;
 using SchedulerBot.Data;
 using SchedulerBot.Data.Models;
 using SchedulerBot.Data.Services;
-using System.Collections.Generic;
-using SchedulerBot.Client.Scheduler;
-using NLog.Extensions.Logging;
 
 namespace SchedulerBot.Client
 {
@@ -27,6 +30,7 @@ namespace SchedulerBot.Client
         private IConfigurationRoot Configuration { get; set; }
         private DiscordClient Client { get; set; }
         private IServiceProvider ServiceProvider { get; set; }
+        private RavenClient RavenClient { get; set; }
 
         static void Main(string[] args = null)
         {
@@ -51,6 +55,13 @@ namespace SchedulerBot.Client
             
             Console.WriteLine("Configuring services...");
             ConfigureServices();
+
+            // Initialise Raven service if production environment
+            if (environment == "Production")
+            {
+                var dsn = Configuration.GetSection("Raven").GetValue<string>("DSN");
+                RavenClient = new RavenClient(dsn);
+            }
 
             var logger = ServiceProvider.GetService<ILogger<Program>>();
 
@@ -207,6 +218,18 @@ namespace SchedulerBot.Client
             var logger = ServiceProvider.GetService<ILogger<Program>>();
             var errorId = Guid.NewGuid();
             logger.LogError($"{errorId}: {e.Exception.Message}\n{e.Exception.StackTrace}");
+
+            if (RavenClient != null)
+            {
+                e.Exception.Data.Add("ErrorEventId", errorId.ToString());
+                e.Exception.Data.Add("Message", e.Context.Message);
+                e.Exception.Data.Add("Command", e.Command.QualifiedName);
+                e.Exception.Data.Add("User", e.Context.Member.GetUsernameAndDiscriminator());
+                e.Exception.Data.Add("UserId", e.Context.Member.Id);
+
+                await RavenClient.CaptureAsync(new SentryEvent(e.Exception));
+            }
+
             var sb = new StringBuilder();
             sb.AppendLine("An error has occurred. Please report this in the support server using the `support` command.");
             sb.AppendLine($"Error event ID: {errorId}");
