@@ -7,6 +7,7 @@ using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Attributes;
 using DSharpPlus.Entities;
 using NodaTime;
+using SchedulerBot.Client.Attributes;
 using SchedulerBot.Client.Extensions;
 using SchedulerBot.Data.Exceptions;
 using SchedulerBot.Data.Models;
@@ -19,8 +20,13 @@ namespace SchedulerBot.Client.Commands
     public class SettingsCommands : BaseCommandModule
     {
         private readonly ICalendarService _calendarService;
+        private readonly IPermissionService _permissionService;
 
-        public SettingsCommands(ICalendarService calendarService) => _calendarService = calendarService;
+        public SettingsCommands(ICalendarService calendarService, IPermissionService permissionService)
+        {
+            _calendarService = calendarService;
+            _permissionService = permissionService;
+        }
 
         [GroupCommand]
         public async Task Settings(CommandContext ctx)
@@ -50,8 +56,15 @@ namespace SchedulerBot.Client.Commands
         }
 
         [Command("prefix"), Description("View the bot's prefix.")]
-        public async Task Prefix(CommandContext ctx)
+        [PermissionNode(PermissionNode.PrefixShow)]
+        public async Task ShowPrefix(CommandContext ctx)
         {
+            if (!await this.CheckPermission(_permissionService, typeof(SettingsCommands), nameof(SettingsCommands.ShowPrefix), ctx.Member))
+            {
+                await ctx.RespondAsync("You are not permitted to use this command.");
+                return;
+            }
+
             var prefix = await _calendarService.GetCalendarPrefixAsync(ctx.Guild.Id);
             if (string.IsNullOrEmpty(prefix))
             {
@@ -75,8 +88,15 @@ namespace SchedulerBot.Client.Commands
         }
 
         [Command("prefix"), Description("Change the bot's prefix.")]
-        public async Task Prefix(CommandContext ctx, string prefix)
+        [PermissionNode(PermissionNode.PrefixModify)]
+        public async Task ModifyPrefix(CommandContext ctx, string prefix)
         {
+            if (!await this.CheckPermission(_permissionService, typeof(SettingsCommands), nameof(SettingsCommands.ModifyPrefix), ctx.Member))
+            {
+                await ctx.RespondAsync("You are not permitted to use this command.");
+                return;
+            }
+
             string newPrefix = string.Empty;
             try
             {
@@ -92,8 +112,15 @@ namespace SchedulerBot.Client.Commands
         }
 
         [Command("defaultchannel"), Description("View the default channel that the bot sends messages to.")]
-        public async Task DefaultChannel(CommandContext ctx)
+        [PermissionNode(PermissionNode.DefaultChannelShow)]
+        public async Task ShowDefaultChannel(CommandContext ctx)
         {
+            if (!await this.CheckPermission(_permissionService, typeof(SettingsCommands), nameof(SettingsCommands.ShowDefaultChannel), ctx.Member))
+            {
+                await ctx.RespondAsync("You are not permitted to use this command.");
+                return;
+            }
+
             var defaultChannel = await _calendarService.GetCalendarDefaultChannelAsync(ctx.Guild.Id);
             if (defaultChannel == 0)
             {
@@ -118,8 +145,15 @@ namespace SchedulerBot.Client.Commands
         }
 
         [Command("defaultchannel"), Description("Set the default channel that the bot sends messages to.")]
-        public async Task DefaultChannel(CommandContext ctx, DiscordChannel channel)
+        [PermissionNode(PermissionNode.DefaultChannelModify)]
+        public async Task ModifyDefaultChannel(CommandContext ctx, DiscordChannel channel)
         {
+            if (!await this.CheckPermission(_permissionService, typeof(SettingsCommands), nameof(SettingsCommands.ModifyDefaultChannel), ctx.Member))
+            {
+                await ctx.RespondAsync("You are not permitted to use this command.");
+                return;
+            }
+
             ulong defaultChannel = 0;
             try
             {
@@ -134,8 +168,15 @@ namespace SchedulerBot.Client.Commands
         }
 
         [Command("timezone"), Description("View the timezone for the bot.")]
-        public async Task Timezone(CommandContext ctx)
+        [PermissionNode(PermissionNode.TimezoneShow)]
+        public async Task ShowTimezone(CommandContext ctx)
         {
+            if (!await this.CheckPermission(_permissionService, typeof(SettingsCommands), nameof(SettingsCommands.ShowTimezone), ctx.Member))
+            {
+                await ctx.RespondAsync("You are not permitted to use this command.");
+                return;
+            }
+
             var timezone = await _calendarService.GetCalendarTimezoneAsync(ctx.Guild.Id);
             if (string.IsNullOrEmpty(timezone))
             {
@@ -160,8 +201,15 @@ namespace SchedulerBot.Client.Commands
         }
 
         [Command("timezone"), Description("Change the timezone for the bot.")]
-        public async Task Timezone(CommandContext ctx, string timezone)
+        [PermissionNode(PermissionNode.TimezoneModify)]
+        public async Task ModifyTimezone(CommandContext ctx, string timezone)
         {
+            if (!await this.CheckPermission(_permissionService, typeof(SettingsCommands), nameof(SettingsCommands.ModifyTimezone), ctx.Member))
+            {
+                await ctx.RespondAsync("You are not permitted to use this command.");
+                return;
+            }
+
             string tz = string.Empty;
 
             try

@@ -1,13 +1,13 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.Reflection;
-using System.Text;
 using System.Threading.Tasks;
-using DSharpPlus;
 using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Attributes;
 using DSharpPlus.Entities;
+using SchedulerBot.Client.Attributes;
+using SchedulerBot.Client.Extensions;
+using SchedulerBot.Data.Models;
 using SchedulerBot.Data.Services;
 
 namespace SchedulerBot.Client.Commands
@@ -15,19 +15,38 @@ namespace SchedulerBot.Client.Commands
     public class MiscCommands : BaseCommandModule
     {
         private readonly ICalendarService _calendarService;
+        internal readonly IPermissionService _permissionService;
 
-        public MiscCommands(ICalendarService calendarService) => _calendarService = calendarService;
+        public MiscCommands(ICalendarService calendarService, IPermissionService permissionService)
+        {
+            _calendarService = calendarService;
+            _permissionService = permissionService;
+        }
 
         [Command("ping"), Description("Pings the bot.")]
+        [PermissionNode(PermissionNode.Ping)]
         public async Task Ping(CommandContext ctx)
         {
+            if (!await this.CheckPermission(_permissionService, typeof(MiscCommands), nameof(MiscCommands.Ping), ctx.Member))
+            {
+                await ctx.RespondAsync("You are not permitted to use this command.");
+                return;
+            }
+
             TimeSpan diff = DateTimeOffset.Now - ctx.Message.Timestamp;
             await ctx.RespondAsync($"Pong! Time: {diff.Milliseconds}ms");
         }
 
         [Command("prefix"), Description("View the bot's current prefix for your guild.")]
+        [PermissionNode(PermissionNode.PrefixShow)]
         public async Task Prefix(CommandContext ctx)
         {
+            if (!await this.CheckPermission(_permissionService, typeof(MiscCommands), nameof(MiscCommands.Prefix), ctx.Member))
+            {
+                await ctx.RespondAsync("You are not permitted to use this command.");
+                return;
+            }
+
             var prefix = await _calendarService.GetCalendarPrefixAsync(ctx.Guild.Id);
             await ctx.RespondAsync($"`{prefix}`");
         }
