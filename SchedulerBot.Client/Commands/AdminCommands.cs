@@ -20,7 +20,8 @@ namespace SchedulerBot.Client.Commands
         [Command("forceerror"), Description("Forces the bot to throw an error.")]
         public async Task ForceError(CommandContext ctx)
         {
-            await ctx.RespondAsync("Error");
+            await ctx.RespondAsync("Forcing error");
+            throw new Exception("Test exception");
         }
 
         [Command("shell"), Description("Run command-line instructions.")]

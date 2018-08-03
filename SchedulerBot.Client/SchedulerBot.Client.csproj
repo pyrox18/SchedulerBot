@@ -19,13 +19,21 @@
     <PackageReference Include="Microsoft.Extensions.Logging" Version="2.1.1" />
     <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="2.1.1" />
     <PackageReference Include="Microsoft.Recognizers.Text.DateTime" Version="1.0.8.2" />
+    <PackageReference Include="NLog.Extensions.Logging" Version="1.2.0" />
     <PackageReference Include="NodaTime" Version="2.3.0" />
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="2.1.1.1" />
     <PackageReference Include="Quartz" Version="3.0.6" />
+    <PackageReference Include="SharpRaven" Version="2.4.0" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\SchedulerBot.Data\SchedulerBot.Data.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="nlog.config">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 
 </Project>
