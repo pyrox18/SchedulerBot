@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 using System.Timers;
@@ -9,14 +10,15 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using DSharpPlus;
 using DSharpPlus.CommandsNext;
+using DSharpPlus.Entities;
 using DSharpPlus.EventArgs;
 using SchedulerBot.Client.Commands;
 using SchedulerBot.Data;
 using SchedulerBot.Data.Models;
 using SchedulerBot.Data.Services;
 using System.Collections.Generic;
-using DSharpPlus.Entities;
 using SchedulerBot.Client.Scheduler;
+using NLog.Extensions.Logging;
 
 namespace SchedulerBot.Client
 {
@@ -48,26 +50,29 @@ namespace SchedulerBot.Client
             Configuration = Configure(environment);
             
             Console.WriteLine("Configuring services...");
-            ServiceProvider = ConfigureServices(new ServiceCollection());
+            ConfigureServices();
+
+            var logger = ServiceProvider.GetService<ILogger<Program>>();
 
             // Bot
-            Console.WriteLine("Initialising client...");
+            logger.LogInformation($"SchedulerBot v{Assembly.GetEntryAssembly().GetCustomAttribute<AssemblyInformationalVersionAttribute>().InformationalVersion}");
+            logger.LogInformation("Initialising client");
             Client = new DiscordClient(new DiscordConfiguration
             {
                 Token = Configuration.GetSection("Bot").GetValue<string>("Token"),
                 TokenType = TokenType.Bot,
-                UseInternalLogHandler = true,
                 LogLevel = DSharpPlus.LogLevel.Debug,
             });
+            Client.DebugLogger.LogMessageReceived += OnLogMessageReceived;
 
-            Console.WriteLine("Initialising commands module...");
+            logger.LogInformation("Initialising command module");
             var commands = Client.UseCommandsNext(new CommandsNextConfiguration
             {
                 PrefixResolver = ResolvePrefix,
                 Services = ServiceProvider
             });
 
-            Console.WriteLine("Registering commands...");
+            logger.LogInformation("Registering commands");
             commands.RegisterCommands<AdminCommands>();
             commands.RegisterCommands<EventCommands>();
             commands.RegisterCommands<InitializerCommands>();
@@ -76,7 +81,7 @@ namespace SchedulerBot.Client
             commands.RegisterCommands<SettingsCommands>();
 
             // Register event handlers
-            Console.WriteLine("Registering event handlers...");
+            logger.LogInformation("Registering event handlers");
             Client.GuildCreated += OnGuildCreate;
             Client.GuildDeleted += OnGuildDelete;
             Client.GuildMemberRemoved += OnGuildMemberRemove;
@@ -84,27 +89,29 @@ namespace SchedulerBot.Client
 
             // Start event scheduler
             var scheduler = ServiceProvider.GetService<IEventScheduler>();
-            Console.WriteLine("Starting event scheduler...");
+            logger.LogInformation("Starting event scheduler");
             await scheduler.Start();
 
-            Console.WriteLine("Starting initial event poll...");
+            logger.LogInformation("Starting initial event poll");
             await PollAndScheduleEvents();
-            Console.WriteLine("Polling completed.");
-            Console.WriteLine("Starting poll timer...");
+            logger.LogInformation("Initial event poll completed");
+            logger.LogInformation("Starting poll timer");
             Timer t = new Timer(60 * 60 * 1000)
             {
                 AutoReset = true
             };
             t.Elapsed += new ElapsedEventHandler(PollerTimerElapsed);
             t.Start();
-            Console.WriteLine("Timer started.");
+            logger.LogInformation("Poll timer started");
 
+            logger.LogInformation("Connecting bot");
             Console.WriteLine("Connecting...");
             await Client.ConnectAsync();
-            Console.WriteLine("Bot connected");
+            logger.LogInformation("Bot connected");
             await Task.Delay(-1);
 
             await scheduler.Shutdown();
+            NLog.LogManager.Shutdown();
         }
 
         private IConfigurationRoot Configure(string environment)
@@ -124,14 +131,17 @@ namespace SchedulerBot.Client
             return builder.Build();
         }
 
-        private IServiceProvider ConfigureServices(IServiceCollection services)
+        private void ConfigureServices()
         {
+            var services = new ServiceCollection();
             var connectionString = Configuration.GetConnectionString("SchedulerBotContext");
 
+            services.AddSingleton<ILoggerFactory, LoggerFactory>();
+            services.AddSingleton(typeof(ILogger<>), typeof(Logger<>));
             services.AddLogging(options =>
             {
-                options.AddConfiguration(Configuration.GetSection("Logging"));
-                options.AddConsole();
+                var logLevel = Enum.Parse<Microsoft.Extensions.Logging.LogLevel>(Configuration.GetSection("Logging").GetSection("LogLevel").GetValue<string>("Default"));
+                options.SetMinimumLevel(logLevel);
             });
 
             services.AddEntityFrameworkNpgsql()
@@ -147,7 +157,17 @@ namespace SchedulerBot.Client
             // Scheduler service
             services.AddSingleton<IEventScheduler, EventScheduler>();
 
-            return services.BuildServiceProvider();
+            ServiceProvider = services.BuildServiceProvider();
+
+            var loggerFactory = ServiceProvider.GetRequiredService<ILoggerFactory>();
+
+            // NLog configuration
+            loggerFactory.AddNLog(new NLogProviderOptions
+            {
+                CaptureMessageProperties = true,
+                CaptureMessageTemplates = true
+            });
+            NLog.LogManager.LoadConfiguration("nlog.config");
         }
 
         private async Task OnGuildCreate(GuildCreateEventArgs e)
@@ -196,6 +216,29 @@ namespace SchedulerBot.Client
         {
             var eventScheduler = ServiceProvider.GetService<IEventScheduler>();
             await eventScheduler.PollAndScheduleEvents(Client);
+        }
+
+        private void OnLogMessageReceived(object sender, DebugLogMessageEventArgs e)
+        {
+            var logger = ServiceProvider.GetService<ILogger<Program>>();
+            switch (e.Level)
+            {
+                case DSharpPlus.LogLevel.Critical:
+                    logger.LogCritical($"[{e.Application}] {e.Message}");
+                    break;
+                case DSharpPlus.LogLevel.Debug:
+                    logger.LogDebug($"[{e.Application}] {e.Message}");
+                    break;
+                case DSharpPlus.LogLevel.Error:
+                    logger.LogError($"[{e.Application}] {e.Message}");
+                    break;
+                case DSharpPlus.LogLevel.Info:
+                    logger.LogInformation($"[{e.Application}] {e.Message}");
+                    break;
+                case DSharpPlus.LogLevel.Warning:
+                    logger.LogWarning($"[{e.Application}] {e.Message}");
+                    break;
+            }
         }
     }
 }
