@@ -156,11 +156,12 @@ namespace SchedulerBot.Data.Services
                 throw new CalendarNotFoundException();
             }
 
+            var oldTz = DateTimeZoneProviders.Tzdb[calendar.Timezone];
             var earliestEvent = calendar.Events.OrderBy(e => e.StartTimestamp).FirstOrDefault();
             if (earliestEvent != null)
             {
                 Instant instant = Instant.FromDateTimeOffset(earliestEvent.StartTimestamp);
-                LocalDateTime dt = new ZonedDateTime(instant, DateTimeZoneProviders.Tzdb[calendar.Timezone]).LocalDateTime;
+                LocalDateTime dt = new ZonedDateTime(instant, oldTz).LocalDateTime;
                 ZonedDateTime zdt = tz.AtStrictly(dt);
                 if (zdt.ToInstant().ToDateTimeOffset() < SystemClock.Instance.GetCurrentInstant().ToDateTimeOffset())
                 {
@@ -171,8 +172,10 @@ namespace SchedulerBot.Data.Services
             calendar.Timezone = newTimezone;
             foreach (var evt in calendar.Events)
             {
-                LocalDateTime startDt = LocalDateTime.FromDateTime(evt.StartTimestamp.LocalDateTime);
-                LocalDateTime endDt = LocalDateTime.FromDateTime(evt.EndTimestamp.LocalDateTime);
+                Instant startInstant = Instant.FromDateTimeOffset(evt.StartTimestamp);
+                Instant endInstant = Instant.FromDateTimeOffset(evt.EndTimestamp);
+                LocalDateTime startDt = new ZonedDateTime(startInstant, oldTz).LocalDateTime;
+                LocalDateTime endDt = new ZonedDateTime(endInstant, oldTz).LocalDateTime;
                 ZonedDateTime startZdt = tz.AtStrictly(startDt);
                 ZonedDateTime endZdt = tz.AtStrictly(endDt);
                 evt.StartTimestamp = startZdt.ToDateTimeOffset();
