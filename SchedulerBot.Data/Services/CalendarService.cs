@@ -142,20 +142,42 @@ namespace SchedulerBot.Data.Services
 
         public async Task<string> UpdateCalendarTimezoneAsync(ulong calendarId, string newTimezone)
         {
-            // TODO: add checking for events rolling into the past on timezone change
             var tz = DateTimeZoneProviders.Tzdb.GetZoneOrNull(newTimezone);
             if (tz == null)
             {
                 throw new InvalidTimeZoneException("Invalid TZ timezone");
             }
 
-            var calendar = await _db.Calendars.FirstOrDefaultAsync(c => c.Id == calendarId);
+            var calendar = await _db.Calendars
+                .Include(c => c.Events)
+                .FirstOrDefaultAsync(c => c.Id == calendarId);
             if (calendar == null)
             {
                 throw new CalendarNotFoundException();
             }
 
+            var earliestEvent = calendar.Events.OrderBy(e => e.StartTimestamp).FirstOrDefault();
+            if (earliestEvent != null)
+            {
+                Instant instant = Instant.FromDateTimeOffset(earliestEvent.StartTimestamp);
+                LocalDateTime dt = new ZonedDateTime(instant, DateTimeZoneProviders.Tzdb[calendar.Timezone]).LocalDateTime;
+                ZonedDateTime zdt = tz.AtStrictly(dt);
+                if (zdt.ToInstant().ToDateTimeOffset() < SystemClock.Instance.GetCurrentInstant().ToDateTimeOffset())
+                {
+                    throw new ExistingEventInNewTimezonePastException();
+                }
+            }
+
             calendar.Timezone = newTimezone;
+            foreach (var evt in calendar.Events)
+            {
+                LocalDateTime startDt = LocalDateTime.FromDateTime(evt.StartTimestamp.LocalDateTime);
+                LocalDateTime endDt = LocalDateTime.FromDateTime(evt.EndTimestamp.LocalDateTime);
+                ZonedDateTime startZdt = tz.AtStrictly(startDt);
+                ZonedDateTime endZdt = tz.AtStrictly(endDt);
+                evt.StartTimestamp = startZdt.ToDateTimeOffset();
+                evt.EndTimestamp = endZdt.ToDateTimeOffset();
+            }
             await _db.SaveChangesAsync();
             return calendar.Timezone;
         }
