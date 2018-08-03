@@ -58,7 +58,7 @@ namespace SchedulerBot.Client.Scheduler
         public async Task ScheduleEvent(Event evt, DiscordClient client, ulong channelId)
         {
             if (await Scheduler.CheckExists(new TriggerKey(evt.Id.ToString(), "eventNotifications"))
-                || evt.StartTimestamp < DateTimeOffset.Now.AddHours(2))
+                || evt.StartTimestamp > DateTimeOffset.Now.AddHours(2))
             {
                 return;
             }
