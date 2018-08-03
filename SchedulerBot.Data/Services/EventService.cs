@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
+using NodaTime;
 using SchedulerBot.Data.Exceptions;
 using SchedulerBot.Data.Models;
 
@@ -38,12 +39,31 @@ namespace SchedulerBot.Data.Services
                 throw new CalendarNotFoundException();
             }
 
-            var events = await _db.Calendars
+            var calendar = await _db.Calendars
                 .Where(c => c.Id == calendarId)
-                .Select(c => c.Events)
+                .Select(c => new
+                {
+                    c.Events,
+                    c.Timezone
+                })
                 .FirstOrDefaultAsync();
 
-            return events.OrderBy(e => e.StartTimestamp).ToList();
+            var orderedEvents = calendar.Events.OrderBy(e => e.StartTimestamp).ToList();
+            var tz = DateTimeZoneProviders.Tzdb[calendar.Timezone];
+            foreach (var evt in orderedEvents)
+            {
+                Instant instant = Instant.FromDateTimeOffset(evt.StartTimestamp);
+                LocalDateTime dt = new ZonedDateTime(instant, DateTimeZoneProviders.Tzdb[calendar.Timezone]).LocalDateTime;
+                ZonedDateTime zdt = tz.AtStrictly(dt);
+                evt.StartTimestamp = zdt.ToDateTimeOffset();
+
+                instant = Instant.FromDateTimeOffset(evt.EndTimestamp);
+                dt = new ZonedDateTime(instant, DateTimeZoneProviders.Tzdb[calendar.Timezone]).LocalDateTime;
+                zdt = tz.AtStrictly(dt);
+                evt.EndTimestamp = zdt.ToDateTimeOffset();
+            }
+
+            return orderedEvents;
         }
 
         public async Task<Event> DeleteEventAsync(ulong calendarId, int index)
