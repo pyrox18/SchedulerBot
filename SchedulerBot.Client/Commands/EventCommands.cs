@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -8,13 +9,14 @@ using Microsoft.Recognizers.Text.DateTime;
 using DSharpPlus;
 using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Attributes;
+using SchedulerBot.Client.Attributes;
 using SchedulerBot.Client.EmbedFactories;
 using SchedulerBot.Client.Exceptions;
+using SchedulerBot.Client.Extensions;
 using SchedulerBot.Client.Parsers;
 using SchedulerBot.Data.Exceptions;
 using SchedulerBot.Data.Models;
 using SchedulerBot.Data.Services;
-using System.Globalization;
 using SchedulerBot.Client.Scheduler;
 
 namespace SchedulerBot.Client.Commands
@@ -25,18 +27,27 @@ namespace SchedulerBot.Client.Commands
     {
         private readonly ICalendarService _calendarService;
         private readonly IEventService _eventService;
+        internal readonly IPermissionService _permissionService;
         private readonly IEventScheduler _eventScheduler;
 
-        public EventCommands(ICalendarService calendarService, IEventService eventService, IEventScheduler eventScheduler)
+        public EventCommands(ICalendarService calendarService, IEventService eventService, IPermissionService permissionService, IEventScheduler eventScheduler)
         {
             _calendarService = calendarService;
             _eventService = eventService;
+            _permissionService = permissionService;
             _eventScheduler = eventScheduler;
         }
 
         [GroupCommand, Description("Create an event.")]
+        [PermissionNode(PermissionNode.EventCreate)]
         public async Task Create(CommandContext ctx, params string[] args)
         {
+            if (!await this.CheckPermission(_permissionService, typeof(EventCommands), nameof(EventCommands.Create), ctx.Member))
+            {
+                await ctx.RespondAsync("You are not permitted to use this command.");
+                return;
+            }
+
             var timezone = await _calendarService.GetCalendarTimezoneAsync(ctx.Guild.Id);
             if (string.IsNullOrEmpty(timezone))
             {
@@ -84,8 +95,15 @@ namespace SchedulerBot.Client.Commands
         }
 
         [Command("list"), Description("Lists all events.")]
+        [PermissionNode(PermissionNode.EventList)]
         public async Task List(CommandContext ctx)
         {
+            if (!await this.CheckPermission(_permissionService, typeof(EventCommands), nameof(EventCommands.List), ctx.Member))
+            {
+                await ctx.RespondAsync("You are not permitted to use this command.");
+                return;
+            }
+
             List<Event> events;
             try
             {
@@ -157,8 +175,15 @@ namespace SchedulerBot.Client.Commands
         }
 
         [Command("update"), Description("Update an event.")]
+        [PermissionNode(PermissionNode.EventUpdate)]
         public async Task Update(CommandContext ctx, int index, [RemainingText] string args)
         {
+            if (!await this.CheckPermission(_permissionService, typeof(EventCommands), nameof(EventCommands.Update), ctx.Member))
+            {
+                await ctx.RespondAsync("You are not permitted to use this command.");
+                return;
+            }
+
             if (index <= 0)
             {
                 await ctx.RespondAsync("Event index must be greater than 0.");
@@ -213,8 +238,15 @@ namespace SchedulerBot.Client.Commands
         }
 
         [Command("delete"), Description("Delete an event.")]
+        [PermissionNode(PermissionNode.EventDelete)]
         public async Task Delete(CommandContext ctx, int index)
         {
+            if (!await this.CheckPermission(_permissionService, typeof(EventCommands), nameof(EventCommands.Delete), ctx.Member))
+            {
+                await ctx.RespondAsync("You are not permitted to use this command.");
+                return;
+            }
+
             if (index <= 0)
             {
                 await ctx.RespondAsync("Event index must be greater than 0.");

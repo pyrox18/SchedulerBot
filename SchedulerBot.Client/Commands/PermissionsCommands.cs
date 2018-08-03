@@ -7,6 +7,7 @@ using DSharpPlus;
 using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Attributes;
 using DSharpPlus.Entities;
+using SchedulerBot.Client.Attributes;
 using SchedulerBot.Client.Extensions;
 using SchedulerBot.Data.Exceptions;
 using SchedulerBot.Data.Models;
@@ -23,8 +24,15 @@ namespace SchedulerBot.Client.Commands
         public PermissionsCommands(IPermissionService permissionService) => _permissionService = permissionService;
 
         [Command("allow"), Description("Allows a certain role to use a certain command.")]
-        public async Task Allow(CommandContext ctx, string node, DiscordRole role)
+        [PermissionNode(PermissionNode.PermsModify)]
+        public async Task AllowRole(CommandContext ctx, string node, DiscordRole role)
         {
+            if (!await this.CheckPermission(_permissionService, typeof(PermissionsCommands), nameof(PermissionsCommands.AllowRole), ctx.Member))
+            {
+                await ctx.RespondAsync("You are not permitted to use this command.");
+                return;
+            }
+
             Permission permission;
             try
             {
@@ -39,8 +47,15 @@ namespace SchedulerBot.Client.Commands
         }
 
         [Command("allow"), Description("Allows a certain user to use a certain command.")]
-        public async Task Allow(CommandContext ctx, string node, DiscordMember user)
+        [PermissionNode(PermissionNode.PermsModify)]
+        public async Task AllowUser(CommandContext ctx, string node, DiscordMember user)
         {
+            if (!await this.CheckPermission(_permissionService, typeof(PermissionsCommands), nameof(PermissionsCommands.AllowUser), ctx.Member))
+            {
+                await ctx.RespondAsync("You are not permitted to use this command.");
+                return;
+            }
+
             Permission permission;
             try
             {
@@ -55,8 +70,15 @@ namespace SchedulerBot.Client.Commands
         }
 
         [Command("deny"), Description("Denies a certain role from using a certain command.")]
-        public async Task Deny(CommandContext ctx, string node, DiscordRole role)
+        [PermissionNode(PermissionNode.PermsModify)]
+        public async Task DenyRole(CommandContext ctx, string node, DiscordRole role)
         {
+            if (!await this.CheckPermission(_permissionService, typeof(PermissionsCommands), nameof(PermissionsCommands.DenyRole), ctx.Member))
+            {
+                await ctx.RespondAsync("You are not permitted to use this command.");
+                return;
+            }
+
             Permission permission;
             try
             {
@@ -71,8 +93,15 @@ namespace SchedulerBot.Client.Commands
         }
 
         [Command("deny"), Description("Denies a certain user from using a certain command.")]
-        public async Task Deny(CommandContext ctx, string node, DiscordMember user)
+        [PermissionNode(PermissionNode.PermsModify)]
+        public async Task DenyUser(CommandContext ctx, string node, DiscordMember user)
         {
+            if (!await this.CheckPermission(_permissionService, typeof(PermissionsCommands), nameof(PermissionsCommands.DenyUser), ctx.Member))
+            {
+                await ctx.RespondAsync("You are not permitted to use this command.");
+                return;
+            }
+
             Permission permission;
             try
             {
@@ -87,8 +116,15 @@ namespace SchedulerBot.Client.Commands
         }
 
         [Command("show"), Description("Shows current permission settings for a role.")]
-        public async Task Show(CommandContext ctx, DiscordRole role)
+        [PermissionNode(PermissionNode.PermsShow)]
+        public async Task ShowRole(CommandContext ctx, DiscordRole role)
         {
+            if (!await this.CheckPermission(_permissionService, typeof(PermissionsCommands), nameof(PermissionsCommands.ShowRole), ctx.Member))
+            {
+                await ctx.RespondAsync("You are not permitted to use this command.");
+                return;
+            }
+
             var permissions = await _permissionService.GetPermissionsForRoleAsync(ctx.Guild.Id, role.Id);
 
             var sb = new StringBuilder();
@@ -112,8 +148,15 @@ namespace SchedulerBot.Client.Commands
         }
 
         [Command("show"), Description("Shows current permission settings for a user.")]
-        public async Task Show(CommandContext ctx, DiscordMember user)
+        [PermissionNode(PermissionNode.PermsShow)]
+        public async Task ShowUser(CommandContext ctx, DiscordMember user)
         {
+            if (!await this.CheckPermission(_permissionService, typeof(PermissionsCommands), nameof(PermissionsCommands.ShowUser), ctx.Member))
+            {
+                await ctx.RespondAsync("You are not permitted to use this command.");
+                return;
+            }
+
             var permissions = await _permissionService.GetPermissionsForUserAsync(ctx.Guild.Id, user.Id);
 
             var sb = new StringBuilder();
@@ -137,8 +180,15 @@ namespace SchedulerBot.Client.Commands
         }
 
         [Command("show"), Description("Shows current permission settings for a node.")]
-        public async Task Show(CommandContext ctx, string node)
+        [PermissionNode(PermissionNode.PermsShow)]
+        public async Task ShowNode(CommandContext ctx, string node)
         {
+            if (!await this.CheckPermission(_permissionService, typeof(PermissionsCommands), nameof(PermissionsCommands.ShowNode), ctx.Member))
+            {
+                await ctx.RespondAsync("You are not permitted to use this command.");
+                return;
+            }
+
             List<Permission> permissions;
             try
             {
@@ -206,8 +256,15 @@ namespace SchedulerBot.Client.Commands
         }
 
         [Command("nodes"), Description("Lists all available permission nodes.")]
+        [PermissionNode(PermissionNode.PermsNodes)]
         public async Task Nodes(CommandContext ctx)
         {
+            if (!await this.CheckPermission(_permissionService, typeof(PermissionsCommands), nameof(PermissionsCommands.Nodes), ctx.Member))
+            {
+                await ctx.RespondAsync("You are not permitted to use this command.");
+                return;
+            }
+
             var nodes = _permissionService.GetPermissionNodes();
             var sb = new StringBuilder();
             sb.AppendLine("```css");

@@ -122,8 +122,11 @@ namespace SchedulerBot.Data.Services
 
             if (existingPermission == null)
             {
-                existingPermission.Node = Enum.Parse<PermissionNode>(actualNode);
-                existingPermission.IsDenied = false;
+                existingPermission = new Permission
+                {
+                    Node = Enum.Parse<PermissionNode>(actualNode),
+                    IsDenied = false
+                };
                 return existingPermission;
             }
 
@@ -197,6 +200,17 @@ namespace SchedulerBot.Data.Services
                 .ToListAsync();
 
             return permissions;
+        }
+
+        public async Task<bool> CheckPermissionsAsync(PermissionNode node, ulong calendarId, ulong userId, IEnumerable<ulong> roleIds)
+        {
+            var isNotPermitted = await _db.Permissions.AnyAsync(
+                p => p.Calendar.Id == calendarId
+                && p.Node == node
+                && ((p.Type == PermissionType.User && p.TargetId == userId) || (p.Type == PermissionType.Role && roleIds.Contains(p.TargetId)))
+            );
+
+            return !isNotPermitted;
         }
     }
 }
