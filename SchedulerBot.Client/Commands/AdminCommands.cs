@@ -23,11 +23,5 @@ namespace SchedulerBot.Client.Commands
             await ctx.RespondAsync("Forcing error");
             throw new Exception("Test exception");
         }
-
-        [Command("shell"), Description("Run command-line instructions.")]
-        public async Task Shell(CommandContext ctx, string command)
-        {
-            await ctx.RespondAsync($"Executing command: {command}");
-        }
     }
 }
