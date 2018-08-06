@@ -27,7 +27,7 @@ namespace SchedulerBot.Client.Commands
     {
         private readonly ICalendarService _calendarService;
         private readonly IEventService _eventService;
-        internal readonly IPermissionService _permissionService;
+        private readonly IPermissionService _permissionService;
         private readonly IEventScheduler _eventScheduler;
 
         public EventCommands(ICalendarService calendarService, IEventService eventService, IPermissionService permissionService, IEventScheduler eventScheduler)
