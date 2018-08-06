@@ -51,7 +51,7 @@ namespace SchedulerBot.Client
             Console.WriteLine($"Environment: {environment}");
 
             Console.WriteLine("Reading configuration file...");
-            Configuration = Configure(environment);
+            Configure(environment);
             
             Console.WriteLine("Configuring services...");
             ConfigureServices();
@@ -126,7 +126,7 @@ namespace SchedulerBot.Client
             NLog.LogManager.Shutdown();
         }
 
-        private IConfigurationRoot Configure(string environment)
+        private void Configure(string environment)
         {
             var builder = new ConfigurationBuilder();
             if (environment == "Development")
@@ -140,7 +140,7 @@ namespace SchedulerBot.Client
             builder.AddJsonFile("appsettings.json")
                 .AddJsonFile($"appsettings.{environment}.json");
 
-            return builder.Build();
+            Configuration = builder.Build();
         }
 
         private void ConfigureServices()
