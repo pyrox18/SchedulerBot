@@ -10,6 +10,7 @@ The entire bot is rewritten in .NET Core, with the DSharpPlus library. The appli
 
 - Added a variant of the `event list` command that accepts an event index to view the details of a specific event.
 - Added pagination to the base `event list` command that displays a maximum of 10 events per page.
+- Added mentions to events, which can be supplied by adding the `--mention` flag followed by a list of mentions. Supported mentions are role mentions, user mentions and `@everyone`.
 
 ### Changed
 
