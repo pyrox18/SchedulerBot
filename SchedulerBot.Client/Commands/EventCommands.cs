@@ -10,7 +10,7 @@ using DSharpPlus;
 using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Attributes;
 using SchedulerBot.Client.Attributes;
-using SchedulerBot.Client.EmbedFactories;
+using SchedulerBot.Client.Factories;
 using SchedulerBot.Client.Exceptions;
 using SchedulerBot.Client.Extensions;
 using SchedulerBot.Client.Parsers;
@@ -18,6 +18,7 @@ using SchedulerBot.Data.Exceptions;
 using SchedulerBot.Data.Models;
 using SchedulerBot.Data.Services;
 using SchedulerBot.Client.Scheduler;
+using DSharpPlus.Interactivity;
 
 namespace SchedulerBot.Client.Commands
 {
@@ -115,63 +116,57 @@ namespace SchedulerBot.Client.Commands
                 return;
             }
 
-            StringBuilder sb = new StringBuilder();
-            sb.AppendLine("```css");
-
             if (events.Count < 1)
             {
-                sb.AppendLine("No events found!");
+                await ctx.RespondAsync("No events found.");
+                return;
             }
-            else
+
+            var pages = EventListPageFactory.GetEventListPages(events);
+            var interactivity = ctx.Client.GetInteractivity();
+            await interactivity.SendPaginatedMessage(ctx.Channel, ctx.User, pages);
+        }
+
+        [Command("list"), Description("List the details of a single event.")]
+        [PermissionNode(PermissionNode.EventList)]
+        public async Task ListOne(CommandContext ctx, int index)
+        {
+            if (!await this.CheckPermission(_permissionService, typeof(EventCommands), nameof(EventCommands.ListOne), ctx.Member))
             {
-                int i = 0;
-                bool activeEventHeaderWritten = false;
-                DateTimeOffset now = DateTimeOffset.Now;
-
-                while (i < events.Count && events[i].StartTimestamp <= now)
-                {
-                    if (!activeEventHeaderWritten)
-                    {
-                        sb.AppendLine("[Active Events]");
-                        sb.AppendLine();
-                        activeEventHeaderWritten = true;
-                    }
-                    sb.AppendLine($"{i + 1}: {events[i].Name} /* {events[i].StartTimestamp.ToString("ddd d MMM yyyy h:mm:ss tt zzz", CultureInfo.InvariantCulture)} to {events[i].EndTimestamp.ToString("ddd d MMM yyyy h:mm:ss tt zzz", CultureInfo.InvariantCulture)} */");
-                    if (!string.IsNullOrEmpty(events[i].Description))
-                    {
-                        sb.AppendLine($"    # {events[i].Description}");
-                    }
-                    if (events[i].Repeat != RepeatType.None)
-                    {
-                        sb.AppendLine($"    # Repeat: {events[i].Repeat}");
-                    }
-
-                    i++;
-                }
-                if (i < events.Count)
-                {
-                    sb.AppendLine();
-                    sb.AppendLine("[Upcoming Events]");
-                    sb.AppendLine();
-                }
-                while (i < events.Count)
-                {
-                    sb.AppendLine($"{i + 1}: {events[i].Name} /* {events[i].StartTimestamp.ToString("ddd d MMM yyyy h:mm:ss tt zzz", CultureInfo.InvariantCulture)} to {events[i].EndTimestamp.ToString("ddd d MMM yyyy h:mm:ss tt zzz", CultureInfo.InvariantCulture)} */");
-                    if (!string.IsNullOrEmpty(events[i].Description))
-                    {
-                        sb.AppendLine($"    # {events[i].Description}");
-                    }
-                    if (events[i].Repeat != RepeatType.None)
-                    {
-                        sb.AppendLine($"    # Repeat: {events[i].Repeat}");
-                    }
-
-                    i++;
-                }
+                await ctx.RespondAsync("You are not permitted to use this command.");
+                return;
             }
-            sb.AppendLine("```");
 
-            await ctx.RespondAsync(sb.ToString());
+            if (index <= 0)
+            {
+                await ctx.RespondAsync("Event index must be greater than 0.");
+                return;
+            }
+
+            Event evt;
+            try
+            {
+                evt = await _eventService.GetEventByIndexAsync(ctx.Guild.Id, index - 1);
+            }
+            catch (ArgumentOutOfRangeException)
+            {
+                await ctx.RespondAsync("Event not found.");
+                return;
+            }
+            catch (CalendarNotFoundException)
+            {
+                await ctx.RespondAsync("Calendar not initialised. Run `init <timezone>` to initialise the calendar.");
+                return;
+            }
+
+            if (evt == null)
+            {
+                await ctx.RespondAsync("Event not found.");
+                return;
+            }
+
+            var embed = EventEmbedFactory.GetViewEventEmbed(evt);
+            await ctx.RespondAsync(embed: embed);
         }
 
         [Command("update"), Description("Update an event.")]

@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 using DSharpPlus;
 using DSharpPlus.Entities;
 using Quartz;
-using SchedulerBot.Client.EmbedFactories;
+using SchedulerBot.Client.Factories;
 using SchedulerBot.Data.Models;
 
 namespace SchedulerBot.Client.Scheduler
