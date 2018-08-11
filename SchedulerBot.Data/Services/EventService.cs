@@ -86,8 +86,12 @@ namespace SchedulerBot.Data.Services
                 .FirstOrDefaultAsync();
             events = events.OrderBy(e => e.StartTimestamp).ToList();
 
-            var deletedEvent = events[index];
+            var deletedEvent = await _db.Events
+                .Include(e => e.Mentions)
+                .Include(e => e.RSVPs)
+                .FirstOrDefaultAsync(e => e.Id == events[index].Id);
             _db.EventMentions.RemoveRange(deletedEvent.Mentions);
+            _db.EventRSVPs.RemoveRange(deletedEvent.RSVPs);
             _db.Events.Remove(deletedEvent);
             await _db.SaveChangesAsync();
             return deletedEvent;
@@ -95,8 +99,12 @@ namespace SchedulerBot.Data.Services
 
         public async Task<Event> DeleteEventAsync(Guid eventId)
         {
-            var evt = await _db.Events.FirstOrDefaultAsync(e => e.Id == eventId);
+            var evt = await _db.Events
+                .Include(e => e.Mentions)
+                .Include(e => e.RSVPs)
+                .FirstOrDefaultAsync(e => e.Id == eventId);
             _db.EventMentions.RemoveRange(evt.Mentions);
+            _db.EventRSVPs.RemoveRange(evt.RSVPs);
             _db.Events.Remove(evt);
             await _db.SaveChangesAsync();
             return evt;
