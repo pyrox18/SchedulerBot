@@ -200,6 +200,11 @@ namespace SchedulerBot.Data.Services
         public async Task<Event> ToggleRSVPByIndexAsync(ulong calendarId, ulong userId, int index)
         {
             var evt = await GetEventByIndexAsync(calendarId, index);
+            if (evt.StartTimestamp <= DateTimeOffset.Now)
+            {
+                throw new ActiveEventException();
+            }
+
             var rsvp = evt.RSVPs.FirstOrDefault(r => r.UserId == userId);
             if (rsvp == null)
             {
