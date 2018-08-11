@@ -6,6 +6,11 @@ This changelog is formatted based on [Keep a Changelog](http://keepachangelog.co
 
 The entire bot is rewritten in .NET Core, with the DSharpPlus library. The application now uses PostgreSQL as the database layer.
 
+### Added
+
+- Added a variant of the `event list` command that accepts an event index to view the details of a specific event.
+- Added pagination to the base `event list` command that displays a maximum of 10 events per page.
+
 ### Changed
 
 - Permission deny/allow commands for roles and users now require the role and user to be mentioned. (e.g. `perms deny ping @SomeUser`)
@@ -30,6 +35,7 @@ The entire bot is rewritten in .NET Core, with the DSharpPlus library. The appli
 ### Removed
 
 - Removed admin `eval` and `shell` commands.
+- Removed event descriptions and repeat types from being displayed in the base `event list` command. Each event's details can instead be viewed with the new `event list <event number>` command.
 
 ## v1.0.3 - 2018-05-24
 
