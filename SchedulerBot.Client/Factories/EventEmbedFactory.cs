@@ -33,22 +33,25 @@ namespace SchedulerBot.Client.Factories
             embed.AddField("Repeat", evt.Repeat == RepeatType.None ? "N/A" : evt.Repeat.ToString());
 
             StringBuilder sb = new StringBuilder();
-            foreach (var mention in evt.Mentions)
+            if (evt.Mentions != null)
             {
-                switch (mention.Type)
+                foreach (var mention in evt.Mentions)
                 {
-                    case MentionType.Role:
-                        sb.Append($"{mention.TargetId.AsRoleMention()} ");
-                        break;
-                    case MentionType.User:
-                        sb.Append($"{mention.TargetId.AsUserMention()} ");
-                        break;
-                    case MentionType.Everyone:
-                        sb.Append("@everyone");
-                        break;
+                    switch (mention.Type)
+                    {
+                        case MentionType.Role:
+                            sb.Append($"{mention.TargetId.AsRoleMention()} ");
+                            break;
+                        case MentionType.User:
+                            sb.Append($"{mention.TargetId.AsUserMention()} ");
+                            break;
+                        case MentionType.Everyone:
+                            sb.Append("@everyone");
+                            break;
+                    }
                 }
             }
-            embed.AddField("Mentions", evt.Mentions.Count > 0 ? sb.ToString() : "N/A");
+            embed.AddField("Mentions", evt.Mentions != null && evt.Mentions.Count > 0 ? sb.ToString() : "N/A");
 
             return embed;
         }
