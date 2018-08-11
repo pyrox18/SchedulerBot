@@ -124,6 +124,7 @@ namespace SchedulerBot.Data.Services
             var evt = events[index];
             evt = await _db.Events
                 .Include(e => e.Mentions)
+                .Include(e => e.RSVPs)
                 .Where(e => e == evt)
                 .FirstOrDefaultAsync();
             return evt;
