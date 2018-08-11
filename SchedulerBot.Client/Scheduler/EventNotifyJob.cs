@@ -35,6 +35,12 @@ namespace SchedulerBot.Client.Scheduler
                     case Data.Models.MentionType.Everyone:
                         sb.Append("@everyone");
                         break;
+                    case Data.Models.MentionType.RSVP:
+                        foreach (var rsvp in evt.RSVPs)
+                        {
+                            sb.Append($"{rsvp.UserId.AsUserMention()} ");
+                        }
+                        break;
                 }
             }
             await client.SendMessageAsync(channel, sb.ToString(), embed: embed);

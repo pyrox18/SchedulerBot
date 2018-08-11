@@ -14,6 +14,7 @@ namespace SchedulerBot.Data.Models
         public DateTimeOffset EndTimestamp { get; set; }
         public RepeatType Repeat { get; set; }
         public List<EventMention> Mentions { get; set; }
+        public List<EventRSVP> RSVPs { get; set; }
     }
 
     public enum RepeatType

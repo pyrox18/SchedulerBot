@@ -1,12 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Globalization;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
-using Microsoft.Recognizers.Text;
-using Microsoft.Recognizers.Text.DateTime;
-using DSharpPlus;
 using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Attributes;
 using SchedulerBot.Client.Attributes;
@@ -273,6 +268,54 @@ namespace SchedulerBot.Client.Commands
 
             var embed = EventEmbedFactory.GetDeleteEventEmbed(deletedEvent);
             await ctx.RespondAsync("Deleted event.", embed: embed);
+        }
+
+        [Command("rsvp"), Description("Add or remove an RSVP to an event.")]
+        [PermissionNode(PermissionNode.EventRSVP)]
+        public async Task RSVP(CommandContext ctx, int index)
+        {
+            if (!await this.CheckPermission(_permissionService, typeof(EventCommands), nameof(EventCommands.RSVP), ctx.Member))
+            {
+                await ctx.RespondAsync("You are not permitted to use this command.");
+                return;
+            }
+
+            if (index <= 0)
+            {
+                await ctx.RespondAsync("Event index must be greater than 0.");
+                return;
+            }
+
+            Event evt;
+            try
+            {
+                evt = await _eventService.ToggleRSVPByIndexAsync(ctx.Guild.Id, ctx.Member.Id, index - 1);
+            }
+            catch (ArgumentOutOfRangeException)
+            {
+                await ctx.RespondAsync("Event not found.");
+                return;
+            }
+            catch (CalendarNotFoundException)
+            {
+                await ctx.RespondAsync("Calendar not initialised. Run `init <timezone>` to initialise the calendar.");
+                return;
+            }
+
+            if (evt == null)
+            {
+                await ctx.RespondAsync("Event not found.");
+                return;
+            }
+
+            if (evt.RSVPs.Any(r => r.UserId == ctx.Member.Id))
+            {
+                await ctx.RespondAsync($"Added RSVP for user {ctx.Member.GetUsernameAndDiscriminator()} for event {evt.Name}.");
+            }
+            else
+            {
+                await ctx.RespondAsync($"Removed RSVP for user {ctx.Member.GetUsernameAndDiscriminator()} for event {evt.Name}.");
+            }
         }
     }
 }
