@@ -10,7 +10,11 @@ The entire bot is rewritten in .NET Core, with the DSharpPlus library. The appli
 
 - Added a variant of the `event list` command that accepts an event index to view the details of a specific event.
 - Added pagination to the base `event list` command that displays a maximum of 10 events per page.
-- Added mentions to events, which can be supplied by adding the `--mention` flag followed by a list of mentions. Supported mentions are role mentions, user mentions and `@everyone`.
+- Added RSVP functionality to events via the `event rsvp <event number>` command.
+- Added mentions to events, which can be supplied by adding the `--mention` flag followed by a list of mentions. Supported mentions are role mentions, user mentions, `@everyone`, and RSVP'd users.
+- Added permission management for `@everyone`.
+- Introduced new permission nodes:
+  - EventRSVP
 
 ### Changed
 
@@ -37,6 +41,10 @@ The entire bot is rewritten in .NET Core, with the DSharpPlus library. The appli
 
 - Removed admin `eval` and `shell` commands.
 - Removed event descriptions and repeat types from being displayed in the base `event list` command. Each event's details can instead be viewed with the new `event list <event number>` command.
+
+### Fixed
+
+- Server owners should now be able to use all commands regardless of permission settings.
 
 ## v1.0.3 - 2018-05-24
 
