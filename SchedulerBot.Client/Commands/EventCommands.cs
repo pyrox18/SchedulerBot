@@ -301,6 +301,11 @@ namespace SchedulerBot.Client.Commands
                 await ctx.RespondAsync("Calendar not initialised. Run `init <timezone>` to initialise the calendar.");
                 return;
             }
+            catch (ActiveEventException)
+            {
+                await ctx.RespondAsync("Cannot add or remove RSVP on an event already in progress.");
+                return;
+            }
 
             if (evt == null)
             {
