@@ -188,5 +188,26 @@ namespace SchedulerBot.Data.Services
 
             return events;
         }
+
+        public async Task<Event> ToggleRSVPByIndexAsync(ulong calendarId, ulong userId, int index)
+        {
+            var evt = await GetEventByIndexAsync(calendarId, index);
+            var rsvp = evt.RSVPs.FirstOrDefault(r => r.UserId == userId);
+            if (rsvp == null)
+            {
+                evt.RSVPs.Add(new EventRSVP
+                {
+                    UserId = userId
+                });
+            }
+            else
+            {
+                evt.RSVPs.Remove(rsvp);
+                _db.EventRSVPs.Remove(rsvp);
+            }
+
+            await _db.SaveChangesAsync();
+            return evt;
+        }
     }
 }
