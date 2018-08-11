@@ -108,6 +108,40 @@ namespace SchedulerBot.Client.Parsers
                         case "desc":
                             evt.Description = string.Join(' ', values.ToArray());
                             break;
+                        case "mention":
+                            evt.Mentions = new List<EventMention>();
+                            foreach (var value in values)
+                            {
+                                if (value == "@everyone")
+                                {
+                                    evt.Mentions.Clear();
+                                    evt.Mentions.Add(new EventMention
+                                    {
+                                        Type = MentionType.Everyone
+                                    });
+
+                                    break;
+                                }
+                                else if (value.StartsWith("<@") && value.EndsWith(">"))
+                                {
+                                    var mention = new EventMention();
+                                    string mentionIdString;
+                                    if (value.StartsWith("<@&"))
+                                    {
+                                        mention.Type = MentionType.Role;
+                                        mentionIdString = value.Substring(3);
+                                    }
+                                    else
+                                    {
+                                        mention.Type = MentionType.User;
+                                        mentionIdString = value.Substring(2);
+                                    }
+                                    mentionIdString = mentionIdString.TrimEnd('>');
+                                    mention.TargetId = UInt64.Parse(mentionIdString);
+                                    evt.Mentions.Add(mention);
+                                }
+                            }
+                            break;
                         default:
                             break;
                     }

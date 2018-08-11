@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using DSharpPlus;
 using DSharpPlus.Entities;
 using Quartz;
+using SchedulerBot.Client.Extensions;
 using SchedulerBot.Client.Factories;
 using SchedulerBot.Data.Models;
 
@@ -20,7 +21,23 @@ namespace SchedulerBot.Client.Scheduler
             var channel = (DiscordChannel)jobDataMap["channel"];
 
             var embed = EventEmbedFactory.GetNotifyEventEmbed(evt);
-            await client.SendMessageAsync(channel, embed: embed);
+            StringBuilder sb = new StringBuilder();
+            foreach (var mention in evt.Mentions)
+            {
+                switch (mention.Type)
+                {
+                    case Data.Models.MentionType.Role:
+                        sb.Append($"{mention.TargetId.AsRoleMention()} ");
+                        break;
+                    case Data.Models.MentionType.User:
+                        sb.Append($"{mention.TargetId.AsUserMention()} ");
+                        break;
+                    case Data.Models.MentionType.Everyone:
+                        sb.Append("@everyone");
+                        break;
+                }
+            }
+            await client.SendMessageAsync(channel, sb.ToString(), embed: embed);
         }
     }
 }
