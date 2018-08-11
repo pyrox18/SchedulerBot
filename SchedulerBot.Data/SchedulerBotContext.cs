@@ -16,5 +16,6 @@ namespace SchedulerBot.Data
         public DbSet<Event> Events { get; set; }
         public DbSet<Permission> Permissions { get; set; }
         public DbSet<EventMention> EventMentions { get; set; }
+        public DbSet<EventRSVP> EventRSVPs { get; set; }
     }
 }
