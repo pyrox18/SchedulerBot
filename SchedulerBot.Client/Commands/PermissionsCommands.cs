@@ -205,12 +205,19 @@ namespace SchedulerBot.Client.Commands
 
             foreach (var perm in permissions)
             {
-                if (perm.Type == PermissionType.Role)
+                if (perm.Type == PermissionType.Role || perm.Type == PermissionType.Everyone)
                 {
-                    DiscordRole role = ctx.Guild.Roles.FirstOrDefault(r => r.Id == perm.TargetId);
-                    if (role != null)
+                    if (perm.Type == PermissionType.Everyone)
                     {
-                        roleNames.Add(role.Name);
+                        roleNames.Add("@everyone");
+                    }
+                    else
+                    {
+                        DiscordRole role = ctx.Guild.Roles.FirstOrDefault(r => r.Id == perm.TargetId);
+                        if (role != null)
+                        {
+                            roleNames.Add(role.Name);
+                        }
                     }
                 }
                 else

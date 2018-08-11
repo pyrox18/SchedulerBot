@@ -34,7 +34,7 @@ namespace SchedulerBot.Data.Services
         public async Task<bool> RemoveRolePermissionsAsync(ulong calendarId, ulong roleId)
         {
             var permissions = await _db.Permissions
-                .Where(p => p.Calendar.Id == calendarId && p.Type == PermissionType.Role && p.TargetId == roleId)
+                .Where(p => p.Calendar.Id == calendarId && (p.Type == PermissionType.Role || p.Type == PermissionType.Everyone) && p.TargetId == roleId)
                 .ToListAsync();
 
             _db.Permissions.RemoveRange(permissions);
@@ -53,9 +53,9 @@ namespace SchedulerBot.Data.Services
 
             var existingPermission = await _db.Permissions
                 .FirstOrDefaultAsync(
-                    p => p.Calendar.Id == calendarId 
-                    && p.Type == PermissionType.Role
-                    && p.Node == Enum.Parse<PermissionNode>(actualNode) 
+                    p => p.Calendar.Id == calendarId
+                    && (p.Type == PermissionType.Role || p.Type == PermissionType.Everyone)
+                    && p.Node == Enum.Parse<PermissionNode>(actualNode)
                     && p.TargetId == roleId
                 );
 
@@ -68,7 +68,7 @@ namespace SchedulerBot.Data.Services
             {
                 Id = Guid.NewGuid(),
                 Calendar = await _db.Calendars.FirstOrDefaultAsync(c => c.Id == calendarId),
-                Type = PermissionType.Role,
+                Type = roleId == calendarId ? PermissionType.Everyone : PermissionType.Role,
                 Node = Enum.Parse<PermissionNode>(actualNode),
                 TargetId = roleId,
                 IsDenied = true
@@ -114,8 +114,8 @@ namespace SchedulerBot.Data.Services
 
             var existingPermission = await _db.Permissions
                 .FirstOrDefaultAsync(
-                    p => p.Calendar.Id == calendarId 
-                    && p.Type == PermissionType.Role
+                    p => p.Calendar.Id == calendarId
+                    && (p.Type == PermissionType.Role || p.Type == PermissionType.Everyone)
                     && p.Node == Enum.Parse<PermissionNode>(actualNode) 
                     && p.TargetId == roleId
                 );
@@ -185,7 +185,7 @@ namespace SchedulerBot.Data.Services
         public async Task<List<Permission>> GetPermissionsForRoleAsync(ulong calendarId, ulong roleId)
         {
             var permissions = await _db.Permissions
-                .Where(p => p.Calendar.Id == calendarId && p.Type == PermissionType.Role && p.TargetId == roleId)
+                .Where(p => p.Calendar.Id == calendarId && (p.Type == PermissionType.Role || p.Type == PermissionType.Everyone) && p.TargetId == roleId)
                 .OrderBy(p => p.Node)
                 .ToListAsync();
 
@@ -207,7 +207,7 @@ namespace SchedulerBot.Data.Services
             var isNotPermitted = await _db.Permissions.AnyAsync(
                 p => p.Calendar.Id == calendarId
                 && p.Node == node
-                && ((p.Type == PermissionType.User && p.TargetId == userId) || (p.Type == PermissionType.Role && roleIds.Contains(p.TargetId)))
+                && ((p.Type == PermissionType.Everyone) || (p.Type == PermissionType.User && p.TargetId == userId) || (p.Type == PermissionType.Role && roleIds.Contains(p.TargetId)))
             );
 
             return !isNotPermitted;
