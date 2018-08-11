@@ -122,6 +122,13 @@ namespace SchedulerBot.Client.Parsers
 
                                     break;
                                 }
+                                else if (value.ToLower() == "rsvp")
+                                {
+                                    evt.Mentions.Add(new EventMention
+                                    {
+                                        Type = MentionType.RSVP
+                                    });
+                                }
                                 else if (value.StartsWith("<@") && value.EndsWith(">"))
                                 {
                                     var mention = new EventMention();

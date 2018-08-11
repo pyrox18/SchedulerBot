@@ -16,6 +16,7 @@ namespace SchedulerBot.Data.Models
     {
         Role,
         User,
-        Everyone
+        Everyone,
+        RSVP
     }
 }

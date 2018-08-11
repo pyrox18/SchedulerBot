@@ -48,6 +48,9 @@ namespace SchedulerBot.Client.Factories
                         case MentionType.Everyone:
                             mentionStringBuilder.Append("@everyone");
                             break;
+                        case MentionType.RSVP:
+                            mentionStringBuilder.Append("All RSVP'd users ");
+                            break;
                     }
                 }
             }
