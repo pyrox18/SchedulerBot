@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace SchedulerBot.Data.Models
 {
@@ -29,7 +27,8 @@ namespace SchedulerBot.Data.Models
         PermsShow,
         PermsModify,
         PermsNodes,
-        Ping
+        Ping,
+        EventRSVP
     }
 
     public enum PermissionType
