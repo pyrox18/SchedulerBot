@@ -15,6 +15,7 @@ namespace SchedulerBot.Data.Models
     public enum MentionType
     {
         Role,
-        User
+        User,
+        Everyone
     }
 }
