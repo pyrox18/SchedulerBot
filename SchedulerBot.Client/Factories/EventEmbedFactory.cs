@@ -32,7 +32,7 @@ namespace SchedulerBot.Client.Factories
             embed.AddField("End Date", evt.EndTimestamp.ToString("ddd d MMM yyyy h:mm:ss tt zzz", CultureInfo.InvariantCulture), true);
             embed.AddField("Repeat", evt.Repeat == RepeatType.None ? "N/A" : evt.Repeat.ToString());
 
-            StringBuilder sb = new StringBuilder();
+            StringBuilder mentionStringBuilder = new StringBuilder();
             if (evt.Mentions != null)
             {
                 foreach (var mention in evt.Mentions)
@@ -40,18 +40,28 @@ namespace SchedulerBot.Client.Factories
                     switch (mention.Type)
                     {
                         case MentionType.Role:
-                            sb.Append($"{mention.TargetId.AsRoleMention()} ");
+                            mentionStringBuilder.Append($"{mention.TargetId.AsRoleMention()} ");
                             break;
                         case MentionType.User:
-                            sb.Append($"{mention.TargetId.AsUserMention()} ");
+                            mentionStringBuilder.Append($"{mention.TargetId.AsUserMention()} ");
                             break;
                         case MentionType.Everyone:
-                            sb.Append("@everyone");
+                            mentionStringBuilder.Append("@everyone");
                             break;
                     }
                 }
             }
-            embed.AddField("Mentions", evt.Mentions != null && evt.Mentions.Count > 0 ? sb.ToString() : "N/A");
+            embed.AddField("Mentions", evt.Mentions != null && evt.Mentions.Count > 0 ? mentionStringBuilder.ToString() : "N/A");
+
+            StringBuilder rsvpStringBuilder = new StringBuilder();
+            if (evt.RSVPs != null)
+            {
+                foreach (var rsvp in evt.RSVPs)
+                {
+                    rsvpStringBuilder.Append($"{rsvp.UserId.AsUserMention()} ");
+                }
+            }
+            embed.AddField("RSVPs", evt.RSVPs != null && evt.RSVPs.Count > 0 ? rsvpStringBuilder.ToString() : "N/A");
 
             return embed;
         }
