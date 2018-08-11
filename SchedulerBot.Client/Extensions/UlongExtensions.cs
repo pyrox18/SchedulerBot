@@ -10,5 +10,15 @@ namespace SchedulerBot.Client.Extensions
         {
             return $"<#{channelId}>";
         }
+
+        public static string AsUserMention(this ulong userId)
+        {
+            return $"<@{userId}>";
+        }
+
+        public static string AsRoleMention(this ulong roleId)
+        {
+            return $"<@&{roleId}>";
+        }
     }
 }

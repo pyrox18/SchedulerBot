@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Text;
 using DSharpPlus.Entities;
+using SchedulerBot.Client.Extensions;
 using SchedulerBot.Data.Models;
 
 namespace SchedulerBot.Client.Factories
@@ -30,6 +31,24 @@ namespace SchedulerBot.Client.Factories
             embed.AddField("Start Date", evt.StartTimestamp.ToString("ddd d MMM yyyy h:mm:ss tt zzz", CultureInfo.InvariantCulture), true);
             embed.AddField("End Date", evt.EndTimestamp.ToString("ddd d MMM yyyy h:mm:ss tt zzz", CultureInfo.InvariantCulture), true);
             embed.AddField("Repeat", evt.Repeat == RepeatType.None ? "N/A" : evt.Repeat.ToString());
+
+            StringBuilder sb = new StringBuilder();
+            foreach (var mention in evt.Mentions)
+            {
+                switch (mention.Type)
+                {
+                    case MentionType.Role:
+                        sb.Append($"{mention.TargetId.AsRoleMention()} ");
+                        break;
+                    case MentionType.User:
+                        sb.Append($"{mention.TargetId.AsUserMention()} ");
+                        break;
+                    case MentionType.Everyone:
+                        sb.Append("@everyone");
+                        break;
+                }
+            }
+            embed.AddField("Mentions", evt.Mentions.Count > 0 ? sb.ToString() : "N/A");
 
             return embed;
         }
