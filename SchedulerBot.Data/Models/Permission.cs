@@ -34,6 +34,7 @@ namespace SchedulerBot.Data.Models
     public enum PermissionType
     {
         Role,
-        User
+        User,
+        Everyone
     }
 }
