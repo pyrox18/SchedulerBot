@@ -137,15 +137,6 @@ namespace SchedulerBot.Client.Commands
                         activeEventHeaderWritten = true;
                     }
                     sb.AppendLine($"{i + 1}: {events[i].Name} /* {events[i].StartTimestamp.ToString("ddd d MMM yyyy h:mm:ss tt zzz", CultureInfo.InvariantCulture)} to {events[i].EndTimestamp.ToString("ddd d MMM yyyy h:mm:ss tt zzz", CultureInfo.InvariantCulture)} */");
-                    if (!string.IsNullOrEmpty(events[i].Description))
-                    {
-                        sb.AppendLine($"    # {events[i].Description}");
-                    }
-                    if (events[i].Repeat != RepeatType.None)
-                    {
-                        sb.AppendLine($"    # Repeat: {events[i].Repeat}");
-                    }
-
                     i++;
                 }
                 if (i < events.Count)
@@ -157,19 +148,11 @@ namespace SchedulerBot.Client.Commands
                 while (i < events.Count)
                 {
                     sb.AppendLine($"{i + 1}: {events[i].Name} /* {events[i].StartTimestamp.ToString("ddd d MMM yyyy h:mm:ss tt zzz", CultureInfo.InvariantCulture)} to {events[i].EndTimestamp.ToString("ddd d MMM yyyy h:mm:ss tt zzz", CultureInfo.InvariantCulture)} */");
-                    if (!string.IsNullOrEmpty(events[i].Description))
-                    {
-                        sb.AppendLine($"    # {events[i].Description}");
-                    }
-                    if (events[i].Repeat != RepeatType.None)
-                    {
-                        sb.AppendLine($"    # Repeat: {events[i].Repeat}");
-                    }
-
                     i++;
                 }
             }
             sb.AppendLine("```");
+            sb.AppendLine("Run `event list <event number>` to view details for a certain event.");
 
             await ctx.RespondAsync(sb.ToString());
         }
