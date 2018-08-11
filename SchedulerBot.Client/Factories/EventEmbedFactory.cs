@@ -5,7 +5,7 @@ using System.Text;
 using DSharpPlus.Entities;
 using SchedulerBot.Data.Models;
 
-namespace SchedulerBot.Client.EmbedFactories
+namespace SchedulerBot.Client.Factories
 {
     public static class EventEmbedFactory
     {

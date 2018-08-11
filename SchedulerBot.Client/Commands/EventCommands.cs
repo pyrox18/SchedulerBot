@@ -10,7 +10,7 @@ using DSharpPlus;
 using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Attributes;
 using SchedulerBot.Client.Attributes;
-using SchedulerBot.Client.EmbedFactories;
+using SchedulerBot.Client.Factories;
 using SchedulerBot.Client.Exceptions;
 using SchedulerBot.Client.Extensions;
 using SchedulerBot.Client.Parsers;
@@ -18,6 +18,7 @@ using SchedulerBot.Data.Exceptions;
 using SchedulerBot.Data.Models;
 using SchedulerBot.Data.Services;
 using SchedulerBot.Client.Scheduler;
+using DSharpPlus.Interactivity;
 
 namespace SchedulerBot.Client.Commands
 {
@@ -115,46 +116,15 @@ namespace SchedulerBot.Client.Commands
                 return;
             }
 
-            StringBuilder sb = new StringBuilder();
-            sb.AppendLine("```css");
-
             if (events.Count < 1)
             {
-                sb.AppendLine("No events found!");
+                await ctx.RespondAsync("No events found.");
+                return;
             }
-            else
-            {
-                int i = 0;
-                bool activeEventHeaderWritten = false;
-                DateTimeOffset now = DateTimeOffset.Now;
 
-                while (i < events.Count && events[i].StartTimestamp <= now)
-                {
-                    if (!activeEventHeaderWritten)
-                    {
-                        sb.AppendLine("[Active Events]");
-                        sb.AppendLine();
-                        activeEventHeaderWritten = true;
-                    }
-                    sb.AppendLine($"{i + 1}: {events[i].Name} /* {events[i].StartTimestamp.ToString("ddd d MMM yyyy h:mm:ss tt zzz", CultureInfo.InvariantCulture)} to {events[i].EndTimestamp.ToString("ddd d MMM yyyy h:mm:ss tt zzz", CultureInfo.InvariantCulture)} */");
-                    i++;
-                }
-                if (i < events.Count)
-                {
-                    sb.AppendLine();
-                    sb.AppendLine("[Upcoming Events]");
-                    sb.AppendLine();
-                }
-                while (i < events.Count)
-                {
-                    sb.AppendLine($"{i + 1}: {events[i].Name} /* {events[i].StartTimestamp.ToString("ddd d MMM yyyy h:mm:ss tt zzz", CultureInfo.InvariantCulture)} to {events[i].EndTimestamp.ToString("ddd d MMM yyyy h:mm:ss tt zzz", CultureInfo.InvariantCulture)} */");
-                    i++;
-                }
-            }
-            sb.AppendLine("```");
-            sb.AppendLine("Run `event list <event number>` to view details for a certain event.");
-
-            await ctx.RespondAsync(sb.ToString());
+            var pages = EventListPageFactory.GetEventListPages(events);
+            var interactivity = ctx.Client.GetInteractivity();
+            await interactivity.SendPaginatedMessage(ctx.Channel, ctx.User, pages);
         }
 
         [Command("list"), Description("List the details of a single event.")]

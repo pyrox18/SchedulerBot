@@ -13,6 +13,7 @@ using DSharpPlus;
 using DSharpPlus.CommandsNext;
 using DSharpPlus.Entities;
 using DSharpPlus.EventArgs;
+using DSharpPlus.Interactivity;
 using NLog.Extensions.Logging;
 using SharpRaven;
 using SharpRaven.Data;
@@ -29,6 +30,7 @@ namespace SchedulerBot.Client
     {
         private IConfigurationRoot Configuration { get; set; }
         private DiscordClient Client { get; set; }
+        private InteractivityExtension Interactivity { get; set; }
         private IServiceProvider ServiceProvider { get; set; }
         private RavenClient RavenClient { get; set; }
 
@@ -73,6 +75,10 @@ namespace SchedulerBot.Client
                 Token = Configuration.GetSection("Bot").GetValue<string>("Token"),
                 TokenType = TokenType.Bot,
                 LogLevel = DSharpPlus.LogLevel.Debug,
+            });
+            Interactivity = Client.UseInteractivity(new InteractivityConfiguration
+            {
+                PaginationBehavior = TimeoutBehaviour.DeleteReactions
             });
             Client.DebugLogger.LogMessageReceived += OnLogMessageReceived;
 
