@@ -27,8 +27,8 @@ namespace SchedulerBot.Client.EmbedFactories
             };
             embed.AddField("Event Name", evt.Name);
             embed.AddField("Description", string.IsNullOrEmpty(evt.Description) ? "N/A" : evt.Description);
-            embed.AddField("Start Date", evt.StartTimestamp.ToString("ddd d/M/yyyy h:mm:ss tt zzz", CultureInfo.InvariantCulture), true);
-            embed.AddField("End Date", evt.EndTimestamp.ToString("ddd d/M/yyyy h:mm:ss tt zzz", CultureInfo.InvariantCulture), true);
+            embed.AddField("Start Date", evt.StartTimestamp.ToString("ddd d MMM yyyy h:mm:ss tt zzz", CultureInfo.InvariantCulture), true);
+            embed.AddField("End Date", evt.EndTimestamp.ToString("ddd d MMM yyyy h:mm:ss tt zzz", CultureInfo.InvariantCulture), true);
             embed.AddField("Repeat", evt.Repeat == RepeatType.None ? "N/A" : evt.Repeat.ToString());
 
             return embed;
