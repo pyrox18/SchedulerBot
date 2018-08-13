@@ -34,12 +34,12 @@ namespace SchedulerBot.Data.Models
 
         public bool HasStarted()
         {
-            return StartTimestamp >= DateTimeOffset.Now;
+            return StartTimestamp <= DateTimeOffset.Now;
         }
 
         public bool HasEnded()
         {
-            return EndTimestamp >= DateTimeOffset.Now;
+            return EndTimestamp <= DateTimeOffset.Now;
         }
     }
 
