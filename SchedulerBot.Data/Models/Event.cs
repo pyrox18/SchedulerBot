@@ -12,6 +12,7 @@ namespace SchedulerBot.Data.Models
         public string Description { get; set; }
         public DateTimeOffset StartTimestamp { get; set; }
         public DateTimeOffset EndTimestamp { get; set; }
+        public DateTimeOffset? ReminderTimestamp { get; set; }
         public RepeatType Repeat { get; set; }
         public List<EventMention> Mentions { get; set; }
         public List<EventRSVP> RSVPs { get; set; }
