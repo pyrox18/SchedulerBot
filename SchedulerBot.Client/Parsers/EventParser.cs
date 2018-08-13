@@ -25,7 +25,7 @@ namespace SchedulerBot.Client.Parsers
 
             var bodyString = ParseEventInputBody(args);
             ParseEventTimestamps(bodyString, timezone, ref evt);
-            ParseEventInputFlags(args, ref evt);
+            ParseEventInputFlags(args, ref evt, timezone);
 
             return evt;
         }
@@ -37,7 +37,7 @@ namespace SchedulerBot.Client.Parsers
             {
                 ParseEventTimestamps(bodyString, timezone, ref evt);
             }
-            ParseEventInputFlags(args, ref evt);
+            ParseEventInputFlags(args, ref evt, timezone);
 
             return evt;
         }
@@ -62,7 +62,7 @@ namespace SchedulerBot.Client.Parsers
             return string.Join(' ', body.ToArray());
         }
 
-        private static void ParseEventInputFlags(string[] args, ref Event evt)
+        private static void ParseEventInputFlags(string[] args, ref Event evt, string timezone)
         {
             uint i = 0;
             int argsLength = args.Length;
@@ -146,6 +146,37 @@ namespace SchedulerBot.Client.Parsers
                                     mentionIdString = mentionIdString.TrimEnd('>');
                                     mention.TargetId = UInt64.Parse(mentionIdString);
                                     evt.Mentions.Add(mention);
+                                }
+                            }
+                            break;
+                        case "remind":
+                            var reminderString = string.Join(' ', values);
+                            var tz = DateTimeZoneProviders.Tzdb.GetZoneOrNull(timezone);
+                            if (tz == null)
+                            {
+                                throw new InvalidTimeZoneException();
+                            }
+
+                            var results = DateTimeRecognizer.RecognizeDateTime(reminderString, Culture.English);
+                            if (results.Count > 0 && results.First().TypeName.StartsWith("datetimeV2"))
+                            {
+                                var first = results.First();
+                                var resolutionValues = (IList<Dictionary<string, string>>)first.Resolution["values"];
+
+                                var subType = first.TypeName.Split('.').Last();
+                                if (subType == "duration")
+                                {
+                                    string value = resolutionValues.Select(v => v["value"]).FirstOrDefault();
+                                    double seconds = double.Parse(value);
+                                    var reminderTimestamp = evt.StartTimestamp.AddSeconds(-seconds);
+                                    if (IsFuture(reminderTimestamp))
+                                    {
+                                        evt.ReminderTimestamp = reminderTimestamp;
+                                    }
+                                    else
+                                    {
+                                        throw new DateTimeInPastException();
+                                    }
                                 }
                             }
                             break;

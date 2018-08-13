@@ -58,7 +58,7 @@ namespace SchedulerBot.Client.Commands
             }
             catch (DateTimeInPastException)
             {
-                await ctx.RespondAsync("Cannot create an event that starts or ends in the past.");
+                await ctx.RespondAsync("Cannot create an event that starts or ends in the past, or has a reminder that is in the past.");
                 return;
             }
             catch (EventEndBeforeStartException)
@@ -205,7 +205,7 @@ namespace SchedulerBot.Client.Commands
             }
             catch (DateTimeInPastException)
             {
-                await ctx.RespondAsync("Cannot create an event that starts or ends in the past.");
+                await ctx.RespondAsync("Cannot create an event that starts or ends in the past, or has a reminder that is in the past.");
                 return;
             }
             catch (EventEndBeforeStartException)
