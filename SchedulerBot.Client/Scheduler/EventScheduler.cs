@@ -58,7 +58,8 @@ namespace SchedulerBot.Client.Scheduler
         public async Task ScheduleEvent(Event evt, DiscordClient client, ulong channelId)
         {
             if (await Scheduler.CheckExists(new TriggerKey(evt.Id.ToString(), "eventNotifications"))
-                || evt.StartTimestamp > DateTimeOffset.Now.AddHours(2))
+                || await Scheduler.CheckExists(new TriggerKey(evt.Id.ToString(), "eventReminders"))
+                || (!evt.StartsInHours(2) && (evt.ReminderTimestamp == null || !evt.RemindInHours(2))))
             {
                 return;
             }
@@ -84,6 +85,22 @@ namespace SchedulerBot.Client.Scheduler
 
 
             await Scheduler.ScheduleJob(notifyJob, notifyTrigger);
+
+            if (evt.ReminderTimestamp != null)
+            {
+                IJobDetail reminderJob = JobBuilder.Create<EventReminderJob>()
+                    .WithIdentity(evt.Id.ToString(), "eventReminders")
+                    .UsingJobData(notifyJobDataMap) // same data map as notify job
+                    .Build();
+
+                ITrigger reminderTrigger = TriggerBuilder.Create()
+                    .WithIdentity(evt.Id.ToString(), "eventReminders")
+                    .StartAt(evt.ReminderTimestamp ?? DateTimeOffset.Now) // workaround for nullable timestamp
+                    .ForJob(reminderJob)
+                    .Build();
+
+                await Scheduler.ScheduleJob(reminderJob, reminderTrigger);
+            }
 
             if (evt.Repeat != RepeatType.None)
             {
@@ -138,6 +155,7 @@ namespace SchedulerBot.Client.Scheduler
         public async Task UnscheduleEvent(Guid eventId)
         {
             await Scheduler.UnscheduleJob(new TriggerKey(eventId.ToString(), "eventNotifications"));
+            await Scheduler.UnscheduleJob(new TriggerKey(eventId.ToString(), "eventReminders"));
             await Scheduler.UnscheduleJob(new TriggerKey(eventId.ToString(), "eventDeletions"));
             await Scheduler.UnscheduleJob(new TriggerKey(eventId.ToString(), "eventRepeats"));
         }
