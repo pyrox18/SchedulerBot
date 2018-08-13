@@ -197,6 +197,12 @@ namespace SchedulerBot.Client.Commands
                 await ctx.RespondAsync("Event not found.");
                 return;
             }
+            
+            if (evt.HasStarted())
+            {
+                await ctx.RespondAsync("Cannot update an event that is in progress.");
+                return;
+            }
 
             Event updatedEvent;
             try
