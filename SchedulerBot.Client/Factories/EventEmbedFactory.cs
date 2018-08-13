@@ -13,6 +13,7 @@ namespace SchedulerBot.Client.Factories
         private static readonly DiscordColor _createEventColour = new DiscordColor(124, 174, 255);
         private static readonly DiscordColor _deleteEventColour = new DiscordColor(255, 43, 43);
         private static readonly DiscordColor _notifyEventColour = new DiscordColor(20, 255, 71);
+        private static readonly DiscordColor _remindEventColour = new DiscordColor(0, 216, 255);
         private static readonly DiscordColor _updateEventColour = new DiscordColor(255, 248, 73);
         private static readonly DiscordColor _viewEventColour = new DiscordColor(48, 229, 202);
 
@@ -106,6 +107,14 @@ namespace SchedulerBot.Client.Factories
             var embed = _getBaseEmbed(evt);
             embed.Title = "View Event";
             embed.Color = _viewEventColour;
+            return embed.Build();
+        }
+
+        public static DiscordEmbed GetRemindEventEmbed(Event evt)
+        {
+            var embed = _getBaseEmbed(evt);
+            embed.Title = "Event Reminder";
+            embed.Color = _remindEventColour;
             return embed.Build();
         }
     }
