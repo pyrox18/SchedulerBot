@@ -31,6 +31,16 @@ namespace SchedulerBot.Client.Factories
             embed.AddField("Description", string.IsNullOrEmpty(evt.Description) ? "N/A" : evt.Description);
             embed.AddField("Start Date", evt.StartTimestamp.ToString("ddd d MMM yyyy h:mm:ss tt zzz", CultureInfo.InvariantCulture), true);
             embed.AddField("End Date", evt.EndTimestamp.ToString("ddd d MMM yyyy h:mm:ss tt zzz", CultureInfo.InvariantCulture), true);
+
+            if (evt.ReminderTimestamp != null)
+            {
+                embed.AddField("Reminder", ((DateTimeOffset)evt.ReminderTimestamp).ToString("ddd d MMM yyyy h:mm:ss tt zzz", CultureInfo.InvariantCulture), true);
+            }
+            else
+            {
+                embed.AddField("Reminder", "N/A", true);
+            }
+
             embed.AddField("Repeat", evt.Repeat == RepeatType.None ? "N/A" : evt.Repeat.ToString());
 
             StringBuilder mentionStringBuilder = new StringBuilder();
