@@ -13,6 +13,7 @@ namespace SchedulerBot.Client.Factories
         private static readonly DiscordColor _createEventColour = new DiscordColor(124, 174, 255);
         private static readonly DiscordColor _deleteEventColour = new DiscordColor(255, 43, 43);
         private static readonly DiscordColor _notifyEventColour = new DiscordColor(20, 255, 71);
+        private static readonly DiscordColor _remindEventColour = new DiscordColor(0, 216, 255);
         private static readonly DiscordColor _updateEventColour = new DiscordColor(255, 248, 73);
         private static readonly DiscordColor _viewEventColour = new DiscordColor(48, 229, 202);
 
@@ -30,6 +31,16 @@ namespace SchedulerBot.Client.Factories
             embed.AddField("Description", string.IsNullOrEmpty(evt.Description) ? "N/A" : evt.Description);
             embed.AddField("Start Date", evt.StartTimestamp.ToString("ddd d MMM yyyy h:mm:ss tt zzz", CultureInfo.InvariantCulture), true);
             embed.AddField("End Date", evt.EndTimestamp.ToString("ddd d MMM yyyy h:mm:ss tt zzz", CultureInfo.InvariantCulture), true);
+
+            if (evt.ReminderTimestamp != null)
+            {
+                embed.AddField("Reminder", ((DateTimeOffset)evt.ReminderTimestamp).ToString("ddd d MMM yyyy h:mm:ss tt zzz", CultureInfo.InvariantCulture), true);
+            }
+            else
+            {
+                embed.AddField("Reminder", "N/A", true);
+            }
+
             embed.AddField("Repeat", evt.Repeat == RepeatType.None ? "N/A" : evt.Repeat.ToString());
 
             StringBuilder mentionStringBuilder = new StringBuilder();
@@ -106,6 +117,14 @@ namespace SchedulerBot.Client.Factories
             var embed = _getBaseEmbed(evt);
             embed.Title = "View Event";
             embed.Color = _viewEventColour;
+            return embed.Build();
+        }
+
+        public static DiscordEmbed GetRemindEventEmbed(Event evt)
+        {
+            var embed = _getBaseEmbed(evt);
+            embed.Title = "Event Reminder";
+            embed.Color = _remindEventColour;
             return embed.Build();
         }
     }

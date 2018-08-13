@@ -12,6 +12,7 @@ The entire bot is rewritten in .NET Core, with the DSharpPlus library. The appli
 - Added pagination to the base `event list` command that displays a maximum of 10 events per page.
 - Added RSVP functionality to events via the `event rsvp <event number>` command.
 - Added mentions to events, which can be supplied by adding the `--mention` flag followed by a list of mentions. Supported mentions are role mentions, user mentions, `@everyone`, and RSVP'd users.
+- Added event reminders, which can be configured for each event by adding the `--remind` flag followed by a time duration in natural language.
 - Added permission management for `@everyone`.
 - Introduced new permission nodes:
   - EventRSVP

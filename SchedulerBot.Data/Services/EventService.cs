@@ -191,7 +191,7 @@ namespace SchedulerBot.Data.Services
             var events = await _db.Events
                 .Include(e => e.Calendar)
                 .Include(e => e.Mentions)
-                .Where(e => e.StartTimestamp <= DateTimeOffset.Now.AddHours(hours))
+                .Where(e => e.StartsInHours(hours) || e.RemindInHours(hours))
                 .ToListAsync();
 
             return events;
