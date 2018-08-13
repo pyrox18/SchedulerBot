@@ -41,6 +41,15 @@ namespace SchedulerBot.Data.Models
         {
             return EndTimestamp <= DateTimeOffset.Now;
         }
+
+        public bool HasReminderPassed()
+        {
+            if (ReminderTimestamp == null)
+            {
+                return true;
+            }
+            return ReminderTimestamp <= DateTimeOffset.Now;
+        }
     }
 
     public enum RepeatType

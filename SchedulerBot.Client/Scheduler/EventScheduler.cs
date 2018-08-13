@@ -72,34 +72,38 @@ namespace SchedulerBot.Client.Scheduler
                 ["channel"] = channel
             };
 
-            IJobDetail notifyJob = JobBuilder.Create<EventNotifyJob>()
-                .WithIdentity(evt.Id.ToString(), "eventNotifications")
-                .UsingJobData(notifyJobDataMap)
-                .Build();
-
-            ITrigger notifyTrigger = TriggerBuilder.Create()
-                .WithIdentity(evt.Id.ToString(), "eventNotifications")
-                .StartAt(evt.StartTimestamp)
-                .ForJob(notifyJob)
-                .Build();
-
-
-            await Scheduler.ScheduleJob(notifyJob, notifyTrigger);
-
-            if (evt.ReminderTimestamp != null)
+            if (!evt.HasStarted())
             {
-                IJobDetail reminderJob = JobBuilder.Create<EventReminderJob>()
-                    .WithIdentity(evt.Id.ToString(), "eventReminders")
-                    .UsingJobData(notifyJobDataMap) // same data map as notify job
+
+                IJobDetail notifyJob = JobBuilder.Create<EventNotifyJob>()
+                    .WithIdentity(evt.Id.ToString(), "eventNotifications")
+                    .UsingJobData(notifyJobDataMap)
                     .Build();
 
-                ITrigger reminderTrigger = TriggerBuilder.Create()
-                    .WithIdentity(evt.Id.ToString(), "eventReminders")
-                    .StartAt(evt.ReminderTimestamp ?? DateTimeOffset.Now) // workaround for nullable timestamp
-                    .ForJob(reminderJob)
+                ITrigger notifyTrigger = TriggerBuilder.Create()
+                    .WithIdentity(evt.Id.ToString(), "eventNotifications")
+                    .StartAt(evt.StartTimestamp)
+                    .ForJob(notifyJob)
                     .Build();
 
-                await Scheduler.ScheduleJob(reminderJob, reminderTrigger);
+
+                await Scheduler.ScheduleJob(notifyJob, notifyTrigger);
+
+                if (evt.ReminderTimestamp != null && !evt.HasReminderPassed())
+                {
+                    IJobDetail reminderJob = JobBuilder.Create<EventReminderJob>()
+                        .WithIdentity(evt.Id.ToString(), "eventReminders")
+                        .UsingJobData(notifyJobDataMap) // same data map as notify job
+                        .Build();
+
+                    ITrigger reminderTrigger = TriggerBuilder.Create()
+                        .WithIdentity(evt.Id.ToString(), "eventReminders")
+                        .StartAt(evt.ReminderTimestamp ?? DateTimeOffset.Now) // workaround for nullable timestamp
+                        .ForJob(reminderJob)
+                        .Build();
+
+                    await Scheduler.ScheduleJob(reminderJob, reminderTrigger);
+                }
             }
 
             if (evt.Repeat != RepeatType.None)
