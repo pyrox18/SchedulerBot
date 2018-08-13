@@ -16,6 +16,31 @@ namespace SchedulerBot.Data.Models
         public RepeatType Repeat { get; set; }
         public List<EventMention> Mentions { get; set; }
         public List<EventRSVP> RSVPs { get; set; }
+
+        public bool StartsInHours(double hours)
+        {
+            return StartTimestamp <= DateTimeOffset.Now.AddHours(hours);
+        }
+
+        public bool RemindInHours(double hours)
+        {
+            if (ReminderTimestamp == null)
+            {
+                return false;
+            }
+
+            return ReminderTimestamp <= DateTimeOffset.Now.AddHours(hours);
+        }
+
+        public bool HasStarted()
+        {
+            return StartTimestamp >= DateTimeOffset.Now;
+        }
+
+        public bool HasEnded()
+        {
+            return EndTimestamp >= DateTimeOffset.Now;
+        }
     }
 
     public enum RepeatType
