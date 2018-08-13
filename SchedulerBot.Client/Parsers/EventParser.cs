@@ -24,8 +24,8 @@ namespace SchedulerBot.Client.Parsers
             var evt = new Event();
 
             var bodyString = ParseEventInputBody(args);
-            ParseEventInputFlags(args, ref evt);
             ParseEventTimestamps(bodyString, timezone, ref evt);
+            ParseEventInputFlags(args, ref evt);
 
             return evt;
         }
@@ -33,11 +33,11 @@ namespace SchedulerBot.Client.Parsers
         public static Event ParseUpdateEvent(Event evt, string[] args, string timezone)
         {
             var bodyString = ParseEventInputBody(args);
-            ParseEventInputFlags(args, ref evt);
             if (!string.IsNullOrEmpty(bodyString))
             {
                 ParseEventTimestamps(bodyString, timezone, ref evt);
             }
+            ParseEventInputFlags(args, ref evt);
 
             return evt;
         }
