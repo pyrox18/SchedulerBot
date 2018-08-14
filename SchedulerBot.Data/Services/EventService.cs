@@ -110,6 +110,23 @@ namespace SchedulerBot.Data.Services
             return evt;
         }
 
+        public async Task<List<Event>> DeleteAllEventsAsync(ulong calendarId)
+        {
+            var isCalendarExists = await _db.Calendars.AnyAsync(c => c.Id == calendarId);
+            if (!isCalendarExists)
+            {
+                throw new CalendarNotFoundException();
+            }
+
+            var events = await _db.Events
+                .Where(e => e.Calendar.Id == calendarId)
+                .ToListAsync();
+
+            _db.Events.RemoveRange(events);
+            await _db.SaveChangesAsync();
+            return events;
+        }
+
         public async Task<Event> GetEventByIndexAsync(ulong calendarId, int index)
         {
             if (index < 0)

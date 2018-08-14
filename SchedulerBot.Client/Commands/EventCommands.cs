@@ -289,14 +289,12 @@ namespace SchedulerBot.Client.Commands
         [Group("delete")]
         public class DeleteCommands : BaseCommandModule
         {
-            private readonly ICalendarService _calendarService;
             private readonly IEventService _eventService;
             private readonly IPermissionService _permissionService;
             private readonly IEventScheduler _eventScheduler;
 
-            public DeleteCommands(ICalendarService calendarService, IEventService eventService, IPermissionService permissionService, IEventScheduler eventScheduler)
+            public DeleteCommands(IEventService eventService, IPermissionService permissionService, IEventScheduler eventScheduler)
             {
-                _calendarService = calendarService;
                 _eventService = eventService;
                 _permissionService = permissionService;
                 _eventScheduler = eventScheduler;
@@ -343,6 +341,35 @@ namespace SchedulerBot.Client.Commands
 
                 var embed = EventEmbedFactory.GetDeleteEventEmbed(deletedEvent);
                 await ctx.RespondAsync("Deleted event.", embed: embed);
+            }
+
+            [Command("all"), Description("Delete all events.")]
+            [PermissionNode(PermissionNode.EventDelete)]
+            public async Task DeleteAll(CommandContext ctx)
+            {
+                if (!await this.CheckPermission(_permissionService, typeof(DeleteCommands), nameof(DeleteCommands.DeleteAll), ctx.Member))
+                {
+                    await ctx.RespondAsync("You are not permitted to use this command.");
+                    return;
+                }
+
+                List<Event> deletedEvents;
+                try
+                {
+                    deletedEvents = await _eventService.DeleteAllEventsAsync(ctx.Guild.Id);
+                }
+                catch (CalendarNotFoundException)
+                {
+                    await ctx.RespondAsync("Calendar not initialised. Run `init <timezone>` to initialise the calendar.");
+                    return;
+                }
+                
+                foreach (var evt in deletedEvents)
+                {
+                    await _eventScheduler.UnscheduleEvent(evt);
+                }
+
+                await ctx.RespondAsync("Deleted all events.");
             }
         }
     }
