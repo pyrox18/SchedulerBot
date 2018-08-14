@@ -233,49 +233,6 @@ namespace SchedulerBot.Client.Commands
             await ctx.RespondAsync("Updated event.", embed: embed);
         }
 
-        [Command("delete"), Description("Delete an event.")]
-        [PermissionNode(PermissionNode.EventDelete)]
-        public async Task Delete(CommandContext ctx, int index)
-        {
-            if (!await this.CheckPermission(_permissionService, typeof(EventCommands), nameof(EventCommands.Delete), ctx.Member))
-            {
-                await ctx.RespondAsync("You are not permitted to use this command.");
-                return;
-            }
-
-            if (index <= 0)
-            {
-                await ctx.RespondAsync("Event index must be greater than 0.");
-                return;
-            }
-            Event deletedEvent;
-            try
-            {
-                deletedEvent = await _eventService.DeleteEventAsync(ctx.Guild.Id, index - 1);
-            }
-            catch (ArgumentOutOfRangeException)
-            {
-                await ctx.RespondAsync("Event not found.");
-                return;
-            }
-            catch (CalendarNotFoundException)
-            {
-                await ctx.RespondAsync("Calendar not initialised. Run `init <timezone>` to initialise the calendar.");
-                return;
-            }
-
-            if (deletedEvent == null)
-            {
-                await ctx.RespondAsync("Event not found.");
-                return;
-            }
-
-            await _eventScheduler.UnscheduleEvent(deletedEvent);
-
-            var embed = EventEmbedFactory.GetDeleteEventEmbed(deletedEvent);
-            await ctx.RespondAsync("Deleted event.", embed: embed);
-        }
-
         [Command("rsvp"), Description("Add or remove an RSVP to an event.")]
         [PermissionNode(PermissionNode.EventRSVP)]
         public async Task RSVP(CommandContext ctx, int index)
@@ -326,6 +283,93 @@ namespace SchedulerBot.Client.Commands
             else
             {
                 await ctx.RespondAsync($"Removed RSVP for user {ctx.Member.GetUsernameAndDiscriminator()} for event {evt.Name}.");
+            }
+        }
+
+        [Group("delete")]
+        public class DeleteCommands : BaseCommandModule
+        {
+            private readonly IEventService _eventService;
+            private readonly IPermissionService _permissionService;
+            private readonly IEventScheduler _eventScheduler;
+
+            public DeleteCommands(IEventService eventService, IPermissionService permissionService, IEventScheduler eventScheduler)
+            {
+                _eventService = eventService;
+                _permissionService = permissionService;
+                _eventScheduler = eventScheduler;
+            }
+
+            [GroupCommand, Description("Delete an event.")]
+            [PermissionNode(PermissionNode.EventDelete)]
+            public async Task Delete(CommandContext ctx, int index)
+            {
+                if (!await this.CheckPermission(_permissionService, typeof(DeleteCommands), nameof(DeleteCommands.Delete), ctx.Member))
+                {
+                    await ctx.RespondAsync("You are not permitted to use this command.");
+                    return;
+                }
+
+                if (index <= 0)
+                {
+                    await ctx.RespondAsync("Event index must be greater than 0.");
+                    return;
+                }
+                Event deletedEvent;
+                try
+                {
+                    deletedEvent = await _eventService.DeleteEventAsync(ctx.Guild.Id, index - 1);
+                }
+                catch (ArgumentOutOfRangeException)
+                {
+                    await ctx.RespondAsync("Event not found.");
+                    return;
+                }
+                catch (CalendarNotFoundException)
+                {
+                    await ctx.RespondAsync("Calendar not initialised. Run `init <timezone>` to initialise the calendar.");
+                    return;
+                }
+
+                if (deletedEvent == null)
+                {
+                    await ctx.RespondAsync("Event not found.");
+                    return;
+                }
+
+                await _eventScheduler.UnscheduleEvent(deletedEvent);
+
+                var embed = EventEmbedFactory.GetDeleteEventEmbed(deletedEvent);
+                await ctx.RespondAsync("Deleted event.", embed: embed);
+            }
+
+            [Command("all"), Description("Delete all events.")]
+            [PermissionNode(PermissionNode.EventDelete)]
+            public async Task DeleteAll(CommandContext ctx)
+            {
+                if (!await this.CheckPermission(_permissionService, typeof(DeleteCommands), nameof(DeleteCommands.DeleteAll), ctx.Member))
+                {
+                    await ctx.RespondAsync("You are not permitted to use this command.");
+                    return;
+                }
+
+                List<Event> deletedEvents;
+                try
+                {
+                    deletedEvents = await _eventService.DeleteAllEventsAsync(ctx.Guild.Id);
+                }
+                catch (CalendarNotFoundException)
+                {
+                    await ctx.RespondAsync("Calendar not initialised. Run `init <timezone>` to initialise the calendar.");
+                    return;
+                }
+                
+                foreach (var evt in deletedEvents)
+                {
+                    await _eventScheduler.UnscheduleEvent(evt);
+                }
+
+                await ctx.RespondAsync("Deleted all events.");
             }
         }
     }
