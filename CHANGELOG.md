@@ -13,9 +13,12 @@ The entire bot is rewritten in .NET Core, with the DSharpPlus library. The appli
 - Added RSVP functionality to events via the `event rsvp <event number>` command.
 - Added mentions to events, which can be supplied by adding the `--mention` flag followed by a list of mentions. Supported mentions are role mentions, user mentions, `@everyone`, and RSVP'd users.
 - Added event reminders, which can be configured for each event by adding the `--remind` flag followed by a time duration in natural language.
+- Added a command to delete all events at once.
+- Added a command to display the current time in the calendar's timezone.
 - Added permission management for `@everyone`.
 - Introduced new permission nodes:
   - EventRSVP
+  - Time
 
 ### Changed
 
