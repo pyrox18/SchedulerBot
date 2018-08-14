@@ -28,7 +28,8 @@ namespace SchedulerBot.Data.Models
         PermsModify,
         PermsNodes,
         Ping,
-        EventRSVP
+        EventRSVP,
+        Time
     }
 
     public enum PermissionType
