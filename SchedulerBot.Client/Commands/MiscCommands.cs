@@ -1,10 +1,13 @@
 ﻿using System;
 using System.Diagnostics;
+using System.Globalization;
 using System.Reflection;
+using System.Text;
 using System.Threading.Tasks;
 using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Attributes;
 using DSharpPlus.Entities;
+using NodaTime;
 using SchedulerBot.Client.Attributes;
 using SchedulerBot.Client.Extensions;
 using SchedulerBot.Data.Models;
@@ -87,6 +90,33 @@ namespace SchedulerBot.Client.Commands
         public async Task Invite(CommandContext ctx)
         {
             await ctx.RespondAsync("Click the following link to invite the bot to your server. https://goo.gl/E7hLK9");
+        }
+
+        [Command("time"), Description("Gets the current time according to the set timezone.")]
+        [PermissionNode(PermissionNode.Time)]
+        public async Task Time(CommandContext ctx)
+        {
+            if (!await this.CheckPermission(_permissionService, typeof(MiscCommands), nameof(MiscCommands.Time), ctx.Member))
+            {
+                await ctx.RespondAsync("You are not permitted to use this command.");
+                return;
+            }
+
+            var timezone = await _calendarService.GetCalendarTimezoneAsync(ctx.Guild.Id);
+            if (string.IsNullOrEmpty(timezone))
+            {
+                await ctx.RespondAsync("Calendar not initialised. Run `init <timezone>` to initialise the calendar.");
+                return;
+            }
+
+            var tz = DateTimeZoneProviders.Tzdb[timezone];
+            Instant now = SystemClock.Instance.GetCurrentInstant();
+            var dateTimeNow = now.InZone(tz).ToDateTimeOffset();
+
+            var sb = new StringBuilder();
+            sb.AppendLine($"Timezone: {timezone}");
+            sb.AppendLine(dateTimeNow.ToString("ddd d MMM yyyy h:mm:ss tt zzz", CultureInfo.InvariantCulture));
+            await ctx.RespondAsync(sb.ToString());
         }
     }
 }
