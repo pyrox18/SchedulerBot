@@ -19,6 +19,7 @@ The entire bot is rewritten in .NET Core, with the DSharpPlus library. The appli
 - Introduced new permission nodes:
   - EventRSVP
   - Time
+- Introduced a new "All" permission node, which denies permissions for all other nodes but does not overwrite any existing permissions that have been set.
 
 ### Changed
 

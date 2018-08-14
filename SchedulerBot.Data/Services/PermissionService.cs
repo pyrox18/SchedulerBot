@@ -206,7 +206,7 @@ namespace SchedulerBot.Data.Services
         {
             var isNotPermitted = await _db.Permissions.AnyAsync(
                 p => p.Calendar.Id == calendarId
-                && p.Node == node
+                && (p.Node == node || p.Node == PermissionNode.All)
                 && ((p.Type == PermissionType.Everyone) || (p.Type == PermissionType.User && p.TargetId == userId) || (p.Type == PermissionType.Role && roleIds.Contains(p.TargetId)))
             );
 
