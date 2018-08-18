@@ -86,7 +86,8 @@ namespace SchedulerBot.Client
             var commands = Client.UseCommandsNext(new CommandsNextConfiguration
             {
                 PrefixResolver = ResolvePrefix,
-                Services = ServiceProvider
+                Services = ServiceProvider,
+                EnableDefaultHelp = false
             });
 
             logger.LogInformation("Registering commands");
@@ -96,6 +97,7 @@ namespace SchedulerBot.Client
             commands.RegisterCommands<MiscCommands>();
             commands.RegisterCommands<PermissionsCommands>();
             commands.RegisterCommands<SettingsCommands>();
+            commands.RegisterCommands<HelpCommands>();
 
             // Register event handlers
             logger.LogInformation("Registering event handlers");
