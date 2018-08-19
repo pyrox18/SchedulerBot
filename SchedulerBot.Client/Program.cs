@@ -29,8 +29,7 @@ namespace SchedulerBot.Client
     class Program
     {
         private IConfigurationRoot Configuration { get; set; }
-        private DiscordClient Client { get; set; }
-        private InteractivityExtension Interactivity { get; set; }
+        private DiscordShardedClient Client { get; set; }
         private IServiceProvider ServiceProvider { get; set; }
         private RavenClient RavenClient { get; set; }
 
@@ -70,34 +69,40 @@ namespace SchedulerBot.Client
             // Bot
             logger.LogInformation($"SchedulerBot v{Assembly.GetEntryAssembly().GetCustomAttribute<AssemblyInformationalVersionAttribute>().InformationalVersion}");
             logger.LogInformation("Initialising client");
-            Client = new DiscordClient(new DiscordConfiguration
+            Client = new DiscordShardedClient(new DiscordConfiguration
             {
                 Token = Configuration.GetSection("Bot").GetValue<string>("Token"),
                 TokenType = TokenType.Bot,
                 LogLevel = DSharpPlus.LogLevel.Debug,
             });
-            Interactivity = Client.UseInteractivity(new InteractivityConfiguration
+            await Client.UseInteractivityAsync(new InteractivityConfiguration
             {
                 PaginationBehavior = TimeoutBehaviour.DeleteReactions
             });
             Client.DebugLogger.LogMessageReceived += OnLogMessageReceived;
 
             logger.LogInformation("Initialising command module");
-            var commands = Client.UseCommandsNext(new CommandsNextConfiguration
+            var commandsNextExtensions = await Client.UseCommandsNextAsync(new CommandsNextConfiguration
             {
                 PrefixResolver = ResolvePrefix,
                 Services = ServiceProvider,
                 EnableDefaultHelp = false
             });
 
-            logger.LogInformation("Registering commands");
-            commands.RegisterCommands<AdminCommands>();
-            commands.RegisterCommands<EventCommands>();
-            commands.RegisterCommands<InitializerCommands>();
-            commands.RegisterCommands<MiscCommands>();
-            commands.RegisterCommands<PermissionsCommands>();
-            commands.RegisterCommands<SettingsCommands>();
-            commands.RegisterCommands<HelpCommands>();
+            logger.LogInformation("Registering command extensions");
+            foreach (var ext in commandsNextExtensions)
+            {
+                var commands = ext.Value;
+                commands.RegisterCommands<AdminCommands>();
+                commands.RegisterCommands<EventCommands>();
+                commands.RegisterCommands<InitializerCommands>();
+                commands.RegisterCommands<MiscCommands>();
+                commands.RegisterCommands<PermissionsCommands>();
+                commands.RegisterCommands<SettingsCommands>();
+                commands.RegisterCommands<HelpCommands>();
+
+                commands.CommandErrored += OnCommandError;
+            }
 
             // Register event handlers
             logger.LogInformation("Registering event handlers");
@@ -105,7 +110,6 @@ namespace SchedulerBot.Client
             Client.GuildDeleted += OnGuildDelete;
             Client.GuildMemberRemoved += OnGuildMemberRemove;
             Client.GuildRoleDeleted += OnGuildRoleDelete;
-            commands.CommandErrored += OnCommandError;
 
             // Start event scheduler
             var scheduler = ServiceProvider.GetService<IEventScheduler>();
@@ -124,10 +128,9 @@ namespace SchedulerBot.Client
             t.Start();
             logger.LogInformation("Poll timer started");
 
-            logger.LogInformation("Connecting bot");
-            Console.WriteLine("Connecting...");
-            await Client.ConnectAsync();
-            logger.LogInformation("Bot connected");
+            logger.LogInformation("Connecting all shards...");
+            await Client.StartAsync();
+            logger.LogInformation("All shards connected");
             await Task.Delay(-1);
 
             await scheduler.Shutdown();
@@ -236,6 +239,7 @@ namespace SchedulerBot.Client
                     e.Exception.Data.Add("Command", e.Command.QualifiedName);
                     e.Exception.Data.Add("User", e.Context.Member.GetUsernameAndDiscriminator());
                     e.Exception.Data.Add("UserId", e.Context.Member.Id);
+                    e.Exception.Data.Add("ShardId", e.Context.Client.ShardId);
 
                     await RavenClient.CaptureAsync(new SentryEvent(e.Exception));
                 }

@@ -44,14 +44,18 @@ namespace SchedulerBot.Client.Scheduler
             await Scheduler.Shutdown();
         }
 
-        public async Task PollAndScheduleEvents(DiscordClient client)
+        public async Task PollAndScheduleEvents(DiscordShardedClient shardedClient)
         {
-            var calendarIds = client.Guilds.Keys;
-            var events = await _eventService.GetEventsInHourIntervalAsync(2);
-
-            foreach (var evt in events)
+            foreach (var sc in shardedClient.ShardClients)
             {
-                await ScheduleEvent(evt, client, evt.Calendar.DefaultChannel);
+                var client = sc.Value;
+                var calendarIds = client.Guilds.Keys;
+                var events = await _eventService.GetEventsInHourIntervalAsync(2);
+
+                foreach (var evt in events)
+                {
+                    await ScheduleEvent(evt, client, evt.Calendar.DefaultChannel);
+                }
             }
         }
 
