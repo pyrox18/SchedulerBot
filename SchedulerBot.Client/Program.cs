@@ -223,28 +223,31 @@ namespace SchedulerBot.Client
 
         private async Task OnCommandError(CommandErrorEventArgs e)
         {
-            var logger = ServiceProvider.GetService<ILogger<Program>>();
-            var errorId = Guid.NewGuid();
-            logger.LogError($"{errorId}: {e.Exception.Message}\n{e.Exception.StackTrace}");
-
-            if (RavenClient != null)
+            if (e.Exception.GetType() != typeof(ArgumentException))
             {
-                e.Exception.Data.Add("ErrorEventId", errorId.ToString());
-                e.Exception.Data.Add("Message", e.Context.Message);
-                e.Exception.Data.Add("Command", e.Command.QualifiedName);
-                e.Exception.Data.Add("User", e.Context.Member.GetUsernameAndDiscriminator());
-                e.Exception.Data.Add("UserId", e.Context.Member.Id);
+                var logger = ServiceProvider.GetService<ILogger<Program>>();
+                var errorId = Guid.NewGuid();
+                logger.LogError($"{errorId}: {e.Exception.Message}\n{e.Exception.StackTrace}");
 
-                await RavenClient.CaptureAsync(new SentryEvent(e.Exception));
+                if (RavenClient != null)
+                {
+                    e.Exception.Data.Add("ErrorEventId", errorId.ToString());
+                    e.Exception.Data.Add("Message", e.Context.Message);
+                    e.Exception.Data.Add("Command", e.Command.QualifiedName);
+                    e.Exception.Data.Add("User", e.Context.Member.GetUsernameAndDiscriminator());
+                    e.Exception.Data.Add("UserId", e.Context.Member.Id);
+
+                    await RavenClient.CaptureAsync(new SentryEvent(e.Exception));
+                }
+
+                var sb = new StringBuilder();
+                sb.AppendLine("An error has occurred. Please report this in the support server using the `support` command.");
+                sb.AppendLine($"Error event ID: {errorId}");
+                sb.AppendLine("```");
+                sb.AppendLine($"{e.Exception.Message}");
+                sb.AppendLine("```");
+                await e.Context.RespondAsync(sb.ToString());
             }
-
-            var sb = new StringBuilder();
-            sb.AppendLine("An error has occurred. Please report this in the support server using the `support` command.");
-            sb.AppendLine($"Error event ID: {errorId}");
-            sb.AppendLine("```");
-            sb.AppendLine($"{e.Exception.Message}");
-            sb.AppendLine("```");
-            await e.Context.RespondAsync(sb.ToString());
         }
 
         private async Task<int> ResolvePrefix(DiscordMessage msg)
