@@ -65,9 +65,10 @@ namespace SchedulerBot.Client
             }
 
             var logger = ServiceProvider.GetService<ILogger<Program>>();
+            var version = Assembly.GetEntryAssembly().GetCustomAttribute<AssemblyInformationalVersionAttribute>().InformationalVersion;
 
             // Bot
-            logger.LogInformation($"SchedulerBot v{Assembly.GetEntryAssembly().GetCustomAttribute<AssemblyInformationalVersionAttribute>().InformationalVersion}");
+            logger.LogInformation($"SchedulerBot v{version}");
             logger.LogInformation("Initialising client");
             Client = new DiscordShardedClient(new DiscordConfiguration
             {
@@ -110,6 +111,7 @@ namespace SchedulerBot.Client
             Client.GuildDeleted += OnGuildDelete;
             Client.GuildMemberRemoved += OnGuildMemberRemove;
             Client.GuildRoleDeleted += OnGuildRoleDelete;
+            Client.Ready += OnClientReady;
 
             // Start event scheduler
             var scheduler = ServiceProvider.GetService<IEventScheduler>();
@@ -131,6 +133,7 @@ namespace SchedulerBot.Client
             logger.LogInformation("Connecting all shards...");
             await Client.StartAsync();
             logger.LogInformation("All shards connected");
+
             await Task.Delay(-1);
 
             await scheduler.Shutdown();
@@ -222,6 +225,15 @@ namespace SchedulerBot.Client
         {
             var permissionService = ServiceProvider.GetService<IPermissionService>();
             await permissionService.RemoveRolePermissionsAsync(e.Guild.Id, e.Role.Id);
+        }
+
+        private async Task OnClientReady(ReadyEventArgs e)
+        {
+            // Set status
+            var logger = ServiceProvider.GetService<ILogger<Program>>();
+            logger.LogInformation("Updating status");
+            var version = Assembly.GetEntryAssembly().GetCustomAttribute<AssemblyInformationalVersionAttribute>().InformationalVersion;
+            await Client.UpdateStatusAsync(new DiscordActivity(string.Format(Configuration.GetSection("Bot").GetValue<string>("Status"), version)));
         }
 
         private async Task OnCommandError(CommandErrorEventArgs e)
