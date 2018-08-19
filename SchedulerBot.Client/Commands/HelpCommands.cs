@@ -4,6 +4,7 @@ using System.Text;
 using System.Threading.Tasks;
 using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Attributes;
+using DSharpPlus.Entities;
 using SchedulerBot.Client.Builders;
 
 namespace SchedulerBot.Client.Commands
@@ -14,7 +15,34 @@ namespace SchedulerBot.Client.Commands
         [GroupCommand]
         public async Task Help(CommandContext ctx)
         {
-            await ctx.RespondAsync("Help");
+            var embed = new DiscordEmbedBuilder
+            {
+                Color = new DiscordColor(211, 255, 219),
+                Title = "Help",
+                Author = new DiscordEmbedBuilder.EmbedAuthor
+                {
+                    Name = "SchedulerBot",
+                    IconUrl = "https://cdn.discordapp.com/avatars/339019867325726722/e5fca7dbae7156e05c013766fa498fe1.png"
+                },
+                Description = "All possible main commands are listed below.",
+                Footer = new DiscordEmbedBuilder.EmbedFooter
+                {
+                    Text = "To get additional help for a specific command, run \"help <command>\"."
+                }
+            };
+
+            embed.AddField("init", "Initialises the guild calendar with a specific timezone.")
+                .AddField("event", "Create, update and delete events, and RSVP to events to indicate attendance.")
+                .AddField("perms", "Set user- or role-specific command permissions.")
+                .AddField("settings", "View or change the bot's timezone, default channel and/or prefix settings.")
+                .AddField("prefix", "View the bot's current prefix.")
+                .AddField("ping", "Pings the bot.")
+                .AddField("info", "Get information about the bot.")
+                .AddField("time", "Get the current time in the set timezone.")
+                .AddField("Need more help? Did you find an issue with the bot?", "Run the `support` command to get an invite link to the support server and get in touch with the developer.")
+                .AddField("Want to add the bot to your own server?", "Run the `invite` command to get an invite link for the bot.");
+
+            await ctx.RespondAsync(embed: embed.Build());
         }
 
         [Command("init")]
