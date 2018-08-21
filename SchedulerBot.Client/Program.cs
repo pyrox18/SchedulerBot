@@ -23,6 +23,7 @@ using SchedulerBot.Client.Scheduler;
 using SchedulerBot.Data;
 using SchedulerBot.Data.Models;
 using SchedulerBot.Data.Services;
+using DSharpPlus.Exceptions;
 
 namespace SchedulerBot.Client
 {
@@ -238,7 +239,8 @@ namespace SchedulerBot.Client
 
         private async Task OnCommandError(CommandErrorEventArgs e)
         {
-            if (e.Exception.GetType() != typeof(ArgumentException))
+            var exceptionType = e.Exception.GetType();
+            if (exceptionType != typeof(ArgumentException) && exceptionType != typeof(UnauthorizedException))
             {
                 var logger = ServiceProvider.GetService<ILogger<Program>>();
                 var errorId = Guid.NewGuid();
