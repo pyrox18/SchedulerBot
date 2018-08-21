@@ -1,0 +1,11 @@
+version: '3.4'
+
+services:
+  schedulerbot.client:
+    environment:
+      - ASPNETCORE_ENVIRONMENT
+    image: ${DOCKER_REGISTRY}schedulerbotclient
+    build:
+      context: .
+      dockerfile: SchedulerBot.Client/Dockerfile
+    restart: on-failure
