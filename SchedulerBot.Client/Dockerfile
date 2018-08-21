@@ -1,9 +1,6 @@
 FROM microsoft/dotnet:2.1-runtime AS base
 WORKDIR /app
 
-ARG environment
-ENV ASPNETCORE_ENVIRONMENT=$environment
-
 FROM microsoft/dotnet:2.1-sdk AS build
 WORKDIR /src
 COPY SchedulerBot.Client/SchedulerBot.Client.csproj SchedulerBot.Client/
