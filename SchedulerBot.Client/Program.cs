@@ -32,7 +32,6 @@ namespace SchedulerBot.Client
         private IConfigurationRoot Configuration { get; set; }
         private DiscordShardedClient Client { get; set; }
         private IServiceProvider ServiceProvider { get; set; }
-        private RavenClient RavenClient { get; set; }
 
         static void Main(string[] args = null)
         {
@@ -57,13 +56,6 @@ namespace SchedulerBot.Client
             
             Console.WriteLine("Configuring services...");
             ConfigureServices();
-
-            // Initialise Raven service if production environment
-            if (environment == "Production")
-            {
-                var dsn = Configuration.GetSection("Raven").GetValue<string>("DSN");
-                RavenClient = new RavenClient(dsn);
-            }
 
             var logger = ServiceProvider.GetService<ILogger<Program>>();
             var version = Assembly.GetEntryAssembly().GetCustomAttribute<AssemblyInformationalVersionAttribute>().InformationalVersion;
@@ -171,6 +163,14 @@ namespace SchedulerBot.Client
                 options.SetMinimumLevel(logLevel);
             });
 
+            // Add Raven client as a service for production environment
+            if (Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") == "Production")
+            {
+                var dsn = Configuration.GetSection("Raven").GetValue<string>("DSN");
+                var ravenClient = new RavenClient(dsn);
+                services.AddSingleton<IRavenClient, RavenClient>();
+            }
+
             services.AddEntityFrameworkNpgsql()
                 .AddDbContext<SchedulerBotContext>(options =>
                 {
@@ -246,7 +246,8 @@ namespace SchedulerBot.Client
                 var errorId = Guid.NewGuid();
                 logger.LogError($"{errorId}: {e.Exception.Message}\n{e.Exception.StackTrace}");
 
-                if (RavenClient != null)
+                var ravenClient = ServiceProvider.GetService<IRavenClient>();
+                if (ravenClient != null)
                 {
                     e.Exception.Data.Add("ErrorEventId", errorId.ToString());
                     e.Exception.Data.Add("Message", e.Context.Message);
@@ -255,7 +256,7 @@ namespace SchedulerBot.Client
                     e.Exception.Data.Add("UserId", e.Context.Member.Id);
                     e.Exception.Data.Add("ShardId", e.Context.Client.ShardId);
 
-                    await RavenClient.CaptureAsync(new SentryEvent(e.Exception));
+                    await ravenClient.CaptureAsync(new SentryEvent(e.Exception));
                 }
 
                 var sb = new StringBuilder();
