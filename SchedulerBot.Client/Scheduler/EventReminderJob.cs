@@ -4,6 +4,7 @@ using System.Text;
 using System.Threading.Tasks;
 using DSharpPlus;
 using DSharpPlus.Entities;
+using DSharpPlus.Exceptions;
 using Quartz;
 using SchedulerBot.Client.Extensions;
 using SchedulerBot.Client.Factories;
@@ -15,13 +16,21 @@ namespace SchedulerBot.Client.Scheduler
     {
         public async Task Execute(IJobExecutionContext context)
         {
-            JobDataMap jobDataMap = context.MergedJobDataMap;
-            var evt = (Event)jobDataMap["event"];
-            var client = (DiscordClient)jobDataMap["client"];
-            var channel = (DiscordChannel)jobDataMap["channel"];
+            try
+            {
+                JobDataMap jobDataMap = context.MergedJobDataMap;
+                var evt = (Event)jobDataMap["event"];
+                var client = (DiscordClient)jobDataMap["client"];
+                var channel = (DiscordChannel)jobDataMap["channel"];
 
-            var embed = EventEmbedFactory.GetRemindEventEmbed(evt);
-            await client.SendMessageAsync(channel, embed: embed);
+                var embed = EventEmbedFactory.GetRemindEventEmbed(evt);
+                await client.SendMessageAsync(channel, embed: embed);
+            }
+            catch (UnauthorizedException) { }
+            catch
+            {
+                throw;
+            }
         }
     }
 }
