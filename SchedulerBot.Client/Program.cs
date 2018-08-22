@@ -272,7 +272,20 @@ namespace SchedulerBot.Client
         private async Task<int> ResolvePrefix(DiscordMessage msg)
         {
             var calendarService = ServiceProvider.GetService<ICalendarService>();
-            return await calendarService.ResolveCalendarPrefixAsync(msg.Channel.GuildId, msg.Content);
+            var prefix = await calendarService.GetCalendarPrefixAsync(msg.Channel.GuildId);
+            var defaultPrefix = Configuration.GetSection("Bot").GetSection("Prefixes").Get<string[]>()[0];
+
+            if (string.IsNullOrEmpty(prefix) && msg.Content.StartsWith(defaultPrefix))
+            {
+                return defaultPrefix.Length;
+            }
+
+            if (string.IsNullOrEmpty(prefix) || !msg.Content.StartsWith(prefix))
+            {
+                return -1;
+            }
+
+            return prefix.Length;
         }
 
         private async void PollerTimerElapsed(object sender, ElapsedEventArgs e)

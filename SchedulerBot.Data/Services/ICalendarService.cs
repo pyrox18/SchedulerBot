@@ -7,7 +7,6 @@ namespace SchedulerBot.Data.Services
     {
         Task<Calendar> CreateCalendarAsync(Calendar calendar);
         Task<bool> DeleteCalendarAsync(ulong calendarId);
-        Task<int> ResolveCalendarPrefixAsync(ulong calendarId, string message);
         Task<string> GetCalendarPrefixAsync(ulong calendarId);
         Task<string> UpdateCalendarPrefixAsync(ulong calendarId, string newPrefix);
         Task<ulong> GetCalendarDefaultChannelAsync(ulong calendarId);
