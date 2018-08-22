@@ -111,17 +111,6 @@ namespace SchedulerBot.Client
             logger.LogInformation("Starting event scheduler");
             await scheduler.Start();
 
-            logger.LogInformation("Starting initial event poll");
-            await PollAndScheduleEvents();
-            logger.LogInformation("Initial event poll completed");
-            logger.LogInformation("Starting poll timer");
-            Timer t = new Timer(60 * 60 * 1000)
-            {
-                AutoReset = true
-            };
-            t.Elapsed += new ElapsedEventHandler(PollerTimerElapsed);
-            t.Start();
-            logger.LogInformation("Poll timer started");
 
             logger.LogInformation("Connecting all shards...");
             await Client.StartAsync();
@@ -235,6 +224,19 @@ namespace SchedulerBot.Client
             logger.LogInformation("Updating status");
             var version = Assembly.GetEntryAssembly().GetCustomAttribute<AssemblyInformationalVersionAttribute>().InformationalVersion;
             await Client.UpdateStatusAsync(new DiscordActivity(string.Format(Configuration.GetSection("Bot").GetValue<string>("Status"), version)));
+
+            // Start event polling
+            logger.LogInformation("Starting initial event poll");
+            await PollAndScheduleEvents();
+            logger.LogInformation("Initial event poll completed");
+            logger.LogInformation("Starting poll timer");
+            Timer t = new Timer(60 * 60 * 1000)
+            {
+                AutoReset = true
+            };
+            t.Elapsed += new ElapsedEventHandler(PollerTimerElapsed);
+            t.Start();
+            logger.LogInformation("Poll timer started");
         }
 
         private async Task OnCommandError(CommandErrorEventArgs e)

@@ -49,7 +49,7 @@ namespace SchedulerBot.Client.Scheduler
             {
                 var client = sc.Value;
                 var calendarIds = client.Guilds.Keys;
-                var events = await _eventService.GetEventsInHourIntervalAsync(2);
+                var events = await _eventService.GetEventsInHourIntervalAsync(2, calendarIds);
 
                 foreach (var evt in events)
                 {

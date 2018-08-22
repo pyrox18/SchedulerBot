@@ -214,6 +214,17 @@ namespace SchedulerBot.Data.Services
             return events;
         }
 
+        public async Task<List<Event>> GetEventsInHourIntervalAsync(double hours, IEnumerable<ulong> guildIds)
+        {
+            var events = await _db.Events
+                .Include(e => e.Calendar)
+                .Include(e => e.Mentions)
+                .Where(e => guildIds.Contains(e.Calendar.Id) && (e.StartsInHours(hours) || e.RemindInHours(hours)))
+                .ToListAsync();
+
+            return events;
+        }
+
         public async Task<Event> ToggleRSVPByIndexAsync(ulong calendarId, ulong userId, int index)
         {
             var evt = await GetEventByIndexAsync(calendarId, index);
