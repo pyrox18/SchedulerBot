@@ -13,6 +13,7 @@ using DSharpPlus;
 using DSharpPlus.CommandsNext;
 using DSharpPlus.Entities;
 using DSharpPlus.EventArgs;
+using DSharpPlus.Exceptions;
 using DSharpPlus.Interactivity;
 using NLog.Extensions.Logging;
 using SharpRaven;
@@ -23,7 +24,6 @@ using SchedulerBot.Client.Scheduler;
 using SchedulerBot.Data;
 using SchedulerBot.Data.Models;
 using SchedulerBot.Data.Services;
-using DSharpPlus.Exceptions;
 
 namespace SchedulerBot.Client
 {

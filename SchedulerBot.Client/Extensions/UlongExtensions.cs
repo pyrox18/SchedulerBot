@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace SchedulerBot.Client.Extensions
+﻿namespace SchedulerBot.Client.Extensions
 {
     public static class UlongExtensions
     {

@@ -1,12 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 using DSharpPlus;
 using DSharpPlus.Entities;
 using DSharpPlus.Exceptions;
 using Quartz;
-using SchedulerBot.Client.Extensions;
 using SchedulerBot.Client.Factories;
 using SchedulerBot.Data.Models;
 

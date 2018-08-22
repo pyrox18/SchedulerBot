@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Threading.Tasks;
 using DSharpPlus;
-using DSharpPlus.Entities;
 using SchedulerBot.Data.Models;
 
 namespace SchedulerBot.Client.Scheduler

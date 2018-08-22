@@ -4,16 +4,16 @@ using System.Linq;
 using System.Threading.Tasks;
 using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Attributes;
+using DSharpPlus.Interactivity;
 using SchedulerBot.Client.Attributes;
 using SchedulerBot.Client.Factories;
 using SchedulerBot.Client.Exceptions;
 using SchedulerBot.Client.Extensions;
 using SchedulerBot.Client.Parsers;
+using SchedulerBot.Client.Scheduler;
 using SchedulerBot.Data.Exceptions;
 using SchedulerBot.Data.Models;
 using SchedulerBot.Data.Services;
-using SchedulerBot.Client.Scheduler;
-using DSharpPlus.Interactivity;
 
 namespace SchedulerBot.Client.Commands
 {
