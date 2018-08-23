@@ -76,6 +76,10 @@ Alternatively, open the solution in Visual Studio and debug the `SchedulerBot.Cl
 
 8. Invite the bot to your server by generating an invite link at https://discordapi.com/permissions.html. At minimum, the bot requires permission to read, send and manage messages.
 
+## Docker Support
+
+This project has support for Docker and Docker Compose. Simply run `docker-compose up` from the solution root to start the container, while supplying a suitable `ASPNETCORE_ENVIRONMENT` environment variable. Note that the `Development` environment is not supported due to different configuration file path handling.
+
 ## Production Configuration
 
 Production application settings should be placed in a `appsettings.Production.json` file in the `SchedulerBot.Client` project directory. The contents are similar to the `appsettings.Development.json` file, with some exceptions.
