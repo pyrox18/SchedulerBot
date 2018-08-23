@@ -11,6 +11,10 @@ This codebase represents SchedulerBot version 2 and above, which was rewritten t
 - [Microsoft .NET Core 2.1](https://www.microsoft.com/net/download)
 - [PostgreSQL 10+](https://www.postgresql.org/download/)
 
+## Migrating from v1.0.x to v2.0
+
+A data migration tool is available for migrating data from a MongoDB database that stores data for SchedulerBot v1.0.x to a PostgreSQL database storing data for v2.0. See the readme in the `SchedulerBot.MigrationTool` project for further details.
+
 ## Installation and Usage
 
 1. Clone the repository.
@@ -65,7 +69,7 @@ $ ASPNETCORE_ENVIRONMENT=Development dotnet ef database update -s ../SchedulerBo
 $ cd ../SchedulerBot.Client
 $ dotnet build
 $ cd bin/Debug/netcoreapp2.1
-$ dotnet SchedulerBot.Client.dll
+$ ASPNETCORE_ENVIRONMENT=Development dotnet SchedulerBot.Client.dll
 ```
 
 Alternatively, open the solution in Visual Studio and debug the `SchedulerBot.Client` project from there.
