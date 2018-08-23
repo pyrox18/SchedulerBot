@@ -122,7 +122,17 @@ namespace SchedulerBot.Data.Services
                 .Where(e => e.Calendar.Id == calendarId)
                 .ToListAsync();
 
+            var mentions = await _db.EventMentions
+                .Where(m => m.Event.Calendar.Id == calendarId)
+                .ToListAsync();
+
+            var rsvps = await _db.EventRSVPs
+                .Where(r => r.Event.Calendar.Id == calendarId)
+                .ToListAsync();
+
             _db.Events.RemoveRange(events);
+            _db.EventMentions.RemoveRange(mentions);
+            _db.EventRSVPs.RemoveRange(rsvps);
             await _db.SaveChangesAsync();
             return events;
         }
