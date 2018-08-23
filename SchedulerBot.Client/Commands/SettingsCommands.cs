@@ -32,6 +32,8 @@ namespace SchedulerBot.Client.Commands
         [GroupCommand]
         public async Task Settings(CommandContext ctx)
         {
+            await ctx.TriggerTypingAsync();
+
             var calendar = await _calendarService.TryGetCalendarAsync(ctx.Guild.Id);
             if (calendar == null)
             {
@@ -60,6 +62,8 @@ namespace SchedulerBot.Client.Commands
         [PermissionNode(PermissionNode.PrefixShow)]
         public async Task ShowPrefix(CommandContext ctx)
         {
+            await ctx.TriggerTypingAsync();
+
             if (!await this.CheckPermission(_permissionService, typeof(SettingsCommands), nameof(SettingsCommands.ShowPrefix), ctx.Member))
             {
                 await ctx.RespondAsync("You are not permitted to use this command.");
@@ -92,6 +96,8 @@ namespace SchedulerBot.Client.Commands
         [PermissionNode(PermissionNode.PrefixModify)]
         public async Task ModifyPrefix(CommandContext ctx, string prefix)
         {
+            await ctx.TriggerTypingAsync();
+
             if (!await this.CheckPermission(_permissionService, typeof(SettingsCommands), nameof(SettingsCommands.ModifyPrefix), ctx.Member))
             {
                 await ctx.RespondAsync("You are not permitted to use this command.");
@@ -116,6 +122,8 @@ namespace SchedulerBot.Client.Commands
         [PermissionNode(PermissionNode.DefaultChannelShow)]
         public async Task ShowDefaultChannel(CommandContext ctx)
         {
+            await ctx.TriggerTypingAsync();
+
             if (!await this.CheckPermission(_permissionService, typeof(SettingsCommands), nameof(SettingsCommands.ShowDefaultChannel), ctx.Member))
             {
                 await ctx.RespondAsync("You are not permitted to use this command.");
@@ -149,6 +157,8 @@ namespace SchedulerBot.Client.Commands
         [PermissionNode(PermissionNode.DefaultChannelModify)]
         public async Task ModifyDefaultChannel(CommandContext ctx, DiscordChannel channel)
         {
+            await ctx.TriggerTypingAsync();
+
             if (!await this.CheckPermission(_permissionService, typeof(SettingsCommands), nameof(SettingsCommands.ModifyDefaultChannel), ctx.Member))
             {
                 await ctx.RespondAsync("You are not permitted to use this command.");
@@ -175,6 +185,8 @@ namespace SchedulerBot.Client.Commands
         [PermissionNode(PermissionNode.TimezoneShow)]
         public async Task ShowTimezone(CommandContext ctx)
         {
+            await ctx.TriggerTypingAsync();
+
             if (!await this.CheckPermission(_permissionService, typeof(SettingsCommands), nameof(SettingsCommands.ShowTimezone), ctx.Member))
             {
                 await ctx.RespondAsync("You are not permitted to use this command.");
@@ -208,6 +220,8 @@ namespace SchedulerBot.Client.Commands
         [PermissionNode(PermissionNode.TimezoneModify)]
         public async Task ModifyTimezone(CommandContext ctx, string timezone)
         {
+            await ctx.TriggerTypingAsync();
+
             if (!await this.CheckPermission(_permissionService, typeof(SettingsCommands), nameof(SettingsCommands.ModifyTimezone), ctx.Member))
             {
                 await ctx.RespondAsync("You are not permitted to use this command.");

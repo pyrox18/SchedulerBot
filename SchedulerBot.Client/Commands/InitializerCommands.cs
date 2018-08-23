@@ -14,6 +14,8 @@ namespace SchedulerBot.Client.Commands
         [Command("init"), Description("Initialize the bot with a timezone and a default channel.")]
         public async Task Initialize(CommandContext ctx, string timezone)
         {
+            await ctx.TriggerTypingAsync();
+
             var initSuccess = await _calendarService.InitialiseCalendar(ctx.Guild.Id, timezone, ctx.Channel.Id);
             if (initSuccess == null)
             {

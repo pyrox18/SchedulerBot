@@ -30,6 +30,8 @@ namespace SchedulerBot.Client.Commands
         [PermissionNode(PermissionNode.Ping)]
         public async Task Ping(CommandContext ctx)
         {
+            await ctx.TriggerTypingAsync();
+
             if (!await this.CheckPermission(_permissionService, typeof(MiscCommands), nameof(MiscCommands.Ping), ctx.Member))
             {
                 await ctx.RespondAsync("You are not permitted to use this command.");
@@ -44,6 +46,8 @@ namespace SchedulerBot.Client.Commands
         [PermissionNode(PermissionNode.PrefixShow)]
         public async Task Prefix(CommandContext ctx)
         {
+            await ctx.TriggerTypingAsync();
+
             if (!await this.CheckPermission(_permissionService, typeof(MiscCommands), nameof(MiscCommands.Prefix), ctx.Member))
             {
                 await ctx.RespondAsync("You are not permitted to use this command.");
@@ -57,6 +61,8 @@ namespace SchedulerBot.Client.Commands
         [Command("info"), Description("Get some information about the bot.")]
         public async Task Info(CommandContext ctx)
         {
+            await ctx.TriggerTypingAsync();
+
             var version = Assembly.GetEntryAssembly().GetCustomAttribute<AssemblyInformationalVersionAttribute>().InformationalVersion;
             var uptime = DateTime.Now - Process.GetCurrentProcess().StartTime;
             var embed = new DiscordEmbedBuilder
@@ -84,12 +90,16 @@ namespace SchedulerBot.Client.Commands
         [Command("support"), Description("Get an invite link to the SchedulerBot support server.")]
         public async Task Support(CommandContext ctx)
         {
+            await ctx.TriggerTypingAsync();
+
             await ctx.RespondAsync("Click the following link to join the bot's support server. https://discord.gg/CRxRn5X");
         }
 
         [Command("invite"), Description("Get a link to invite the bot to your server.")]
         public async Task Invite(CommandContext ctx)
         {
+            await ctx.TriggerTypingAsync();
+
             await ctx.RespondAsync("Click the following link to invite the bot to your server. https://goo.gl/E7hLK9");
         }
 
@@ -97,6 +107,8 @@ namespace SchedulerBot.Client.Commands
         [PermissionNode(PermissionNode.Time)]
         public async Task Time(CommandContext ctx)
         {
+            await ctx.TriggerTypingAsync();
+
             if (!await this.CheckPermission(_permissionService, typeof(MiscCommands), nameof(MiscCommands.Time), ctx.Member))
             {
                 await ctx.RespondAsync("You are not permitted to use this command.");

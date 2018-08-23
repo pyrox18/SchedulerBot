@@ -25,6 +25,8 @@ namespace SchedulerBot.Client.Commands
         [PermissionNode(PermissionNode.PermsModify)]
         public async Task AllowRole(CommandContext ctx, string node, DiscordRole role)
         {
+            await ctx.TriggerTypingAsync();
+
             if (!await this.CheckPermission(_permissionService, typeof(PermissionsCommands), nameof(PermissionsCommands.AllowRole), ctx.Member))
             {
                 await ctx.RespondAsync("You are not permitted to use this command.");
@@ -48,6 +50,8 @@ namespace SchedulerBot.Client.Commands
         [PermissionNode(PermissionNode.PermsModify)]
         public async Task AllowUser(CommandContext ctx, string node, DiscordMember user)
         {
+            await ctx.TriggerTypingAsync();
+
             if (!await this.CheckPermission(_permissionService, typeof(PermissionsCommands), nameof(PermissionsCommands.AllowUser), ctx.Member))
             {
                 await ctx.RespondAsync("You are not permitted to use this command.");
@@ -71,6 +75,8 @@ namespace SchedulerBot.Client.Commands
         [PermissionNode(PermissionNode.PermsModify)]
         public async Task DenyRole(CommandContext ctx, string node, DiscordRole role)
         {
+            await ctx.TriggerTypingAsync();
+
             if (!await this.CheckPermission(_permissionService, typeof(PermissionsCommands), nameof(PermissionsCommands.DenyRole), ctx.Member))
             {
                 await ctx.RespondAsync("You are not permitted to use this command.");
@@ -94,6 +100,8 @@ namespace SchedulerBot.Client.Commands
         [PermissionNode(PermissionNode.PermsModify)]
         public async Task DenyUser(CommandContext ctx, string node, DiscordMember user)
         {
+            await ctx.TriggerTypingAsync();
+
             if (!await this.CheckPermission(_permissionService, typeof(PermissionsCommands), nameof(PermissionsCommands.DenyUser), ctx.Member))
             {
                 await ctx.RespondAsync("You are not permitted to use this command.");
@@ -117,6 +125,8 @@ namespace SchedulerBot.Client.Commands
         [PermissionNode(PermissionNode.PermsShow)]
         public async Task ShowRole(CommandContext ctx, DiscordRole role)
         {
+            await ctx.TriggerTypingAsync();
+
             if (!await this.CheckPermission(_permissionService, typeof(PermissionsCommands), nameof(PermissionsCommands.ShowRole), ctx.Member))
             {
                 await ctx.RespondAsync("You are not permitted to use this command.");
@@ -149,6 +159,8 @@ namespace SchedulerBot.Client.Commands
         [PermissionNode(PermissionNode.PermsShow)]
         public async Task ShowUser(CommandContext ctx, DiscordMember user)
         {
+            await ctx.TriggerTypingAsync();
+
             if (!await this.CheckPermission(_permissionService, typeof(PermissionsCommands), nameof(PermissionsCommands.ShowUser), ctx.Member))
             {
                 await ctx.RespondAsync("You are not permitted to use this command.");
@@ -181,6 +193,8 @@ namespace SchedulerBot.Client.Commands
         [PermissionNode(PermissionNode.PermsShow)]
         public async Task ShowNode(CommandContext ctx, string node)
         {
+            await ctx.TriggerTypingAsync();
+
             if (!await this.CheckPermission(_permissionService, typeof(PermissionsCommands), nameof(PermissionsCommands.ShowNode), ctx.Member))
             {
                 await ctx.RespondAsync("You are not permitted to use this command.");
@@ -264,6 +278,8 @@ namespace SchedulerBot.Client.Commands
         [PermissionNode(PermissionNode.PermsNodes)]
         public async Task Nodes(CommandContext ctx)
         {
+            await ctx.TriggerTypingAsync();
+
             if (!await this.CheckPermission(_permissionService, typeof(PermissionsCommands), nameof(PermissionsCommands.Nodes), ctx.Member))
             {
                 await ctx.RespondAsync("You are not permitted to use this command.");

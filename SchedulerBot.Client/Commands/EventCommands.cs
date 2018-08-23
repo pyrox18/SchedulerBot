@@ -38,6 +38,8 @@ namespace SchedulerBot.Client.Commands
         [PermissionNode(PermissionNode.EventCreate)]
         public async Task Create(CommandContext ctx, params string[] args)
         {
+            await ctx.TriggerTypingAsync();
+
             if (!await this.CheckPermission(_permissionService, typeof(EventCommands), nameof(EventCommands.Create), ctx.Member))
             {
                 await ctx.RespondAsync("You are not permitted to use this command.");
@@ -94,6 +96,8 @@ namespace SchedulerBot.Client.Commands
         [PermissionNode(PermissionNode.EventList)]
         public async Task List(CommandContext ctx)
         {
+            await ctx.TriggerTypingAsync();
+
             if (!await this.CheckPermission(_permissionService, typeof(EventCommands), nameof(EventCommands.List), ctx.Member))
             {
                 await ctx.RespondAsync("You are not permitted to use this command.");
@@ -126,6 +130,8 @@ namespace SchedulerBot.Client.Commands
         [PermissionNode(PermissionNode.EventList)]
         public async Task ListOne(CommandContext ctx, int index)
         {
+            await ctx.TriggerTypingAsync();
+
             if (!await this.CheckPermission(_permissionService, typeof(EventCommands), nameof(EventCommands.ListOne), ctx.Member))
             {
                 await ctx.RespondAsync("You are not permitted to use this command.");
@@ -168,6 +174,8 @@ namespace SchedulerBot.Client.Commands
         [PermissionNode(PermissionNode.EventUpdate)]
         public async Task Update(CommandContext ctx, int index, [RemainingText] string args)
         {
+            await ctx.TriggerTypingAsync();
+
             if (!await this.CheckPermission(_permissionService, typeof(EventCommands), nameof(EventCommands.Update), ctx.Member))
             {
                 await ctx.RespondAsync("You are not permitted to use this command.");
@@ -237,6 +245,8 @@ namespace SchedulerBot.Client.Commands
         [PermissionNode(PermissionNode.EventRSVP)]
         public async Task RSVP(CommandContext ctx, int index)
         {
+            await ctx.TriggerTypingAsync();
+
             if (!await this.CheckPermission(_permissionService, typeof(EventCommands), nameof(EventCommands.RSVP), ctx.Member))
             {
                 await ctx.RespondAsync("You are not permitted to use this command.");
@@ -304,6 +314,8 @@ namespace SchedulerBot.Client.Commands
             [PermissionNode(PermissionNode.EventDelete)]
             public async Task Delete(CommandContext ctx, int index)
             {
+                await ctx.TriggerTypingAsync();
+
                 if (!await this.CheckPermission(_permissionService, typeof(DeleteCommands), nameof(DeleteCommands.Delete), ctx.Member))
                 {
                     await ctx.RespondAsync("You are not permitted to use this command.");
@@ -347,6 +359,8 @@ namespace SchedulerBot.Client.Commands
             [PermissionNode(PermissionNode.EventDelete)]
             public async Task DeleteAll(CommandContext ctx)
             {
+                await ctx.TriggerTypingAsync();
+
                 if (!await this.CheckPermission(_permissionService, typeof(DeleteCommands), nameof(DeleteCommands.DeleteAll), ctx.Member))
                 {
                     await ctx.RespondAsync("You are not permitted to use this command.");
