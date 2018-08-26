@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Attributes;
 using DSharpPlus.Entities;
+using Microsoft.Extensions.Configuration;
 using NodaTime;
 using SchedulerBot.Client.Attributes;
 using SchedulerBot.Client.Extensions;
@@ -19,11 +20,13 @@ namespace SchedulerBot.Client.Commands
     {
         private readonly ICalendarService _calendarService;
         internal readonly IPermissionService _permissionService;
+        private readonly IConfigurationRoot _configuration;
 
-        public MiscCommands(ICalendarService calendarService, IPermissionService permissionService)
+        public MiscCommands(ICalendarService calendarService, IPermissionService permissionService, IConfigurationRoot configuration)
         {
             _calendarService = calendarService;
             _permissionService = permissionService;
+            _configuration = configuration;
         }
 
         [Command("ping"), Description("Pings the bot.")]
@@ -92,7 +95,8 @@ namespace SchedulerBot.Client.Commands
         {
             await ctx.TriggerTypingAsync();
 
-            await ctx.RespondAsync("Click the following link to join the bot's support server. https://discord.gg/CRxRn5X");
+            var supportLink = _configuration.GetSection("Bot").GetSection("Links").GetValue<string>("SupportServer");
+            await ctx.RespondAsync($"Click the following link to join the bot's support server. {supportLink}");
         }
 
         [Command("invite"), Description("Get a link to invite the bot to your server.")]
@@ -100,7 +104,8 @@ namespace SchedulerBot.Client.Commands
         {
             await ctx.TriggerTypingAsync();
 
-            await ctx.RespondAsync("Click the following link to invite the bot to your server. https://goo.gl/E7hLK9");
+            var inviteLink = _configuration.GetSection("Bot").GetSection("Links").GetValue<string>("BotInvite");
+            await ctx.RespondAsync($"Click the following link to invite the bot to your server. {inviteLink}");
         }
 
         [Command("time"), Description("Gets the current time according to the set timezone.")]

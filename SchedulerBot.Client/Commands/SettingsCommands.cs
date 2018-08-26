@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Attributes;
 using DSharpPlus.Entities;
+using Microsoft.Extensions.Configuration;
 using SchedulerBot.Client.Attributes;
 using SchedulerBot.Client.Extensions;
 using SchedulerBot.Client.Scheduler;
@@ -20,13 +21,15 @@ namespace SchedulerBot.Client.Commands
         private readonly IEventService _eventService;
         private readonly IPermissionService _permissionService;
         private readonly IEventScheduler _eventScheduler;
+        private readonly IConfigurationRoot _configuration;
 
-        public SettingsCommands(ICalendarService calendarService, IEventService eventService, IPermissionService permissionService, IEventScheduler eventScheduler)
+        public SettingsCommands(ICalendarService calendarService, IEventService eventService, IPermissionService permissionService, IEventScheduler eventScheduler, IConfigurationRoot configuration)
         {
             _calendarService = calendarService;
             _eventService = eventService;
             _permissionService = permissionService;
             _eventScheduler = eventScheduler;
+            _configuration = configuration;
         }
 
         [GroupCommand]
@@ -200,6 +203,7 @@ namespace SchedulerBot.Client.Commands
                 return;
             }
 
+            var timezoneLink = _configuration.GetSection("Bot").GetSection("Links").GetValue<string>("TimezoneList");
             var embed = new DiscordEmbedBuilder
             {
                 Author = new DiscordEmbedBuilder.EmbedAuthor
@@ -208,7 +212,7 @@ namespace SchedulerBot.Client.Commands
                     IconUrl = "https://cdn.discordapp.com/avatars/339019867325726722/e5fca7dbae7156e05c013766fa498fe1.png"
                 },
                 Color = new DiscordColor(211, 255, 219),
-                Description = "Run `settings timezone <new timezone>` to change the timezone. e.g. `settings timezone America/Los_Angeles`\nSee https://goo.gl/NzNMon under the TZ column for a list of valid timezones.",
+                Description = $"Run `settings timezone <new timezone>` to change the timezone. e.g. `settings timezone America/Los_Angeles`\nSee {timezoneLink} under the TZ column for a list of valid timezones.",
                 Title = "Settings: Timezone"
             };
             embed.AddField("Current Value", $"{timezone}", true);
@@ -236,7 +240,8 @@ namespace SchedulerBot.Client.Commands
             }
             catch (InvalidTimeZoneException)
             {
-                await ctx.RespondAsync($"Timezone not found. See https://goo.gl/NzNMon under the TZ column for a list of valid timezones.");
+                var timezoneLink = _configuration.GetSection("Bot").GetSection("Links").GetValue<string>("TimezoneList");
+                await ctx.RespondAsync($"Timezone not found. See {timezoneLink} under the TZ column for a list of valid timezones.");
                 return;
             }
             catch (ExistingEventInNewTimezonePastException)

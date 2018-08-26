@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Attributes;
 using DSharpPlus.Entities;
+using Microsoft.Extensions.Configuration;
 using SchedulerBot.Client.Builders;
 
 namespace SchedulerBot.Client.Commands
@@ -10,6 +11,10 @@ namespace SchedulerBot.Client.Commands
     [Group("help")]
     public class HelpCommands : BaseCommandModule
     {
+        private readonly IConfigurationRoot _configuration;
+
+        public HelpCommands(IConfigurationRoot configuration) => _configuration = configuration;
+
         [GroupCommand]
         public async Task Help(CommandContext ctx)
         {
@@ -50,9 +55,11 @@ namespace SchedulerBot.Client.Commands
         {
             await ctx.TriggerTypingAsync();
 
+            var timezoneLink = _configuration.GetSection("Bot").GetSection("Links").GetValue<string>("TimezoneList");
+
             var usageOptions = new Dictionary<string, string>
             {
-                ["<timezone>"] = "A timezone name from the tz database (case-sensitive). See https://goo.gl/NzNMon under the TZ column for a list of valid timezones"
+                ["<timezone>"] = $"A timezone name from the tz database (case-sensitive). See {timezoneLink} under the TZ column for a list of valid timezones"
             };
 
             var examples = new List<string>
@@ -452,6 +459,10 @@ namespace SchedulerBot.Client.Commands
         [Group("settings")]
         public class SettingsHelpCommands : BaseCommandModule
         {
+            private readonly IConfigurationRoot _configuration;
+
+            public SettingsHelpCommands(IConfigurationRoot configuration) => _configuration = configuration;
+            
             [GroupCommand]
             public async Task Help(CommandContext ctx)
             {
@@ -479,9 +490,11 @@ namespace SchedulerBot.Client.Commands
             {
                 await ctx.TriggerTypingAsync();
 
+                var timezoneLink = _configuration.GetSection("Bot").GetSection("Links").GetValue<string>("TimezoneList");
+
                 var usageOptions = new Dictionary<string, string>
                 {
-                    ["[new timezone]"] = "A timezone name from the tz database (case-sensitive). See https://goo.gl/NzNMon under the TZ column for a list of valid timezones"
+                    ["[new timezone]"] = $"A timezone name from the tz database (case-sensitive). See {timezoneLink} under the TZ column for a list of valid timezones"
                 };
 
                 var examples = new List<string>

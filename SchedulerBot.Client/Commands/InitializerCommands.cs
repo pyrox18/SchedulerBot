@@ -1,6 +1,7 @@
 ﻿using System.Threading.Tasks;
 using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Attributes;
+using Microsoft.Extensions.Configuration;
 using SchedulerBot.Data.Services;
 
 namespace SchedulerBot.Client.Commands
@@ -8,8 +9,13 @@ namespace SchedulerBot.Client.Commands
     public class InitializerCommands : BaseCommandModule
     {
         private readonly ICalendarService _calendarService;
+        private readonly IConfigurationRoot _configuration;
 
-        public InitializerCommands(ICalendarService calendarService) => _calendarService = calendarService;
+        public InitializerCommands(ICalendarService calendarService, IConfigurationRoot configuration)
+        {
+            _calendarService = calendarService;
+            _configuration = configuration;
+        }
 
         [Command("init"), Description("Initialize the bot with a timezone and a default channel.")]
         public async Task Initialize(CommandContext ctx, string timezone)
@@ -23,7 +29,8 @@ namespace SchedulerBot.Client.Commands
             }
             else if (initSuccess == false)
             {
-                await ctx.RespondAsync($"Timezone not found. See https://goo.gl/NzNMon under the TZ column for a list of valid timezones.");
+                var timezoneLink = _configuration.GetSection("Bot").GetSection("Links").GetValue<string>("TimezoneList");
+                await ctx.RespondAsync($"Timezone not found. See {timezoneLink} under the TZ column for a list of valid timezones.");
             }
             else
             {
