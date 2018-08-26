@@ -14,7 +14,7 @@ namespace SchedulerBot.Client.Builders
             {
                 Color = new DiscordColor(211, 255, 219)
             };
-            _embed.WithAuthor("SchedulerBot", icon_url: "https://cdn.discordapp.com/avatars/339019867325726722/e5fca7dbae7156e05c013766fa498fe1.png");
+            _embed.WithAuthor("SchedulerBot", iconUrl: "https://cdn.discordapp.com/avatars/339019867325726722/e5fca7dbae7156e05c013766fa498fe1.png");
             _embed.WithFooter("Syntax: <> = required field, [] = optional field, | = select one. You're not supposed to type these characters in the actual command.");
         }
 
