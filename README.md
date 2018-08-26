@@ -42,12 +42,17 @@ $ git clone https://github.com/pyrox18/SchedulerBot.git
   "Bot": {
     "Token": "YOUR_BOT_TOKEN_HERE",
     "Prefixes": ["+"],
-	"Status": "+help | v{0}"
+	"Status": "+help | v{0}",
+	"Links": {
+      "BotInvite": "INVITE_LINK_HERE",
+      "SupportServer": "SUPPORT_SERVER_LINK_HERE",
+      "TimezoneList": "http://bit.ly/tz-timezones"
+    }
   }
 }
 ```
 
-Replace `YOUR_BOT_TOKEN_HERE` with the app bot user token generated earlier.
+Replace `YOUR_BOT_TOKEN_HERE` with the app bot user token generated earlier. Replace `INVITE_LINK_HERE` and `SUPPORT_SERVER_LINK_HERE` with links to a bot invite and a support server, respectively (or omit them if you don't use them).
 
 5. Restore the solution's dependencies.
 
