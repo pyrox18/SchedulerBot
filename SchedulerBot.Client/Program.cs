@@ -303,9 +303,9 @@ namespace SchedulerBot.Client
         {
             if (!_initialPollDone)
             {
+                _initialPollDone = true;
                 var eventScheduler = ServiceProvider.GetService<IEventScheduler>();
                 await eventScheduler.PollAndScheduleEvents(Client);
-                _initialPollDone = true;
             }
         }
 
