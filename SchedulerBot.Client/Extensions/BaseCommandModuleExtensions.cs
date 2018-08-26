@@ -1,14 +1,11 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
 using DSharpPlus.CommandsNext;
 using DSharpPlus.Entities;
 using SchedulerBot.Client.Attributes;
-using SchedulerBot.Client.Commands;
 using SchedulerBot.Client.Exceptions;
-using SchedulerBot.Data.Models;
 using SchedulerBot.Data.Services;
 
 namespace SchedulerBot.Client.Extensions

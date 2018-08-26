@@ -1,10 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using System.Collections.Generic;
 using System.Threading.Tasks;
 using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Attributes;
 using DSharpPlus.Entities;
+using Microsoft.Extensions.Configuration;
 using SchedulerBot.Client.Builders;
 
 namespace SchedulerBot.Client.Commands
@@ -12,9 +11,15 @@ namespace SchedulerBot.Client.Commands
     [Group("help")]
     public class HelpCommands : BaseCommandModule
     {
+        private readonly IConfigurationRoot _configuration;
+
+        public HelpCommands(IConfigurationRoot configuration) => _configuration = configuration;
+
         [GroupCommand]
         public async Task Help(CommandContext ctx)
         {
+            await ctx.TriggerTypingAsync();
+
             var embed = new DiscordEmbedBuilder
             {
                 Color = new DiscordColor(211, 255, 219),
@@ -48,9 +53,13 @@ namespace SchedulerBot.Client.Commands
         [Command("init")]
         public async Task Init(CommandContext ctx)
         {
+            await ctx.TriggerTypingAsync();
+
+            var timezoneLink = _configuration.GetSection("Bot").GetSection("Links").GetValue<string>("TimezoneList");
+
             var usageOptions = new Dictionary<string, string>
             {
-                ["<timezone>"] = "A timezone name from the tz database (case-sensitive). See https://goo.gl/NzNMon under the TZ column for a list of valid timezones"
+                ["<timezone>"] = $"A timezone name from the tz database (case-sensitive). See {timezoneLink} under the TZ column for a list of valid timezones"
             };
 
             var examples = new List<string>
@@ -72,6 +81,8 @@ namespace SchedulerBot.Client.Commands
         [Command("ping")]
         public async Task Ping(CommandContext ctx)
         {
+            await ctx.TriggerTypingAsync();
+
             var embed = new HelpEmbedBuilder()
                 .WithCommandString("ping")
                 .WithDescription("Pings the bot.")
@@ -84,6 +95,8 @@ namespace SchedulerBot.Client.Commands
         [Command("prefix")]
         public async Task Prefix(CommandContext ctx)
         {
+            await ctx.TriggerTypingAsync();
+
             var embed = new HelpEmbedBuilder()
                 .WithCommandString("prefix")
                 .WithDescription("View the bot's prefix.")
@@ -96,6 +109,8 @@ namespace SchedulerBot.Client.Commands
         [Command("info")]
         public async Task Info(CommandContext ctx)
         {
+            await ctx.TriggerTypingAsync();
+
             var embed = new HelpEmbedBuilder()
                 .WithCommandString("info")
                 .WithDescription("Get information about the bot.")
@@ -108,6 +123,8 @@ namespace SchedulerBot.Client.Commands
         [Command("support")]
         public async Task Support(CommandContext ctx)
         {
+            await ctx.TriggerTypingAsync();
+
             var embed = new HelpEmbedBuilder()
                 .WithCommandString("support")
                 .WithDescription("Get an invite link to the bot's support server.")
@@ -120,6 +137,8 @@ namespace SchedulerBot.Client.Commands
         [Command("time")]
         public async Task Time(CommandContext ctx)
         {
+            await ctx.TriggerTypingAsync();
+
             var embed = new HelpEmbedBuilder()
                 .WithCommandString("time")
                 .WithDescription("View the current time in the set timezone.")
@@ -132,6 +151,8 @@ namespace SchedulerBot.Client.Commands
         [Command("invite")]
         public async Task Invite(CommandContext ctx)
         {
+            await ctx.TriggerTypingAsync();
+
             var embed = new HelpEmbedBuilder()
                 .WithCommandString("invite")
                 .WithDescription("Get an invite link to invite the bot to a server.")
@@ -147,6 +168,8 @@ namespace SchedulerBot.Client.Commands
             [GroupCommand]
             public async Task Help(CommandContext ctx)
             {
+                await ctx.TriggerTypingAsync();
+
                 var usageOptions = new Dictionary<string, string>
                 {
                     ["<event details>"] = "Name and date/time of the event in natural language"
@@ -192,6 +215,8 @@ namespace SchedulerBot.Client.Commands
             [Command("list")]
             public async Task List(CommandContext ctx)
             {
+                await ctx.TriggerTypingAsync();
+
                 var usageOptions = new Dictionary<string, string>
                 {
                     ["[event number]"] = "Number of the event to view"
@@ -216,6 +241,8 @@ namespace SchedulerBot.Client.Commands
             [Command("update")]
             public async Task Update(CommandContext ctx)
             {
+                await ctx.TriggerTypingAsync();
+
                 var usageOptions = new Dictionary<string, string>
                 {
                     ["<event number>"] = "Number of the event to update"
@@ -252,6 +279,8 @@ namespace SchedulerBot.Client.Commands
             [Command("delete")]
             public async Task Delete(CommandContext ctx)
             {
+                await ctx.TriggerTypingAsync();
+
                 var usageOptions = new Dictionary<string, string>
                 {
                     ["<event number>"] = "Number of the event to delete"
@@ -276,6 +305,8 @@ namespace SchedulerBot.Client.Commands
             [Command("rsvp")]
             public async Task Rsvp(CommandContext ctx)
             {
+                await ctx.TriggerTypingAsync();
+
                 var usageOptions = new Dictionary<string, string>
                 {
                     ["<event number>"] = "Number of the event to RSVP to"
@@ -303,6 +334,8 @@ namespace SchedulerBot.Client.Commands
             [GroupCommand]
             public async Task Help(CommandContext ctx)
             {
+                await ctx.TriggerTypingAsync();
+
                 var availableSubcommands = new List<string>
                 {
                     "allow",
@@ -323,6 +356,8 @@ namespace SchedulerBot.Client.Commands
             [Command("deny")]
             public async Task Deny(CommandContext ctx)
             {
+                await ctx.TriggerTypingAsync();
+
                 var usageOptions = new Dictionary<string, string>
                 {
                     ["<permission node>"] = "The permission node to deny usage for",
@@ -350,6 +385,8 @@ namespace SchedulerBot.Client.Commands
             [Command("allow")]
             public async Task Allow(CommandContext ctx)
             {
+                await ctx.TriggerTypingAsync();
+
                 var usageOptions = new Dictionary<string, string>
                 {
                     ["<permission node>"] = "The permission node to allow usage for",
@@ -377,6 +414,8 @@ namespace SchedulerBot.Client.Commands
             [Command("show")]
             public async Task Show(CommandContext ctx)
             {
+                await ctx.TriggerTypingAsync();
+
                 var usageOptions = new Dictionary<string, string>
                 {
                     ["<permission node>"] = "The permission node to show denied permissions for",
@@ -405,6 +444,8 @@ namespace SchedulerBot.Client.Commands
             [Command("nodes")]
             public async Task Nodes(CommandContext ctx)
             {
+                await ctx.TriggerTypingAsync();
+
                 var embed = new HelpEmbedBuilder()
                     .WithCommandString("perms nodes")
                     .WithDescription("List all available permission nodes.")
@@ -418,9 +459,15 @@ namespace SchedulerBot.Client.Commands
         [Group("settings")]
         public class SettingsHelpCommands : BaseCommandModule
         {
+            private readonly IConfigurationRoot _configuration;
+
+            public SettingsHelpCommands(IConfigurationRoot configuration) => _configuration = configuration;
+            
             [GroupCommand]
             public async Task Help(CommandContext ctx)
             {
+                await ctx.TriggerTypingAsync();
+
                 var availableSubcommands = new List<string>
                 {
                     "timezone",
@@ -441,9 +488,13 @@ namespace SchedulerBot.Client.Commands
             [Command("timezone")]
             public async Task Timezone(CommandContext ctx)
             {
+                await ctx.TriggerTypingAsync();
+
+                var timezoneLink = _configuration.GetSection("Bot").GetSection("Links").GetValue<string>("TimezoneList");
+
                 var usageOptions = new Dictionary<string, string>
                 {
-                    ["[new timezone]"] = "A timezone name from the tz database (case-sensitive). See https://goo.gl/NzNMon under the TZ column for a list of valid timezones"
+                    ["[new timezone]"] = $"A timezone name from the tz database (case-sensitive). See {timezoneLink} under the TZ column for a list of valid timezones"
                 };
 
                 var examples = new List<string>
@@ -465,6 +516,8 @@ namespace SchedulerBot.Client.Commands
             [Command("defaultchannel")]
             public async Task DefaultChannel(CommandContext ctx)
             {
+                await ctx.TriggerTypingAsync();
+
                 var usageOptions = new Dictionary<string, string>
                 {
                     ["[new channel]"] = "A channel mention for a new default channel"
@@ -489,6 +542,7 @@ namespace SchedulerBot.Client.Commands
             [Command("prefix")]
             public async Task Prefix(CommandContext ctx)
             {
+                await ctx.TriggerTypingAsync();
                 var usageOptions = new Dictionary<string, string>
                 {
                     ["[new prefix]"] = "A prefix string for the new prefix"

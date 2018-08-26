@@ -13,6 +13,7 @@ using DSharpPlus;
 using DSharpPlus.CommandsNext;
 using DSharpPlus.Entities;
 using DSharpPlus.EventArgs;
+using DSharpPlus.Exceptions;
 using DSharpPlus.Interactivity;
 using NLog.Extensions.Logging;
 using SharpRaven;
@@ -23,7 +24,6 @@ using SchedulerBot.Client.Scheduler;
 using SchedulerBot.Data;
 using SchedulerBot.Data.Models;
 using SchedulerBot.Data.Services;
-using DSharpPlus.Exceptions;
 
 namespace SchedulerBot.Client
 {
@@ -111,17 +111,6 @@ namespace SchedulerBot.Client
             logger.LogInformation("Starting event scheduler");
             await scheduler.Start();
 
-            logger.LogInformation("Starting initial event poll");
-            await PollAndScheduleEvents();
-            logger.LogInformation("Initial event poll completed");
-            logger.LogInformation("Starting poll timer");
-            Timer t = new Timer(60 * 60 * 1000)
-            {
-                AutoReset = true
-            };
-            t.Elapsed += new ElapsedEventHandler(PollerTimerElapsed);
-            t.Start();
-            logger.LogInformation("Poll timer started");
 
             logger.LogInformation("Connecting all shards...");
             await Client.StartAsync();
@@ -162,6 +151,9 @@ namespace SchedulerBot.Client
                 var logLevel = Enum.Parse<Microsoft.Extensions.Logging.LogLevel>(Configuration.GetSection("Logging").GetSection("LogLevel").GetValue<string>("Default"));
                 options.SetMinimumLevel(logLevel);
             });
+
+            // Add configuration as a service
+            services.AddSingleton(Configuration);
 
             // Add Raven client as a service for production environment
             if (Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") == "Production")
@@ -235,6 +227,19 @@ namespace SchedulerBot.Client
             logger.LogInformation("Updating status");
             var version = Assembly.GetEntryAssembly().GetCustomAttribute<AssemblyInformationalVersionAttribute>().InformationalVersion;
             await Client.UpdateStatusAsync(new DiscordActivity(string.Format(Configuration.GetSection("Bot").GetValue<string>("Status"), version)));
+
+            // Start event polling
+            logger.LogInformation("Starting initial event poll");
+            await PollAndScheduleEvents();
+            logger.LogInformation("Initial event poll completed");
+            logger.LogInformation("Starting poll timer");
+            Timer t = new Timer(60 * 60 * 1000)
+            {
+                AutoReset = true
+            };
+            t.Elapsed += new ElapsedEventHandler(PollerTimerElapsed);
+            t.Start();
+            logger.LogInformation("Poll timer started");
         }
 
         private async Task OnCommandError(CommandErrorEventArgs e)
@@ -272,7 +277,20 @@ namespace SchedulerBot.Client
         private async Task<int> ResolvePrefix(DiscordMessage msg)
         {
             var calendarService = ServiceProvider.GetService<ICalendarService>();
-            return await calendarService.ResolveCalendarPrefixAsync(msg.Channel.GuildId, msg.Content);
+            var prefix = await calendarService.GetCalendarPrefixAsync(msg.Channel.GuildId);
+            var defaultPrefix = Configuration.GetSection("Bot").GetSection("Prefixes").Get<string[]>()[0];
+
+            if (string.IsNullOrEmpty(prefix) && msg.Content.StartsWith(defaultPrefix))
+            {
+                return defaultPrefix.Length;
+            }
+
+            if (string.IsNullOrEmpty(prefix) || !msg.Content.StartsWith(prefix))
+            {
+                return -1;
+            }
+
+            return prefix.Length;
         }
 
         private async void PollerTimerElapsed(object sender, ElapsedEventArgs e)

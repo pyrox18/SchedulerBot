@@ -1,11 +1,9 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Serialization;
 
 namespace SchedulerBot.Data
 {

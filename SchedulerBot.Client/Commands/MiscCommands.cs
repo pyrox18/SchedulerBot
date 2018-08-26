@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Attributes;
 using DSharpPlus.Entities;
+using Microsoft.Extensions.Configuration;
 using NodaTime;
 using SchedulerBot.Client.Attributes;
 using SchedulerBot.Client.Extensions;
@@ -19,17 +20,21 @@ namespace SchedulerBot.Client.Commands
     {
         private readonly ICalendarService _calendarService;
         internal readonly IPermissionService _permissionService;
+        private readonly IConfigurationRoot _configuration;
 
-        public MiscCommands(ICalendarService calendarService, IPermissionService permissionService)
+        public MiscCommands(ICalendarService calendarService, IPermissionService permissionService, IConfigurationRoot configuration)
         {
             _calendarService = calendarService;
             _permissionService = permissionService;
+            _configuration = configuration;
         }
 
         [Command("ping"), Description("Pings the bot.")]
         [PermissionNode(PermissionNode.Ping)]
         public async Task Ping(CommandContext ctx)
         {
+            await ctx.TriggerTypingAsync();
+
             if (!await this.CheckPermission(_permissionService, typeof(MiscCommands), nameof(MiscCommands.Ping), ctx.Member))
             {
                 await ctx.RespondAsync("You are not permitted to use this command.");
@@ -44,6 +49,8 @@ namespace SchedulerBot.Client.Commands
         [PermissionNode(PermissionNode.PrefixShow)]
         public async Task Prefix(CommandContext ctx)
         {
+            await ctx.TriggerTypingAsync();
+
             if (!await this.CheckPermission(_permissionService, typeof(MiscCommands), nameof(MiscCommands.Prefix), ctx.Member))
             {
                 await ctx.RespondAsync("You are not permitted to use this command.");
@@ -57,6 +64,8 @@ namespace SchedulerBot.Client.Commands
         [Command("info"), Description("Get some information about the bot.")]
         public async Task Info(CommandContext ctx)
         {
+            await ctx.TriggerTypingAsync();
+
             var version = Assembly.GetEntryAssembly().GetCustomAttribute<AssemblyInformationalVersionAttribute>().InformationalVersion;
             var uptime = DateTime.Now - Process.GetCurrentProcess().StartTime;
             var embed = new DiscordEmbedBuilder
@@ -84,19 +93,27 @@ namespace SchedulerBot.Client.Commands
         [Command("support"), Description("Get an invite link to the SchedulerBot support server.")]
         public async Task Support(CommandContext ctx)
         {
-            await ctx.RespondAsync("Click the following link to join the bot's support server. https://discord.gg/CRxRn5X");
+            await ctx.TriggerTypingAsync();
+
+            var supportLink = _configuration.GetSection("Bot").GetSection("Links").GetValue<string>("SupportServer");
+            await ctx.RespondAsync($"Click the following link to join the bot's support server. {supportLink}");
         }
 
         [Command("invite"), Description("Get a link to invite the bot to your server.")]
         public async Task Invite(CommandContext ctx)
         {
-            await ctx.RespondAsync("Click the following link to invite the bot to your server. https://goo.gl/E7hLK9");
+            await ctx.TriggerTypingAsync();
+
+            var inviteLink = _configuration.GetSection("Bot").GetSection("Links").GetValue<string>("BotInvite");
+            await ctx.RespondAsync($"Click the following link to invite the bot to your server. {inviteLink}");
         }
 
         [Command("time"), Description("Gets the current time according to the set timezone.")]
         [PermissionNode(PermissionNode.Time)]
         public async Task Time(CommandContext ctx)
         {
+            await ctx.TriggerTypingAsync();
+
             if (!await this.CheckPermission(_permissionService, typeof(MiscCommands), nameof(MiscCommands.Time), ctx.Member))
             {
                 await ctx.RespondAsync("You are not permitted to use this command.");
