@@ -226,7 +226,7 @@ namespace SchedulerBot.Client
             var logger = ServiceProvider.GetService<ILogger<Program>>();
             logger.LogInformation("Updating status");
             var version = Assembly.GetEntryAssembly().GetCustomAttribute<AssemblyInformationalVersionAttribute>().InformationalVersion;
-            await Client.UpdateStatusAsync(new DiscordActivity(string.Format(Configuration.GetSection("Bot").GetValue<string>("Status"), version)));
+            await e.Client.UpdateStatusAsync(new DiscordActivity(string.Format(Configuration.GetSection("Bot").GetValue<string>("Status"), version)));
 
             // Start event polling
             logger.LogInformation("Starting initial event poll");
