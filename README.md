@@ -4,7 +4,7 @@ A Discord bot for scheduling events.
 
 This bot uses the [DSharpPlus](https://dsharpplus.emzi0767.com/) library.
 
-This codebase represents SchedulerBot version 2 and above, which was rewritten to work on top of the .NET Core platform. The previous (1.x) SchedulerBot codebase, which was written for Node.js, can be found at [this repository](https://github.com/pyrox18/schedulerbot-old). The previous codebase is no longer maintained, and is only present for display purposes.
+This codebase represents SchedulerBot version 2 and above, which was rewritten to work on top of the .NET Core platform. The previous (1.x) SchedulerBot codebase, which was written for Node.js, can be found at [this repository](https://github.com/pyrox18/schedulerbot-1.0). The previous codebase is no longer maintained, and is only present for display purposes.
 
 ## Prerequisites
 
@@ -42,8 +42,8 @@ $ git clone https://github.com/pyrox18/SchedulerBot.git
   "Bot": {
     "Token": "YOUR_BOT_TOKEN_HERE",
     "Prefixes": ["+"],
-	"Status": "+help | v{0}",
-	"Links": {
+    "Status": "+help | v{0}",
+    "Links": {
       "BotInvite": "INVITE_LINK_HERE",
       "SupportServer": "SUPPORT_SERVER_LINK_HERE",
       "TimezoneList": "http://bit.ly/tz-timezones"
@@ -104,7 +104,12 @@ Production application settings should be placed in a `appsettings.Production.js
   "Bot": {
     "Token": "YOUR_BOT_TOKEN_HERE",
     "Prefixes": [ "+" ],
-    "Status": "+help | v{0}"
+    "Status": "+help | v{0}",
+	"Links": {
+      "BotInvite": "INVITE_LINK_HERE",
+      "SupportServer": "SUPPORT_SERVER_LINK_HERE",
+      "TimezoneList": "http://bit.ly/tz-timezones"
+	}
   },
   "Raven": {
   	"DSN": "https://<key>@sentry.io/<project>"
