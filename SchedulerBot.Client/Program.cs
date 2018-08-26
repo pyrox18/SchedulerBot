@@ -32,6 +32,7 @@ namespace SchedulerBot.Client
         private IConfigurationRoot Configuration { get; set; }
         private DiscordShardedClient Client { get; set; }
         private IServiceProvider ServiceProvider { get; set; }
+        private bool _initialPollDone = false;
 
         static void Main(string[] args = null)
         {
@@ -300,8 +301,12 @@ namespace SchedulerBot.Client
 
         private async Task PollAndScheduleEvents()
         {
-            var eventScheduler = ServiceProvider.GetService<IEventScheduler>();
-            await eventScheduler.PollAndScheduleEvents(Client);
+            if (!_initialPollDone)
+            {
+                var eventScheduler = ServiceProvider.GetService<IEventScheduler>();
+                await eventScheduler.PollAndScheduleEvents(Client);
+                _initialPollDone = true;
+            }
         }
 
         private void OnLogMessageReceived(object sender, DebugLogMessageEventArgs e)
