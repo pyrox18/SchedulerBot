@@ -152,6 +152,9 @@ namespace SchedulerBot.Client
                 options.SetMinimumLevel(logLevel);
             });
 
+            // Add configuration as a service
+            services.AddSingleton(Configuration);
+
             // Add Raven client as a service for production environment
             if (Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") == "Production")
             {
