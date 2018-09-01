@@ -28,6 +28,7 @@ using SchedulerBot.Data.Services;
 using RedLockNet.SERedis.Configuration;
 using System.Net;
 using RedLockNet.SERedis;
+using DSharpPlus.CommandsNext.Exceptions;
 
 namespace SchedulerBot.Client
 {
@@ -258,7 +259,7 @@ namespace SchedulerBot.Client
         private async Task OnCommandError(CommandErrorEventArgs e)
         {
             var exceptionType = e.Exception.GetType();
-            if (exceptionType != typeof(ArgumentException) && exceptionType != typeof(UnauthorizedException))
+            if (exceptionType != typeof(CommandNotFoundException) && exceptionType != typeof(ArgumentException) && exceptionType != typeof(UnauthorizedException))
             {
                 var logger = ServiceProvider.GetService<ILogger<Program>>();
                 var errorId = Guid.NewGuid();
