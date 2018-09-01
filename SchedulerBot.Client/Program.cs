@@ -32,6 +32,7 @@ namespace SchedulerBot.Client
         private IConfigurationRoot Configuration { get; set; }
         private DiscordShardedClient Client { get; set; }
         private IServiceProvider ServiceProvider { get; set; }
+        private bool _initialPollDone = false;
 
         static void Main(string[] args = null)
         {
@@ -226,7 +227,7 @@ namespace SchedulerBot.Client
             var logger = ServiceProvider.GetService<ILogger<Program>>();
             logger.LogInformation("Updating status");
             var version = Assembly.GetEntryAssembly().GetCustomAttribute<AssemblyInformationalVersionAttribute>().InformationalVersion;
-            await Client.UpdateStatusAsync(new DiscordActivity(string.Format(Configuration.GetSection("Bot").GetValue<string>("Status"), version)));
+            await e.Client.UpdateStatusAsync(new DiscordActivity(string.Format(Configuration.GetSection("Bot").GetValue<string>("Status"), version)));
 
             // Start event polling
             logger.LogInformation("Starting initial event poll");
@@ -300,8 +301,12 @@ namespace SchedulerBot.Client
 
         private async Task PollAndScheduleEvents()
         {
-            var eventScheduler = ServiceProvider.GetService<IEventScheduler>();
-            await eventScheduler.PollAndScheduleEvents(Client);
+            if (!_initialPollDone)
+            {
+                _initialPollDone = true;
+                var eventScheduler = ServiceProvider.GetService<IEventScheduler>();
+                await eventScheduler.PollAndScheduleEvents(Client);
+            }
         }
 
         private void OnLogMessageReceived(object sender, DebugLogMessageEventArgs e)
