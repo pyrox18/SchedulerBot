@@ -1,11 +1,14 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Attributes;
 using DSharpPlus.Entities;
+using RedLockNet;
 using SchedulerBot.Client.Attributes;
+using SchedulerBot.Client.Exceptions;
 using SchedulerBot.Client.Extensions;
 using SchedulerBot.Data.Exceptions;
 using SchedulerBot.Data.Models;
@@ -18,8 +21,13 @@ namespace SchedulerBot.Client.Commands
     public class PermissionsCommands : BaseCommandModule
     {
         private readonly IPermissionService _permissionService;
+        private readonly IDistributedLockFactory _redlockFactory;
 
-        public PermissionsCommands(IPermissionService permissionService) => _permissionService = permissionService;
+        public PermissionsCommands(IPermissionService permissionService, IDistributedLockFactory redlockFactory)
+        {
+            _permissionService = permissionService;
+            _redlockFactory = redlockFactory;
+        }
 
         [Command("allow"), Description("Allows a certain role to use a certain command.")]
         [PermissionNode(PermissionNode.PermsModify)]
@@ -34,15 +42,26 @@ namespace SchedulerBot.Client.Commands
             }
 
             Permission permission;
-            try
+            using (var redlock = await _redlockFactory.CreateLockAsync(ctx.Guild.Id.ToString(), TimeSpan.FromSeconds(15), TimeSpan.FromSeconds(10), TimeSpan.FromSeconds(0.5)))
             {
-                permission = await _permissionService.AllowNodeForRoleAsync(ctx.Guild.Id, role.Id, node);
+                if (redlock.IsAcquired)
+                {
+                    try
+                    {
+                        permission = await _permissionService.AllowNodeForRoleAsync(ctx.Guild.Id, role.Id, node);
+                    }
+                    catch (PermissionNodeNotFoundException)
+                    {
+                        await ctx.RespondAsync("Permission node not found.");
+                        return;
+                    }
+                }
+                else
+                {
+                    throw new RedisLockAcquireException($"Cannot acquire lock for guild {ctx.Guild.Id}");
+                }
             }
-            catch (PermissionNodeNotFoundException)
-            {
-                await ctx.RespondAsync("Permission node not found.");
-                return;
-            }
+
             await ctx.RespondAsync($"Allowed permission {permission.Node} for role {role.Name}.");
         }
 
@@ -59,15 +78,26 @@ namespace SchedulerBot.Client.Commands
             }
 
             Permission permission;
-            try
+            using (var redlock = await _redlockFactory.CreateLockAsync(ctx.Guild.Id.ToString(), TimeSpan.FromSeconds(15), TimeSpan.FromSeconds(10), TimeSpan.FromSeconds(0.5)))
             {
-                permission = await _permissionService.AllowNodeForUserAsync(ctx.Guild.Id, user.Id, node);
+                if (redlock.IsAcquired)
+                {
+                    try
+                    {
+                        permission = await _permissionService.AllowNodeForUserAsync(ctx.Guild.Id, user.Id, node);
+                    }
+                    catch (PermissionNodeNotFoundException)
+                    {
+                        await ctx.RespondAsync("Permission node not found.");
+                        return;
+                    }
+                }
+                else
+                {
+                    throw new RedisLockAcquireException($"Cannot acquire lock for guild {ctx.Guild.Id}");
+                }
             }
-            catch (PermissionNodeNotFoundException)
-            {
-                await ctx.RespondAsync("Permission node not found.");
-                return;
-            }
+
             await ctx.RespondAsync($"Allowed permission {permission.Node} for user {user.GetUsernameAndDiscriminator()}.");
         }
 
@@ -84,15 +114,26 @@ namespace SchedulerBot.Client.Commands
             }
 
             Permission permission;
-            try
+            using (var redlock = await _redlockFactory.CreateLockAsync(ctx.Guild.Id.ToString(), TimeSpan.FromSeconds(15), TimeSpan.FromSeconds(10), TimeSpan.FromSeconds(0.5)))
             {
-                permission = await _permissionService.DenyNodeForRoleAsync(ctx.Guild.Id, role.Id, node);
+                if (redlock.IsAcquired)
+                {
+                    try
+                    {
+                        permission = await _permissionService.DenyNodeForRoleAsync(ctx.Guild.Id, role.Id, node);
+                    }
+                    catch (PermissionNodeNotFoundException)
+                    {
+                        await ctx.RespondAsync("Permission node not found.");
+                        return;
+                    }
+                }
+                else
+                {
+                    throw new RedisLockAcquireException($"Cannot acquire lock for guild {ctx.Guild.Id}");
+                }
             }
-            catch (PermissionNodeNotFoundException)
-            {
-                await ctx.RespondAsync("Permission node not found.");
-                return;
-            }
+
             await ctx.RespondAsync($"Denied permission {permission.Node} for role {role.Name}.");
         }
 
@@ -109,15 +150,26 @@ namespace SchedulerBot.Client.Commands
             }
 
             Permission permission;
-            try
+            using (var redlock = await _redlockFactory.CreateLockAsync(ctx.Guild.Id.ToString(), TimeSpan.FromSeconds(15), TimeSpan.FromSeconds(10), TimeSpan.FromSeconds(0.5)))
             {
-                permission = await _permissionService.DenyNodeForUserAsync(ctx.Guild.Id, user.Id, node);
+                if (redlock.IsAcquired)
+                {
+                    try
+                    {
+                        permission = await _permissionService.DenyNodeForUserAsync(ctx.Guild.Id, user.Id, node);
+                    }
+                    catch (PermissionNodeNotFoundException)
+                    {
+                        await ctx.RespondAsync("Permission node not found.");
+                        return;
+                    }
+                }
+                else
+                {
+                    throw new RedisLockAcquireException($"Cannot acquire lock for guild {ctx.Guild.Id}");
+                }
             }
-            catch (PermissionNodeNotFoundException)
-            {
-                await ctx.RespondAsync("Permission node not found.");
-                return;
-            }
+
             await ctx.RespondAsync($"Denied permission {permission.Node} for user {user.GetUsernameAndDiscriminator()}.");
         }
 
