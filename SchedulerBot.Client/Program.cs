@@ -168,6 +168,14 @@ namespace SchedulerBot.Client
                 services.AddSingleton<IRavenClient, RavenClient>();
             }
 
+            // Redis lock factory configuration
+            var endpoints = new List<RedLockEndPoint>
+            {
+                new DnsEndPoint(Configuration.GetConnectionString("Redis"), 6379)
+            };
+            var redlockFactory = RedLockFactory.Create(endpoints);
+            services.AddSingleton<IDistributedLockFactory>(redlockFactory);
+
             services.AddEntityFrameworkNpgsql()
                 .AddDbContext<SchedulerBotContext>(options =>
                 {
@@ -193,13 +201,6 @@ namespace SchedulerBot.Client
             });
             NLog.LogManager.LoadConfiguration("nlog.config");
 
-            // Redis lock factory configuration
-            var endpoints = new List<RedLockEndPoint>
-            {
-                new DnsEndPoint(Configuration.GetConnectionString("Redis"), 6379)
-            };
-            var redlockFactory = RedLockFactory.Create(endpoints);
-            services.AddSingleton<IDistributedLockFactory>(redlockFactory);
         }
 
         private async Task OnGuildCreate(GuildCreateEventArgs e)
