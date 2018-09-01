@@ -10,6 +10,7 @@ This codebase represents SchedulerBot version 2 and above, which was rewritten t
 
 - [Microsoft .NET Core 2.1](https://www.microsoft.com/net/download)
 - [PostgreSQL 10+](https://www.postgresql.org/download/)
+- [Redis 4.0.9+](https://redis.io/download)
 
 ## Migrating from v1.0.x to v2.0
 
@@ -37,7 +38,8 @@ $ git clone https://github.com/pyrox18/SchedulerBot.git
     }
   },
   "ConnectionStrings": {
-    "SchedulerBotContext": "Server=localhost;Database=schedulerbot;"
+    "SchedulerBotContext": "Server=localhost;Database=schedulerbot",
+	"Redis": "localhost"
   },
   "Bot": {
     "Token": "YOUR_BOT_TOKEN_HERE",
@@ -99,7 +101,8 @@ Production application settings should be placed in a `appsettings.Production.js
     }
   },
   "ConnectionStrings": {
-    "SchedulerBotContext": "Server=localhost;Database=schedulerbot"
+    "SchedulerBotContext": "Server=localhost;Database=schedulerbot",
+	"Redis": "localhost"
   },
   "Bot": {
     "Token": "YOUR_BOT_TOKEN_HERE",
