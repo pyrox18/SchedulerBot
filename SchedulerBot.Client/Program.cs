@@ -16,6 +16,7 @@ using DSharpPlus.EventArgs;
 using DSharpPlus.Exceptions;
 using DSharpPlus.Interactivity;
 using NLog.Extensions.Logging;
+using RedLockNet;
 using SharpRaven;
 using SharpRaven.Data;
 using SchedulerBot.Client.Commands;
@@ -24,6 +25,9 @@ using SchedulerBot.Client.Scheduler;
 using SchedulerBot.Data;
 using SchedulerBot.Data.Models;
 using SchedulerBot.Data.Services;
+using RedLockNet.SERedis.Configuration;
+using System.Net;
+using RedLockNet.SERedis;
 
 namespace SchedulerBot.Client
 {
@@ -188,6 +192,14 @@ namespace SchedulerBot.Client
                 CaptureMessageTemplates = true
             });
             NLog.LogManager.LoadConfiguration("nlog.config");
+
+            // Redis lock factory configuration
+            var endpoints = new List<RedLockEndPoint>
+            {
+                new DnsEndPoint(Configuration.GetConnectionString("Redis"), 6379)
+            };
+            var redlockFactory = RedLockFactory.Create(endpoints);
+            services.AddSingleton<IDistributedLockFactory>(redlockFactory);
         }
 
         private async Task OnGuildCreate(GuildCreateEventArgs e)
