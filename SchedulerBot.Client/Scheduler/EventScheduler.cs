@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using DSharpPlus;
 using Quartz;
 using Quartz.Impl;
+using RedLockNet;
 using SchedulerBot.Data.Models;
 using SchedulerBot.Data.Services;
 
@@ -12,11 +13,13 @@ namespace SchedulerBot.Client.Scheduler
     public class EventScheduler : IEventScheduler
     {
         private readonly IEventService _eventService;
+        private readonly IDistributedLockFactory _redlockFactory;
         public IScheduler Scheduler { get; set; }
 
-        public EventScheduler(IEventService eventService)
+        public EventScheduler(IEventService eventService, IDistributedLockFactory redlockFactory)
         {
             _eventService = eventService;
+            _redlockFactory = redlockFactory;
             InitialiseScheduler().GetAwaiter().GetResult();
         }
 
@@ -119,7 +122,8 @@ namespace SchedulerBot.Client.Scheduler
                         ["client"] = client,
                         ["channelId"] = channelId,
                         ["eventService"] = _eventService,
-                        ["eventScheduler"] = this
+                        ["eventScheduler"] = this,
+                        ["redlockFactory"] = _redlockFactory
                     })
                     .Build();
 
@@ -135,8 +139,11 @@ namespace SchedulerBot.Client.Scheduler
             {
                 var deleteJobDataMap = new JobDataMap
                 {
+                    ["client"] = client,
                     ["eventId"] = evt.Id,
-                    ["eventService"] = _eventService
+                    ["channelId"] = channelId,
+                    ["eventService"] = _eventService,
+                    ["redlockFactory"] = _redlockFactory
                 };
 
                 IJobDetail deleteJob = JobBuilder.Create<EventDeleteJob>()
