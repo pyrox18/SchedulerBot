@@ -194,12 +194,14 @@ namespace SchedulerBot.Data.Services
                 var calendar = await _db.Calendars.FirstOrDefaultAsync(c => c.Id == calendarId);
                 if (calendar == null)
                 {
-                    calendar = await CreateCalendarAsync(new Calendar
+                    calendar = new Calendar
                     {
                         Id = calendarId,
                         Prefix = _defaultPrefix,
                         Events = new List<Event>()
-                    });
+                    };
+                    await _db.Calendars.AddAsync(calendar);
+                    await _db.SaveChangesAsync();
                 }
 
                 if (!string.IsNullOrEmpty(calendar.Timezone))
