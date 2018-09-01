@@ -149,7 +149,8 @@ namespace SchedulerBot.Client
             var services = new ServiceCollection();
             var connectionString = Configuration.GetConnectionString("SchedulerBotContext");
 
-            services.AddSingleton<ILoggerFactory, LoggerFactory>();
+            var loggerFactory = new LoggerFactory();
+            services.AddSingleton<ILoggerFactory>(loggerFactory);
             services.AddSingleton(typeof(ILogger<>), typeof(Logger<>));
             services.AddLogging(options =>
             {
@@ -173,7 +174,7 @@ namespace SchedulerBot.Client
             {
                 new DnsEndPoint(Configuration.GetConnectionString("Redis"), 6379)
             };
-            var redlockFactory = RedLockFactory.Create(endpoints);
+            var redlockFactory = RedLockFactory.Create(endpoints, loggerFactory);
             services.AddSingleton<IDistributedLockFactory>(redlockFactory);
 
             services.AddEntityFrameworkNpgsql()
@@ -190,8 +191,6 @@ namespace SchedulerBot.Client
             services.AddSingleton<IEventScheduler, EventScheduler>();
 
             ServiceProvider = services.BuildServiceProvider();
-
-            var loggerFactory = ServiceProvider.GetRequiredService<ILoggerFactory>();
 
             // NLog configuration
             loggerFactory.AddNLog(new NLogProviderOptions
