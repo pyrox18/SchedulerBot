@@ -25,13 +25,9 @@ namespace SchedulerBot.Data.Services
                 throw new CalendarNotFoundException();
             }
 
-            using (var transaction = await _db.Database.BeginTransactionAsync())
-            {
-                evt.Id = Guid.NewGuid();
-                calendar.Events.Add(evt);
-                await _db.SaveChangesAsync();
-                transaction.Commit();
-            }
+            evt.Id = Guid.NewGuid();
+            calendar.Events.Add(evt);
+            await _db.SaveChangesAsync();
             return evt;
         }
 
@@ -84,25 +80,20 @@ namespace SchedulerBot.Data.Services
                 throw new CalendarNotFoundException();
             }
 
-            Event deletedEvent;
-            using (var transaction = await _db.Database.BeginTransactionAsync())
-            {
-                var events = await _db.Calendars
-                    .Where(c => c.Id == calendarId)
-                    .Select(c => c.Events)
-                    .FirstOrDefaultAsync();
-                events = events.OrderBy(e => e.StartTimestamp).ToList();
+            var events = await _db.Calendars
+                .Where(c => c.Id == calendarId)
+                .Select(c => c.Events)
+                .FirstOrDefaultAsync();
+            events = events.OrderBy(e => e.StartTimestamp).ToList();
 
-                deletedEvent = await _db.Events
-                    .Include(e => e.Mentions)
-                    .Include(e => e.RSVPs)
-                    .FirstOrDefaultAsync(e => e.Id == events[index].Id);
-                _db.EventMentions.RemoveRange(deletedEvent.Mentions);
-                _db.EventRSVPs.RemoveRange(deletedEvent.RSVPs);
-                _db.Events.Remove(deletedEvent);
-                await _db.SaveChangesAsync();
-                transaction.Commit();
-            }
+            var deletedEvent = await _db.Events
+                .Include(e => e.Mentions)
+                .Include(e => e.RSVPs)
+                .FirstOrDefaultAsync(e => e.Id == events[index].Id);
+            _db.EventMentions.RemoveRange(deletedEvent.Mentions);
+            _db.EventRSVPs.RemoveRange(deletedEvent.RSVPs);
+            _db.Events.Remove(deletedEvent);
+            await _db.SaveChangesAsync();
             return deletedEvent;
         }
 
@@ -112,15 +103,10 @@ namespace SchedulerBot.Data.Services
                 .Include(e => e.Mentions)
                 .Include(e => e.RSVPs)
                 .FirstOrDefaultAsync(e => e.Id == eventId);
-
-            using (var transaction = await _db.Database.BeginTransactionAsync())
-            {
-                _db.EventMentions.RemoveRange(evt.Mentions);
-                _db.EventRSVPs.RemoveRange(evt.RSVPs);
-                _db.Events.Remove(evt);
-                await _db.SaveChangesAsync();
-                transaction.Commit();
-            }
+            _db.EventMentions.RemoveRange(evt.Mentions);
+            _db.EventRSVPs.RemoveRange(evt.RSVPs);
+            _db.Events.Remove(evt);
+            await _db.SaveChangesAsync();
             return evt;
         }
 
@@ -132,27 +118,22 @@ namespace SchedulerBot.Data.Services
                 throw new CalendarNotFoundException();
             }
 
-            List<Event> events;
-            using (var transaction = await _db.Database.BeginTransactionAsync())
-            {
-                events = await _db.Events
-                    .Where(e => e.Calendar.Id == calendarId)
-                    .ToListAsync();
+            var events = await _db.Events
+                .Where(e => e.Calendar.Id == calendarId)
+                .ToListAsync();
 
-                var mentions = await _db.EventMentions
-                    .Where(m => m.Event.Calendar.Id == calendarId)
-                    .ToListAsync();
+            var mentions = await _db.EventMentions
+                .Where(m => m.Event.Calendar.Id == calendarId)
+                .ToListAsync();
 
-                var rsvps = await _db.EventRSVPs
-                    .Where(r => r.Event.Calendar.Id == calendarId)
-                    .ToListAsync();
+            var rsvps = await _db.EventRSVPs
+                .Where(r => r.Event.Calendar.Id == calendarId)
+                .ToListAsync();
 
-                _db.Events.RemoveRange(events);
-                _db.EventMentions.RemoveRange(mentions);
-                _db.EventRSVPs.RemoveRange(rsvps);
-                await _db.SaveChangesAsync();
-                transaction.Commit();
-            }
+            _db.Events.RemoveRange(events);
+            _db.EventMentions.RemoveRange(mentions);
+            _db.EventRSVPs.RemoveRange(rsvps);
+            await _db.SaveChangesAsync();
             return events;
         }
 
@@ -186,59 +167,49 @@ namespace SchedulerBot.Data.Services
 
         public async Task<Event> UpdateEventAsync(Event evt)
         {
-            Event eventInDb;
-            using (var transaction = await _db.Database.BeginTransactionAsync())
-            {
-                var mentionsToDelete = await _db.EventMentions
-                    .Where(m => m.Event.Id == evt.Id)
-                    .ToListAsync();
-                _db.EventMentions.RemoveRange(mentionsToDelete);
-                await _db.SaveChangesAsync();
+            var mentionsToDelete = await _db.EventMentions
+                .Where(m => m.Event.Id == evt.Id)
+                .ToListAsync();
+            _db.EventMentions.RemoveRange(mentionsToDelete);
+            await _db.SaveChangesAsync();
 
-                eventInDb = await _db.Events
-                    .Include(e => e.Mentions)
-                    .FirstOrDefaultAsync(e => e.Id == evt.Id);
-                eventInDb.Name = evt.Name;
-                eventInDb.StartTimestamp = evt.StartTimestamp;
-                eventInDb.EndTimestamp = evt.EndTimestamp;
-                eventInDb.Description = evt.Description;
-                eventInDb.Repeat = evt.Repeat;
-                eventInDb.Mentions = evt.Mentions;
+            var eventInDb = await _db.Events
+                .Include(e => e.Mentions)
+                .FirstOrDefaultAsync(e => e.Id == evt.Id);
+            eventInDb.Name = evt.Name;
+            eventInDb.StartTimestamp = evt.StartTimestamp;
+            eventInDb.EndTimestamp = evt.EndTimestamp;
+            eventInDb.Description = evt.Description;
+            eventInDb.Repeat = evt.Repeat;
+            eventInDb.Mentions = evt.Mentions;
 
-                await _db.SaveChangesAsync();
-                transaction.Commit();
-            }
+            await _db.SaveChangesAsync();
             return eventInDb;
         }
 
         public async Task<Event> ApplyRepeatAsync(Guid eventId)
         {
-            Event evt;
-            using (var transaction = await _db.Database.BeginTransactionAsync())
+            var evt = await _db.Events.FirstOrDefaultAsync(e => e.Id == eventId);
+            switch (evt.Repeat)
             {
-                evt = await _db.Events.FirstOrDefaultAsync(e => e.Id == eventId);
-                switch (evt.Repeat)
-                {
-                    case RepeatType.Daily:
-                        evt.StartTimestamp = evt.StartTimestamp.AddDays(1);
-                        evt.EndTimestamp = evt.EndTimestamp.AddDays(1);
-                        break;
-                    case RepeatType.Weekly:
-                        evt.StartTimestamp = evt.StartTimestamp.AddDays(7);
-                        evt.EndTimestamp = evt.EndTimestamp.AddDays(7);
-                        break;
-                    case RepeatType.Monthly:
-                        evt.StartTimestamp = evt.StartTimestamp.AddMonths(1);
-                        evt.EndTimestamp = evt.EndTimestamp.AddMonths(1);
-                        break;
-                    case RepeatType.None:
-                    default:
-                        break;
-                }
-
-                await _db.SaveChangesAsync();
-                transaction.Commit();
+                case RepeatType.Daily:
+                    evt.StartTimestamp = evt.StartTimestamp.AddDays(1);
+                    evt.EndTimestamp = evt.EndTimestamp.AddDays(1);
+                    break;
+                case RepeatType.Weekly:
+                    evt.StartTimestamp = evt.StartTimestamp.AddDays(7);
+                    evt.EndTimestamp = evt.EndTimestamp.AddDays(7);
+                    break;
+                case RepeatType.Monthly:
+                    evt.StartTimestamp = evt.StartTimestamp.AddMonths(1);
+                    evt.EndTimestamp = evt.EndTimestamp.AddMonths(1);
+                    break;
+                case RepeatType.None:
+                default:
+                    break;
             }
+
+            await _db.SaveChangesAsync();
             return evt;
         }
 
@@ -272,25 +243,21 @@ namespace SchedulerBot.Data.Services
                 throw new ActiveEventException();
             }
 
-            using (var transaction = await _db.Database.BeginTransactionAsync())
+            var rsvp = evt.RSVPs.FirstOrDefault(r => r.UserId == userId);
+            if (rsvp == null)
             {
-                var rsvp = evt.RSVPs.FirstOrDefault(r => r.UserId == userId);
-                if (rsvp == null)
+                evt.RSVPs.Add(new EventRSVP
                 {
-                    evt.RSVPs.Add(new EventRSVP
-                    {
-                        UserId = userId
-                    });
-                }
-                else
-                {
-                    evt.RSVPs.Remove(rsvp);
-                    _db.EventRSVPs.Remove(rsvp);
-                }
-
-                await _db.SaveChangesAsync();
-                transaction.Commit();
+                    UserId = userId
+                });
             }
+            else
+            {
+                evt.RSVPs.Remove(rsvp);
+                _db.EventRSVPs.Remove(rsvp);
+            }
+
+            await _db.SaveChangesAsync();
             return evt;
         }
     }

@@ -47,12 +47,8 @@ namespace SchedulerBot.Data.Services
 
         public async Task<Calendar> CreateCalendarAsync(Calendar calendar)
         {
-            using (var transaction = await _db.Database.BeginTransactionAsync())
-            {
-                await _db.Calendars.AddAsync(calendar);
-                await _db.SaveChangesAsync();
-                transaction.Commit();
-            }
+            await _db.Calendars.AddAsync(calendar);
+            await _db.SaveChangesAsync();
 
             return calendar;
         }
@@ -62,14 +58,9 @@ namespace SchedulerBot.Data.Services
             var permissionsToRemove = await _db.Permissions.Where(p => p.Calendar.Id == calendarId).ToListAsync();
             var calendarToRemove = await _db.Calendars.FirstOrDefaultAsync(c => c.Id == calendarId);
 
-            using (var transaction = await _db.Database.BeginTransactionAsync())
-            {
-                _db.Permissions.RemoveRange(permissionsToRemove);
-                _db.Calendars.Remove(calendarToRemove);
-                await _db.SaveChangesAsync();
-                transaction.Commit();
-            }
-
+            _db.Permissions.RemoveRange(permissionsToRemove);
+            _db.Calendars.Remove(calendarToRemove);
+            await _db.SaveChangesAsync();
             return true;
         }
 
@@ -91,12 +82,8 @@ namespace SchedulerBot.Data.Services
                 throw new CalendarNotFoundException();
             }
 
-            using (var transaction = await _db.Database.BeginTransactionAsync())
-            {
-                calendar.Prefix = newPrefix;
-                await _db.SaveChangesAsync();
-                transaction.Commit();
-            }
+            calendar.Prefix = newPrefix;
+            await _db.SaveChangesAsync();
             return calendar.Prefix;
         }
 
@@ -118,12 +105,8 @@ namespace SchedulerBot.Data.Services
                 throw new CalendarNotFoundException();
             }
 
-            using (var transaction = await _db.Database.BeginTransactionAsync())
-            {
-                calendar.DefaultChannel = newDefaultChannel;
-                await _db.SaveChangesAsync();
-                transaction.Commit();
-            }
+            calendar.DefaultChannel = newDefaultChannel;
+            await _db.SaveChangesAsync();
             return calendar.DefaultChannel;
         }
 
@@ -153,73 +136,62 @@ namespace SchedulerBot.Data.Services
                 throw new CalendarNotFoundException();
             }
 
-            using (var transaction = await _db.Database.BeginTransactionAsync())
+            var oldTz = DateTimeZoneProviders.Tzdb[calendar.Timezone];
+            var earliestEvent = calendar.Events.OrderBy(e => e.StartTimestamp).FirstOrDefault();
+            if (earliestEvent != null)
             {
-                var oldTz = DateTimeZoneProviders.Tzdb[calendar.Timezone];
-                var earliestEvent = calendar.Events.OrderBy(e => e.StartTimestamp).FirstOrDefault();
-                if (earliestEvent != null)
+                Instant instant = Instant.FromDateTimeOffset(earliestEvent.StartTimestamp);
+                LocalDateTime dt = new ZonedDateTime(instant, oldTz).LocalDateTime;
+                ZonedDateTime zdt = tz.AtStrictly(dt);
+                if (zdt.ToInstant().ToDateTimeOffset() < SystemClock.Instance.GetCurrentInstant().ToDateTimeOffset())
                 {
-                    Instant instant = Instant.FromDateTimeOffset(earliestEvent.StartTimestamp);
-                    LocalDateTime dt = new ZonedDateTime(instant, oldTz).LocalDateTime;
-                    ZonedDateTime zdt = tz.AtStrictly(dt);
-                    if (zdt.ToInstant().ToDateTimeOffset() < SystemClock.Instance.GetCurrentInstant().ToDateTimeOffset())
-                    {
-                        throw new ExistingEventInNewTimezonePastException();
-                    }
+                    throw new ExistingEventInNewTimezonePastException();
                 }
-
-                calendar.Timezone = newTimezone;
-                foreach (var evt in calendar.Events)
-                {
-                    Instant startInstant = Instant.FromDateTimeOffset(evt.StartTimestamp);
-                    Instant endInstant = Instant.FromDateTimeOffset(evt.EndTimestamp);
-                    LocalDateTime startDt = new ZonedDateTime(startInstant, oldTz).LocalDateTime;
-                    LocalDateTime endDt = new ZonedDateTime(endInstant, oldTz).LocalDateTime;
-                    ZonedDateTime startZdt = tz.AtStrictly(startDt);
-                    ZonedDateTime endZdt = tz.AtStrictly(endDt);
-                    evt.StartTimestamp = startZdt.ToDateTimeOffset();
-                    evt.EndTimestamp = endZdt.ToDateTimeOffset();
-                }
-                await _db.SaveChangesAsync();
-                transaction.Commit();
             }
 
+            calendar.Timezone = newTimezone;
+            foreach (var evt in calendar.Events)
+            {
+                Instant startInstant = Instant.FromDateTimeOffset(evt.StartTimestamp);
+                Instant endInstant = Instant.FromDateTimeOffset(evt.EndTimestamp);
+                LocalDateTime startDt = new ZonedDateTime(startInstant, oldTz).LocalDateTime;
+                LocalDateTime endDt = new ZonedDateTime(endInstant, oldTz).LocalDateTime;
+                ZonedDateTime startZdt = tz.AtStrictly(startDt);
+                ZonedDateTime endZdt = tz.AtStrictly(endDt);
+                evt.StartTimestamp = startZdt.ToDateTimeOffset();
+                evt.EndTimestamp = endZdt.ToDateTimeOffset();
+            }
+            await _db.SaveChangesAsync();
             return calendar.Timezone;
         }
 
         public async Task<bool?> InitialiseCalendar(ulong calendarId, string timezone, ulong defaultChannelId)
         {
-            using (var transaction = await _db.Database.BeginTransactionAsync())
+            var calendar = await _db.Calendars.FirstOrDefaultAsync(c => c.Id == calendarId);
+            if (calendar == null)
             {
-                var calendar = await _db.Calendars.FirstOrDefaultAsync(c => c.Id == calendarId);
-                if (calendar == null)
+                calendar = new Calendar
                 {
-                    calendar = new Calendar
-                    {
-                        Id = calendarId,
-                        Prefix = _defaultPrefix,
-                        Events = new List<Event>()
-                    };
-                    await _db.Calendars.AddAsync(calendar);
-                    await _db.SaveChangesAsync();
-                }
-
-                if (!string.IsNullOrEmpty(calendar.Timezone))
-                {
-                    transaction.Dispose();
-                    return null;
-                }
-                var tz = DateTimeZoneProviders.Tzdb.GetZoneOrNull(timezone);
-                if (tz == null)
-                {
-                    transaction.Dispose();
-                    return false;
-                }
-                calendar.Timezone = timezone;
-                calendar.DefaultChannel = defaultChannelId;
+                    Id = calendarId,
+                    Prefix = _defaultPrefix,
+                    Events = new List<Event>()
+                };
+                await _db.Calendars.AddAsync(calendar);
                 await _db.SaveChangesAsync();
-                transaction.Commit();
             }
+
+            if (!string.IsNullOrEmpty(calendar.Timezone))
+            {
+                return null;
+            }
+            var tz = DateTimeZoneProviders.Tzdb.GetZoneOrNull(timezone);
+            if (tz == null)
+            {
+                return false;
+            }
+            calendar.Timezone = timezone;
+            calendar.DefaultChannel = defaultChannelId;
+            await _db.SaveChangesAsync();
             return true;
         }
 
