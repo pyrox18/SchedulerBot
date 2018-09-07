@@ -179,11 +179,13 @@ namespace SchedulerBot.Client
             var redlockFactory = RedLockFactory.Create(endpoints, loggerFactory);
             services.AddSingleton<IDistributedLockFactory>(redlockFactory);
 
-            services.AddEntityFrameworkNpgsql()
-                .AddDbContext<SchedulerBotContext>(options =>
-                {
-                    options.UseNpgsql(connectionString);
-                });
+            //services.AddEntityFrameworkNpgsql()
+            //    .AddDbContext<SchedulerBotContext>(options =>
+            //    {
+            //        options.UseNpgsql(connectionString);
+            //    });
+
+            services.AddSingleton(new SchedulerBotContextFactory(connectionString));
 
             services.AddSingleton<ICalendarService, CalendarService>()
                 .AddSingleton<IEventService, EventService>()

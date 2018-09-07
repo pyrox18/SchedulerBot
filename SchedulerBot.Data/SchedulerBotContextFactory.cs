@@ -9,7 +9,9 @@ namespace SchedulerBot.Data
 {
     public class SchedulerBotContextFactory : IDesignTimeDbContextFactory<SchedulerBotContext>
     {
-        public SchedulerBotContext CreateDbContext(string[] args)
+        private readonly string _connectionString;
+
+        public SchedulerBotContextFactory()
         {
             string environment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT");
 
@@ -26,9 +28,23 @@ namespace SchedulerBot.Data
                 }
             });
 
-            var builder = new DbContextOptionsBuilder<SchedulerBotContext>();
-            builder.UseNpgsql(config.ConnectionStrings.SchedulerBotContext);
+            _connectionString = config.ConnectionStrings.SchedulerBotContext;
+        }
 
+        public SchedulerBotContextFactory(string connectionString)
+        {
+            _connectionString = connectionString;
+        }
+
+        public SchedulerBotContext CreateDbContext(string[] args)
+        {
+            return CreateDbContext();
+        }
+
+        public SchedulerBotContext CreateDbContext()
+        {
+            var builder = new DbContextOptionsBuilder<SchedulerBotContext>();
+            builder.UseNpgsql(_connectionString);
             return new SchedulerBotContext(builder.Options);
         }
     }
