@@ -83,6 +83,10 @@ namespace SchedulerBot.Client.Scheduler
             {
                 return;
             }
+            catch (NotFoundException)
+            {
+                return;
+            }
 
             var notifyJobDataMap = new JobDataMap
             {
