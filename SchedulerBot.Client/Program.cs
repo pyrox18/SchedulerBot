@@ -69,6 +69,12 @@ namespace SchedulerBot.Client
 
             // Bot
             logger.LogInformation($"SchedulerBot v{version}");
+
+            // Apply deletes and repeats to events that have ended
+            var eventService = ServiceProvider.GetService<IEventService>();
+            logger.LogInformation("Deleting and repeating past events");
+            await eventService.ApplyDeleteAndRepeatPastEventsAsync();
+
             logger.LogInformation("Initialising client");
             Client = new DiscordShardedClient(new DiscordConfiguration
             {
@@ -283,8 +289,9 @@ namespace SchedulerBot.Client
 
         private async Task OnClientReady(ReadyEventArgs e)
         {
-            // Set status
             var logger = ServiceProvider.GetService<ILogger<Program>>();
+
+            // Set status
             logger.LogInformation("Updating status");
             var version = Assembly.GetEntryAssembly().GetCustomAttribute<AssemblyInformationalVersionAttribute>().InformationalVersion;
             await e.Client.UpdateStatusAsync(new DiscordActivity(string.Format(Configuration.GetSection("Bot").GetValue<string>("Status"), version)));
@@ -365,6 +372,7 @@ namespace SchedulerBot.Client
             {
                 _initialPollDone = true;
                 var eventScheduler = ServiceProvider.GetService<IEventScheduler>();
+
                 await eventScheduler.PollAndScheduleEvents(Client);
             }
         }

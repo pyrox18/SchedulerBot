@@ -321,5 +321,53 @@ namespace SchedulerBot.Data.Services
 
             return evt;
         }
+
+        public async Task ApplyDeleteAndRepeatPastEventsAsync()
+        {
+            using (var db = _contextFactory.CreateDbContext())
+            {
+                var events = await db.Events
+                    .Include(e => e.Mentions)
+                    .Include(e => e.RSVPs)
+                    .Where(e => e.EndTimestamp < DateTimeOffset.Now)
+                    .ToListAsync();
+
+                foreach (var evt in events)
+                {
+                    if (evt.Repeat == RepeatType.None)
+                    {
+                        db.EventMentions.RemoveRange(evt.Mentions);
+                        db.EventRSVPs.RemoveRange(evt.RSVPs);
+                        db.Events.Remove(evt);
+                    }
+                    else
+                    {
+
+                        while (evt.StartTimestamp < DateTimeOffset.Now)
+                        {
+                            switch (evt.Repeat)
+                            {
+                                case RepeatType.Daily:
+                                    evt.StartTimestamp = evt.StartTimestamp.AddDays(1);
+                                    evt.EndTimestamp = evt.EndTimestamp.AddDays(1);
+                                    break;
+                                case RepeatType.Weekly:
+                                    evt.StartTimestamp = evt.StartTimestamp.AddDays(7);
+                                    evt.EndTimestamp = evt.EndTimestamp.AddDays(7);
+                                    break;
+                                case RepeatType.Monthly:
+                                    evt.StartTimestamp = evt.StartTimestamp.AddMonths(1);
+                                    evt.EndTimestamp = evt.EndTimestamp.AddMonths(1);
+                                    break;
+                                default:
+                                    break;
+                            }
+                        }
+                    }
+                }
+
+                await db.SaveChangesAsync();
+            }
+        }
     }
 }
