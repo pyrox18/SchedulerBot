@@ -17,12 +17,12 @@ namespace SchedulerBot.Client.Scheduler
             var eventId = (Guid)jobDataMap["eventId"];
             var client = (DiscordClient)jobDataMap["client"];
             var channelId = (ulong)jobDataMap["channelId"];
+            var guildId = (ulong)jobDataMap["guildId"];
             var eventService = (IEventService)jobDataMap["eventService"];
             var eventScheduler = (IEventScheduler)jobDataMap["eventScheduler"];
             var redlockFactory = (IDistributedLockFactory)jobDataMap["redlockFactory"];
 
             Event evt;
-            var guildId = (await client.GetChannelAsync(channelId)).GuildId;
             using (var redlock = await redlockFactory.CreateLockAsync(guildId.ToString(), TimeSpan.FromSeconds(15), TimeSpan.FromSeconds(10), TimeSpan.FromSeconds(0.5)))
             {
                 if (redlock.IsAcquired)

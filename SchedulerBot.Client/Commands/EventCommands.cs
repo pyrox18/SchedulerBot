@@ -99,7 +99,7 @@ namespace SchedulerBot.Client.Commands
             }
 
             var defaultChannelId = await _calendarService.GetCalendarDefaultChannelAsync(ctx.Guild.Id);
-            await _eventScheduler.ScheduleEvent(savedEvent, ctx.Client, defaultChannelId);
+            await _eventScheduler.ScheduleEvent(savedEvent, ctx.Client, defaultChannelId, ctx.Guild.Id);
 
             var embed = EventEmbedFactory.GetCreateEventEmbed(savedEvent);
             await ctx.RespondAsync("New event created.", embed: embed);

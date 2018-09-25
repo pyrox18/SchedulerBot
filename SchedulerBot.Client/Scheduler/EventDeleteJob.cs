@@ -15,11 +15,9 @@ namespace SchedulerBot.Client.Scheduler
             JobDataMap jobDataMap = context.MergedJobDataMap;
             DiscordClient client = (DiscordClient)jobDataMap["client"];
             Guid eventId = (Guid)jobDataMap["eventId"];
-            ulong channelId = (ulong)jobDataMap["channelId"];
+            ulong guildId = (ulong)jobDataMap["guildId"];
             IEventService eventService = (IEventService)jobDataMap["eventService"];
             IDistributedLockFactory redlockFactory = (IDistributedLockFactory)jobDataMap["redlockFactory"];
-
-            var guildId = (await client.GetChannelAsync(channelId)).GuildId;
 
             using (var redlock = await redlockFactory.CreateLockAsync(guildId.ToString(), TimeSpan.FromSeconds(15), TimeSpan.FromSeconds(10), TimeSpan.FromSeconds(0.5)))
             {

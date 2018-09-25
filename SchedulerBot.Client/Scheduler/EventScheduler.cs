@@ -1,7 +1,10 @@
 ﻿using System;
 using System.Collections.Specialized;
+using System.Linq;
 using System.Threading.Tasks;
 using DSharpPlus;
+using DSharpPlus.Entities;
+using DSharpPlus.Exceptions;
 using Quartz;
 using Quartz.Impl;
 using RedLockNet;
@@ -56,12 +59,13 @@ namespace SchedulerBot.Client.Scheduler
 
                 foreach (var evt in events)
                 {
-                    await ScheduleEvent(evt, client, evt.Calendar.DefaultChannel);
+                    var calendarId = calendarIds.FirstOrDefault(x => x == evt.Calendar.Id);
+                    await ScheduleEvent(evt, client, evt.Calendar.DefaultChannel, calendarId);
                 }
             }
         }
 
-        public async Task ScheduleEvent(Event evt, DiscordClient client, ulong channelId)
+        public async Task ScheduleEvent(Event evt, DiscordClient client, ulong channelId, ulong? guildId = null)
         {
             if (await Scheduler.CheckExists(new TriggerKey(evt.Id.ToString(), "eventNotifications"))
                 || await Scheduler.CheckExists(new TriggerKey(evt.Id.ToString(), "eventReminders"))
@@ -70,7 +74,16 @@ namespace SchedulerBot.Client.Scheduler
                 return;
             }
 
-            var channel = await client.GetChannelAsync(channelId);
+            DiscordChannel channel;
+            try
+            {
+                channel = await client.GetChannelAsync(channelId);
+            }
+            catch (UnauthorizedException)
+            {
+                return;
+            }
+
             var notifyJobDataMap = new JobDataMap
             {
                 ["event"] = evt,
@@ -121,6 +134,7 @@ namespace SchedulerBot.Client.Scheduler
                         ["eventId"] = evt.Id,
                         ["client"] = client,
                         ["channelId"] = channelId,
+                        ["guildId"] = guildId ?? evt.Calendar.Id,
                         ["eventService"] = _eventService,
                         ["eventScheduler"] = this,
                         ["redlockFactory"] = _redlockFactory
@@ -141,7 +155,7 @@ namespace SchedulerBot.Client.Scheduler
                 {
                     ["client"] = client,
                     ["eventId"] = evt.Id,
-                    ["channelId"] = channelId,
+                    ["guildId"] = guildId ?? evt.Calendar.Id,
                     ["eventService"] = _eventService,
                     ["redlockFactory"] = _redlockFactory
                 };
