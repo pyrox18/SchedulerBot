@@ -87,6 +87,7 @@ namespace SchedulerBot.Client.Commands
             };
             embed.AddField("Version", version, true);
             embed.AddField("Guilds", _shardedClientInformationService.GetTotalGuildCount().ToString(), true);
+            embed.AddField("Users", _shardedClientInformationService.GetTotalUserCount().ToString(), true);
             embed.AddField("Shard Number", $"{ctx.Client.ShardId + 1}/{ctx.Client.ShardCount}", true);
             embed.AddField("Uptime", $"{uptime.Days} day(s), {uptime.Hours} hour(s), {uptime.Minutes} minute(s), {uptime.Seconds} second(s)");
 
