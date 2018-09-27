@@ -11,6 +11,7 @@ using Microsoft.Extensions.Configuration;
 using NodaTime;
 using SchedulerBot.Client.Attributes;
 using SchedulerBot.Client.Extensions;
+using SchedulerBot.Client.Services;
 using SchedulerBot.Data.Models;
 using SchedulerBot.Data.Services;
 
@@ -19,12 +20,14 @@ namespace SchedulerBot.Client.Commands
     public class MiscCommands : BaseCommandModule
     {
         private readonly ICalendarService _calendarService;
+        private readonly IShardedClientInformationService _shardedClientInformationService;
         internal readonly IPermissionService _permissionService;
         private readonly IConfigurationRoot _configuration;
 
-        public MiscCommands(ICalendarService calendarService, IPermissionService permissionService, IConfigurationRoot configuration)
+        public MiscCommands(ICalendarService calendarService, IShardedClientInformationService shardedClientInformationService, IPermissionService permissionService, IConfigurationRoot configuration)
         {
             _calendarService = calendarService;
+            _shardedClientInformationService = shardedClientInformationService;
             _permissionService = permissionService;
             _configuration = configuration;
         }
@@ -83,7 +86,7 @@ namespace SchedulerBot.Client.Commands
                 }
             };
             embed.AddField("Version", version, true);
-            embed.AddField("Guilds", ctx.Client.Guilds.Count.ToString(), true);
+            embed.AddField("Guilds", _shardedClientInformationService.GetTotalGuildCount().ToString(), true);
             embed.AddField("Shard Number", $"{ctx.Client.ShardId + 1}/{ctx.Client.ShardCount}", true);
             embed.AddField("Uptime", $"{uptime.Days} day(s), {uptime.Hours} hour(s), {uptime.Minutes} minute(s), {uptime.Seconds} second(s)");
 

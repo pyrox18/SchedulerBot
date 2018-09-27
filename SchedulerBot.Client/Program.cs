@@ -30,6 +30,7 @@ using System.Net;
 using RedLockNet.SERedis;
 using DSharpPlus.CommandsNext.Exceptions;
 using SchedulerBot.Client.Exceptions;
+using SchedulerBot.Client.Services;
 
 namespace SchedulerBot.Client
 {
@@ -195,8 +196,9 @@ namespace SchedulerBot.Client
 
             services.AddSingleton<ICalendarService, CalendarService>()
                 .AddSingleton<IEventService, EventService>()
-                .AddSingleton<IPermissionService, PermissionService>();
-
+                .AddSingleton<IPermissionService, PermissionService>()
+                .AddSingleton<IShardedClientInformationService, ShardedClientInformationService>(s => new ShardedClientInformationService(Client));
+                
             // Scheduler service
             services.AddSingleton<IEventScheduler, EventScheduler>();
 
