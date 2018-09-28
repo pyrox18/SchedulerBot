@@ -16,6 +16,7 @@ using DSharpPlus.EventArgs;
 using DSharpPlus.Exceptions;
 using DSharpPlus.Interactivity;
 using NLog.Extensions.Logging;
+using RedLockNet;
 using SharpRaven;
 using SharpRaven.Data;
 using SchedulerBot.Client.Commands;
@@ -24,6 +25,12 @@ using SchedulerBot.Client.Scheduler;
 using SchedulerBot.Data;
 using SchedulerBot.Data.Models;
 using SchedulerBot.Data.Services;
+using RedLockNet.SERedis.Configuration;
+using System.Net;
+using RedLockNet.SERedis;
+using DSharpPlus.CommandsNext.Exceptions;
+using SchedulerBot.Client.Exceptions;
+using SchedulerBot.Client.Services;
 
 namespace SchedulerBot.Client
 {
@@ -63,6 +70,12 @@ namespace SchedulerBot.Client
 
             // Bot
             logger.LogInformation($"SchedulerBot v{version}");
+
+            // Apply deletes and repeats to events that have ended
+            var eventService = ServiceProvider.GetService<IEventService>();
+            logger.LogInformation("Deleting and repeating past events");
+            await eventService.ApplyDeleteAndRepeatPastEventsAsync();
+
             logger.LogInformation("Initialising client");
             Client = new DiscordShardedClient(new DiscordConfiguration
             {
@@ -145,7 +158,8 @@ namespace SchedulerBot.Client
             var services = new ServiceCollection();
             var connectionString = Configuration.GetConnectionString("SchedulerBotContext");
 
-            services.AddSingleton<ILoggerFactory, LoggerFactory>();
+            var loggerFactory = new LoggerFactory();
+            services.AddSingleton<ILoggerFactory>(loggerFactory);
             services.AddSingleton(typeof(ILogger<>), typeof(Logger<>));
             services.AddLogging(options =>
             {
@@ -164,22 +178,31 @@ namespace SchedulerBot.Client
                 services.AddSingleton<IRavenClient, RavenClient>();
             }
 
-            services.AddEntityFrameworkNpgsql()
-                .AddDbContext<SchedulerBotContext>(options =>
-                {
-                    options.UseNpgsql(connectionString);
-                });
+            // Redis lock factory configuration
+            var endpoints = new List<RedLockEndPoint>
+            {
+                new DnsEndPoint(Configuration.GetConnectionString("Redis"), 6379)
+            };
+            var redlockFactory = RedLockFactory.Create(endpoints, loggerFactory);
+            services.AddSingleton<IDistributedLockFactory>(redlockFactory);
+
+            //services.AddEntityFrameworkNpgsql()
+            //    .AddDbContext<SchedulerBotContext>(options =>
+            //    {
+            //        options.UseNpgsql(connectionString);
+            //    });
+
+            services.AddSingleton(new SchedulerBotContextFactory(connectionString));
 
             services.AddSingleton<ICalendarService, CalendarService>()
                 .AddSingleton<IEventService, EventService>()
-                .AddSingleton<IPermissionService, PermissionService>();
-
+                .AddSingleton<IPermissionService, PermissionService>()
+                .AddSingleton<IShardedClientInformationService, ShardedClientInformationService>(s => new ShardedClientInformationService(Client));
+                
             // Scheduler service
             services.AddSingleton<IEventScheduler, EventScheduler>();
 
             ServiceProvider = services.BuildServiceProvider();
-
-            var loggerFactory = ServiceProvider.GetRequiredService<ILoggerFactory>();
 
             // NLog configuration
             loggerFactory.AddNLog(new NLogProviderOptions
@@ -188,6 +211,7 @@ namespace SchedulerBot.Client
                 CaptureMessageTemplates = true
             });
             NLog.LogManager.LoadConfiguration("nlog.config");
+
         }
 
         private async Task OnGuildCreate(GuildCreateEventArgs e)
@@ -200,31 +224,76 @@ namespace SchedulerBot.Client
             };
 
             var calendarService = ServiceProvider.GetService<ICalendarService>();
-            await calendarService.CreateCalendarAsync(calendar);
+            var redlockFactory = ServiceProvider.GetService<IDistributedLockFactory>();
+            using (var redlock = await redlockFactory.CreateLockAsync(e.Guild.Id.ToString(), TimeSpan.FromSeconds(15), TimeSpan.FromSeconds(10), TimeSpan.FromSeconds(0.5)))
+            {
+                if (redlock.IsAcquired)
+                {
+                    await calendarService.CreateCalendarAsync(calendar);
+                }
+                else
+                {
+                    throw new RedisLockAcquireException($"Cannot acquire lock for guild {e.Guild.Id}");
+                }
+            }
         }
 
         private async Task OnGuildDelete(GuildDeleteEventArgs e)
         {
             var calendarService = ServiceProvider.GetService<ICalendarService>();
-            await calendarService.DeleteCalendarAsync(e.Guild.Id);
+            var redlockFactory = ServiceProvider.GetService<IDistributedLockFactory>();
+            using (var redlock = await redlockFactory.CreateLockAsync(e.Guild.Id.ToString(), TimeSpan.FromSeconds(15), TimeSpan.FromSeconds(10), TimeSpan.FromSeconds(0.5)))
+            {
+                if (redlock.IsAcquired)
+                {
+                    await calendarService.DeleteCalendarAsync(e.Guild.Id);
+                }
+                else
+                {
+                    throw new RedisLockAcquireException($"Cannot acquire lock for guild {e.Guild.Id}");
+                }
+            }
         }
 
         private async Task OnGuildMemberRemove(GuildMemberRemoveEventArgs e)
         {
             var permissionService = ServiceProvider.GetService<IPermissionService>();
-            await permissionService.RemoveUserPermissionsAsync(e.Guild.Id, e.Member.Id);
+            var redlockFactory = ServiceProvider.GetService<IDistributedLockFactory>();
+            using (var redlock = await redlockFactory.CreateLockAsync(e.Guild.Id.ToString(), TimeSpan.FromSeconds(15), TimeSpan.FromSeconds(10), TimeSpan.FromSeconds(0.5)))
+            {
+                if (redlock.IsAcquired)
+                {
+                    await permissionService.RemoveUserPermissionsAsync(e.Guild.Id, e.Member.Id);
+                }
+                else
+                {
+                    throw new RedisLockAcquireException($"Cannot acquire lock for guild {e.Guild.Id}");
+                }
+            }
         }
 
         private async Task OnGuildRoleDelete(GuildRoleDeleteEventArgs e)
         {
             var permissionService = ServiceProvider.GetService<IPermissionService>();
-            await permissionService.RemoveRolePermissionsAsync(e.Guild.Id, e.Role.Id);
+            var redlockFactory = ServiceProvider.GetService<IDistributedLockFactory>();
+            using (var redlock = await redlockFactory.CreateLockAsync(e.Guild.Id.ToString(), TimeSpan.FromSeconds(15), TimeSpan.FromSeconds(10), TimeSpan.FromSeconds(0.5)))
+            {
+                if (redlock.IsAcquired)
+                {
+                    await permissionService.RemoveRolePermissionsAsync(e.Guild.Id, e.Role.Id);
+                }
+                else
+                {
+                    throw new RedisLockAcquireException($"Cannot acquire lock for guild {e.Guild.Id}");
+                }
+            }
         }
 
         private async Task OnClientReady(ReadyEventArgs e)
         {
-            // Set status
             var logger = ServiceProvider.GetService<ILogger<Program>>();
+
+            // Set status
             logger.LogInformation("Updating status");
             var version = Assembly.GetEntryAssembly().GetCustomAttribute<AssemblyInformationalVersionAttribute>().InformationalVersion;
             await e.Client.UpdateStatusAsync(new DiscordActivity(string.Format(Configuration.GetSection("Bot").GetValue<string>("Status"), version)));
@@ -246,7 +315,7 @@ namespace SchedulerBot.Client
         private async Task OnCommandError(CommandErrorEventArgs e)
         {
             var exceptionType = e.Exception.GetType();
-            if (exceptionType != typeof(ArgumentException) && exceptionType != typeof(UnauthorizedException))
+            if (exceptionType != typeof(CommandNotFoundException) && exceptionType != typeof(ArgumentException) && exceptionType != typeof(UnauthorizedException))
             {
                 var logger = ServiceProvider.GetService<ILogger<Program>>();
                 var errorId = Guid.NewGuid();
@@ -305,6 +374,7 @@ namespace SchedulerBot.Client
             {
                 _initialPollDone = true;
                 var eventScheduler = ServiceProvider.GetService<IEventScheduler>();
+
                 await eventScheduler.PollAndScheduleEvents(Client);
             }
         }

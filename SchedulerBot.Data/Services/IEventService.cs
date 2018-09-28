@@ -18,5 +18,6 @@ namespace SchedulerBot.Data.Services
         Task<List<Event>> GetEventsInHourIntervalAsync(double hours);
         Task<List<Event>> GetEventsInHourIntervalAsync(double hours, IEnumerable<ulong> guildIds);
         Task<Event> ToggleRSVPByIndexAsync(ulong calendarId, ulong userId, int index);
+        Task ApplyDeleteAndRepeatPastEventsAsync();
     }
 }

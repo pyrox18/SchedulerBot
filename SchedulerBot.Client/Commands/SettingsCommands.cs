@@ -4,7 +4,9 @@ using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Attributes;
 using DSharpPlus.Entities;
 using Microsoft.Extensions.Configuration;
+using RedLockNet;
 using SchedulerBot.Client.Attributes;
+using SchedulerBot.Client.Exceptions;
 using SchedulerBot.Client.Extensions;
 using SchedulerBot.Client.Scheduler;
 using SchedulerBot.Data.Exceptions;
@@ -22,14 +24,16 @@ namespace SchedulerBot.Client.Commands
         private readonly IPermissionService _permissionService;
         private readonly IEventScheduler _eventScheduler;
         private readonly IConfigurationRoot _configuration;
+        private readonly IDistributedLockFactory _redlockFactory;
 
-        public SettingsCommands(ICalendarService calendarService, IEventService eventService, IPermissionService permissionService, IEventScheduler eventScheduler, IConfigurationRoot configuration)
+        public SettingsCommands(ICalendarService calendarService, IEventService eventService, IPermissionService permissionService, IEventScheduler eventScheduler, IConfigurationRoot configuration, IDistributedLockFactory redlockFactory)
         {
             _calendarService = calendarService;
             _eventService = eventService;
             _permissionService = permissionService;
             _eventScheduler = eventScheduler;
             _configuration = configuration;
+            _redlockFactory = redlockFactory;
         }
 
         [GroupCommand]
@@ -108,14 +112,24 @@ namespace SchedulerBot.Client.Commands
             }
 
             string newPrefix = string.Empty;
-            try
+            using (var redlock = await _redlockFactory.CreateLockAsync(ctx.Guild.Id.ToString(), TimeSpan.FromSeconds(15), TimeSpan.FromSeconds(10), TimeSpan.FromSeconds(0.5)))
             {
-                newPrefix = await _calendarService.UpdateCalendarPrefixAsync(ctx.Guild.Id, prefix);
-            }
-            catch (CalendarNotFoundException)
-            {
-                await ctx.RespondAsync("Calendar not initialised. Run `init <timezone>` to initialise the calendar.");
-                return;
+                if (redlock.IsAcquired)
+                {
+                    try
+                    {
+                        newPrefix = await _calendarService.UpdateCalendarPrefixAsync(ctx.Guild.Id, prefix);
+                    }
+                    catch (CalendarNotFoundException)
+                    {
+                        await ctx.RespondAsync("Calendar not initialised. Run `init <timezone>` to initialise the calendar.");
+                        return;
+                    }
+                }
+                else
+                {
+                    throw new RedisLockAcquireException($"Cannot acquire lock for guild {ctx.Guild.Id}");
+                }
             }
 
             await ctx.RespondAsync($"Prefix set to `{newPrefix}`.");
@@ -169,14 +183,24 @@ namespace SchedulerBot.Client.Commands
             }
 
             ulong defaultChannel = 0;
-            try
+            using (var redlock = await _redlockFactory.CreateLockAsync(ctx.Guild.Id.ToString(), TimeSpan.FromSeconds(15), TimeSpan.FromSeconds(10), TimeSpan.FromSeconds(0.5)))
             {
-                defaultChannel = await _calendarService.UpdateCalendarDefaultChannelAsync(ctx.Guild.Id, channel.Id);
-            }
-            catch (CalendarNotFoundException)
-            {
-                await ctx.RespondAsync("Calendar not initialised. Run `init <timezone>` to initialise the calendar.");
-                return;
+                if (redlock.IsAcquired)
+                {
+                    try
+                    {
+                        defaultChannel = await _calendarService.UpdateCalendarDefaultChannelAsync(ctx.Guild.Id, channel.Id);
+                    }
+                    catch (CalendarNotFoundException)
+                    {
+                        await ctx.RespondAsync("Calendar not initialised. Run `init <timezone>` to initialise the calendar.");
+                        return;
+                    }
+                }
+                else
+                {
+                    throw new RedisLockAcquireException($"Cannot acquire lock for guild {ctx.Guild.Id}");
+                }
             }
 
             await RescheduleAllEvents(ctx, defaultChannel);
@@ -233,26 +257,35 @@ namespace SchedulerBot.Client.Commands
             }
 
             string tz = string.Empty;
-
-            try
+            using (var redlock = await _redlockFactory.CreateLockAsync(ctx.Guild.Id.ToString(), TimeSpan.FromSeconds(15), TimeSpan.FromSeconds(10), TimeSpan.FromSeconds(0.5)))
             {
-                tz = await _calendarService.UpdateCalendarTimezoneAsync(ctx.Guild.Id, timezone);
-            }
-            catch (InvalidTimeZoneException)
-            {
-                var timezoneLink = _configuration.GetSection("Bot").GetSection("Links").GetValue<string>("TimezoneList");
-                await ctx.RespondAsync($"Timezone not found. See {timezoneLink} under the TZ column for a list of valid timezones.");
-                return;
-            }
-            catch (ExistingEventInNewTimezonePastException)
-            {
-                await ctx.RespondAsync($"Cannot update timezone, due to events starting or ending in the past if the timezone is changed to {timezone}.");
-                return;
-            }
-            catch (CalendarNotFoundException)
-            {
-                await ctx.RespondAsync("Calendar not initialised. Run `init <timezone>` to initialise the calendar.");
-                return;
+                if (redlock.IsAcquired)
+                {
+                    try
+                    {
+                        tz = await _calendarService.UpdateCalendarTimezoneAsync(ctx.Guild.Id, timezone);
+                    }
+                    catch (InvalidTimeZoneException)
+                    {
+                        var timezoneLink = _configuration.GetSection("Bot").GetSection("Links").GetValue<string>("TimezoneList");
+                        await ctx.RespondAsync($"Timezone not found. See {timezoneLink} under the TZ column for a list of valid timezones.");
+                        return;
+                    }
+                    catch (ExistingEventInNewTimezonePastException)
+                    {
+                        await ctx.RespondAsync($"Cannot update timezone, due to events starting or ending in the past if the timezone is changed to {timezone}.");
+                        return;
+                    }
+                    catch (CalendarNotFoundException)
+                    {
+                        await ctx.RespondAsync("Calendar not initialised. Run `init <timezone>` to initialise the calendar.");
+                        return;
+                    }
+                }
+                else
+                {
+                    throw new RedisLockAcquireException($"Cannot acquire lock for guild {ctx.Guild.Id}");
+                }
             }
 
             var defaultChannel = await _calendarService.GetCalendarDefaultChannelAsync(ctx.Guild.Id);

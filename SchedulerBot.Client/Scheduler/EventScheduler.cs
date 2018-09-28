@@ -1,9 +1,13 @@
 ﻿using System;
 using System.Collections.Specialized;
+using System.Linq;
 using System.Threading.Tasks;
 using DSharpPlus;
+using DSharpPlus.Entities;
+using DSharpPlus.Exceptions;
 using Quartz;
 using Quartz.Impl;
+using RedLockNet;
 using SchedulerBot.Data.Models;
 using SchedulerBot.Data.Services;
 
@@ -12,11 +16,13 @@ namespace SchedulerBot.Client.Scheduler
     public class EventScheduler : IEventScheduler
     {
         private readonly IEventService _eventService;
+        private readonly IDistributedLockFactory _redlockFactory;
         public IScheduler Scheduler { get; set; }
 
-        public EventScheduler(IEventService eventService)
+        public EventScheduler(IEventService eventService, IDistributedLockFactory redlockFactory)
         {
             _eventService = eventService;
+            _redlockFactory = redlockFactory;
             InitialiseScheduler().GetAwaiter().GetResult();
         }
 
@@ -53,12 +59,13 @@ namespace SchedulerBot.Client.Scheduler
 
                 foreach (var evt in events)
                 {
-                    await ScheduleEvent(evt, client, evt.Calendar.DefaultChannel);
+                    var calendarId = calendarIds.FirstOrDefault(x => x == evt.Calendar.Id);
+                    await ScheduleEvent(evt, client, evt.Calendar.DefaultChannel, calendarId);
                 }
             }
         }
 
-        public async Task ScheduleEvent(Event evt, DiscordClient client, ulong channelId)
+        public async Task ScheduleEvent(Event evt, DiscordClient client, ulong channelId, ulong? guildId = null)
         {
             if (await Scheduler.CheckExists(new TriggerKey(evt.Id.ToString(), "eventNotifications"))
                 || await Scheduler.CheckExists(new TriggerKey(evt.Id.ToString(), "eventReminders"))
@@ -67,7 +74,20 @@ namespace SchedulerBot.Client.Scheduler
                 return;
             }
 
-            var channel = await client.GetChannelAsync(channelId);
+            DiscordChannel channel;
+            try
+            {
+                channel = await client.GetChannelAsync(channelId);
+            }
+            catch (UnauthorizedException)
+            {
+                return;
+            }
+            catch (NotFoundException)
+            {
+                return;
+            }
+
             var notifyJobDataMap = new JobDataMap
             {
                 ["event"] = evt,
@@ -118,8 +138,10 @@ namespace SchedulerBot.Client.Scheduler
                         ["eventId"] = evt.Id,
                         ["client"] = client,
                         ["channelId"] = channelId,
+                        ["guildId"] = guildId ?? evt.Calendar.Id,
                         ["eventService"] = _eventService,
-                        ["eventScheduler"] = this
+                        ["eventScheduler"] = this,
+                        ["redlockFactory"] = _redlockFactory
                     })
                     .Build();
 
@@ -135,8 +157,11 @@ namespace SchedulerBot.Client.Scheduler
             {
                 var deleteJobDataMap = new JobDataMap
                 {
+                    ["client"] = client,
                     ["eventId"] = evt.Id,
-                    ["eventService"] = _eventService
+                    ["guildId"] = guildId ?? evt.Calendar.Id,
+                    ["eventService"] = _eventService,
+                    ["redlockFactory"] = _redlockFactory
                 };
 
                 IJobDetail deleteJob = JobBuilder.Create<EventDeleteJob>()
