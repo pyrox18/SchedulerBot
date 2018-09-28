@@ -148,7 +148,7 @@ namespace SchedulerBot.Client
                 builder.SetBasePath(Directory.GetCurrentDirectory());
             }
             builder.AddJsonFile("appsettings.json")
-                .AddJsonFile($"appsettings.{environment}.json");
+                .AddJsonFile($"appsettings.{environment}.json", true);
 
             builder.AddEnvironmentVariables();
             Configuration = builder.Build();
