@@ -1,10 +1,7 @@
-﻿using System;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Attributes;
 using Microsoft.Extensions.Configuration;
-using RedLockNet;
-using SchedulerBot.Client.Exceptions;
 using SchedulerBot.Data.Services;
 
 namespace SchedulerBot.Client.Commands
@@ -13,13 +10,11 @@ namespace SchedulerBot.Client.Commands
     {
         private readonly ICalendarService _calendarService;
         private readonly IConfigurationRoot _configuration;
-        private readonly IDistributedLockFactory _redlockFactory;
 
-        public InitializerCommands(ICalendarService calendarService, IConfigurationRoot configuration, IDistributedLockFactory redlockFactory)
+        public InitializerCommands(ICalendarService calendarService, IConfigurationRoot configuration)
         {
             _calendarService = calendarService;
             _configuration = configuration;
-            _redlockFactory = redlockFactory;
         }
 
         [Command("init"), Description("Initialize the bot with a timezone and a default channel.")]
@@ -28,17 +23,7 @@ namespace SchedulerBot.Client.Commands
             await ctx.TriggerTypingAsync();
 
             bool? initSuccess;
-            using (var redlock = await _redlockFactory.CreateLockAsync(ctx.Guild.Id.ToString(), TimeSpan.FromSeconds(15), TimeSpan.FromSeconds(10), TimeSpan.FromSeconds(0.5)))
-            {
-                if (redlock.IsAcquired)
-                {
-                    initSuccess = await _calendarService.InitialiseCalendar(ctx.Guild.Id, timezone, ctx.Channel.Id);
-                }
-                else
-                {
-                    throw new RedisLockAcquireException($"Cannot acquire lock for guild {ctx.Guild.Id}");
-                }
-            }
+            initSuccess = await _calendarService.InitialiseCalendar(ctx.Guild.Id, timezone, ctx.Channel.Id);
 
             if (initSuccess == null)
             {
