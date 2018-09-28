@@ -50,17 +50,8 @@ namespace SchedulerBot.Client
         {
             Console.OutputEncoding = Encoding.UTF8;
 
-            string environment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT");
-
-            if (String.IsNullOrWhiteSpace(environment))
-            {
-                throw new ArgumentNullException("Environment not found in ASPNETCORE_ENVIRONMENT");
-            }
-
-            Console.WriteLine($"Environment: {environment}");
-
             Console.WriteLine("Reading configuration file...");
-            Configure(environment);
+            Configure();
             
             Console.WriteLine("Configuring services...");
             ConfigureServices();
@@ -136,9 +127,18 @@ namespace SchedulerBot.Client
             NLog.LogManager.Shutdown();
         }
 
-        private void Configure(string environment)
+        private void Configure()
         {
             var builder = new ConfigurationBuilder();
+
+            string environment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT");
+
+            if (string.IsNullOrWhiteSpace(environment))
+            {
+                throw new ArgumentNullException("Environment not found in ASPNETCORE_ENVIRONMENT");
+            }
+
+            Console.WriteLine($"Environment: {environment}");
             if (environment == "Development")
             {
                 builder.SetBasePath(Path.Combine(Directory.GetCurrentDirectory(), string.Format("..{0}..{0}..{0}", Path.DirectorySeparatorChar)));
@@ -148,8 +148,9 @@ namespace SchedulerBot.Client
                 builder.SetBasePath(Directory.GetCurrentDirectory());
             }
             builder.AddJsonFile("appsettings.json")
-                .AddJsonFile($"appsettings.{environment}.json");
+                .AddJsonFile($"appsettings.{environment}.json", true);
 
+            builder.AddEnvironmentVariables();
             Configuration = builder.Build();
         }
 
