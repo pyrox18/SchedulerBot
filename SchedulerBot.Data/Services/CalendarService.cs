@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Newtonsoft.Json;
 using NodaTime;
 using SchedulerBot.Data.Exceptions;
@@ -17,32 +18,10 @@ namespace SchedulerBot.Data.Services
         private readonly SchedulerBotContextFactory _contextFactory;
         private readonly string _defaultPrefix;
 
-        public CalendarService(SchedulerBotContextFactory contextFactory)
+        public CalendarService(SchedulerBotContextFactory contextFactory, IConfigurationRoot configuration)
         {
             _contextFactory = contextFactory;
-
-            string environment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT");
-
-            var json = "";
-            var filePath = $"appsettings.{environment}.json";
-            if (environment == "Development")
-            {
-                filePath = string.Format("..{0}..{0}..{0}{1}", Path.DirectorySeparatorChar, filePath);
-            }
-
-            using (var fs = File.OpenRead(filePath))
-            using (var sr = new StreamReader(fs, new UTF8Encoding(false)))
-                json = sr.ReadToEnd();
-
-            var config = JsonConvert.DeserializeAnonymousType(json, new
-            {
-                Bot = new
-                {
-                    Prefixes = new string[] { }
-                }
-            });
-
-            _defaultPrefix = config.Bot.Prefixes[0];
+            _defaultPrefix = configuration.GetSection("Bot").GetSection("Prefixes").Get<string[]>()[0];
         }
 
         public async Task<Calendar> CreateCalendarAsync(Calendar calendar)
