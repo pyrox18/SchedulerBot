@@ -266,3 +266,6 @@ SchedulerBot.MigrationTool/appsettings.*.json
 
 # Visual Studio Code
 .vscode/
+
+# Environment variable file
+.env
