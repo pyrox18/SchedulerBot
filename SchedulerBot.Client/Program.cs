@@ -68,12 +68,14 @@ namespace SchedulerBot.Client
             await eventService.ApplyDeleteAndRepeatPastEventsAsync();
 
             logger.LogInformation("Initialising client");
-            Client = new DiscordShardedClient(new DiscordConfiguration
+            var config = new DiscordConfiguration
             {
                 Token = Configuration.GetSection("Bot").GetValue<string>("Token"),
-                TokenType = TokenType.Bot,
-                LogLevel = DSharpPlus.LogLevel.Debug,
-            });
+                TokenType = TokenType.Bot
+            };
+            var logLevel = Configuration.GetSection("Logging").GetSection("LogLevel").GetValue<string>("Default");
+            config.LogLevel = logLevel == "Information" ? DSharpPlus.LogLevel.Info : Enum.Parse<DSharpPlus.LogLevel>(logLevel);
+            Client = new DiscordShardedClient(config);
             await Client.UseInteractivityAsync(new InteractivityConfiguration
             {
                 PaginationBehavior = TimeoutBehaviour.DeleteReactions
@@ -115,7 +117,6 @@ namespace SchedulerBot.Client
             var scheduler = ServiceProvider.GetService<IEventScheduler>();
             logger.LogInformation("Starting event scheduler");
             await scheduler.Start();
-
 
             logger.LogInformation("Connecting all shards...");
             await Client.StartAsync();

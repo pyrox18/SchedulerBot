@@ -2,6 +2,12 @@
 
 This changelog is formatted based on [Keep a Changelog](http://keepachangelog.com/) and this project attempts to adhere to [Semantic Versioning](http://semver.org) as much as possible.
 
+## v2.0.1 - 2018-09-28
+
+### Fixed
+
+- Bot client logging level now conform to the logging level set in the application configuration.
+
 ## v2.0.0 - 2018-09-28
 
 The entire bot is rewritten in .NET Core, with the DSharpPlus library. The application now uses PostgreSQL as the database layer.
