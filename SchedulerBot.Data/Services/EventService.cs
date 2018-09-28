@@ -225,6 +225,7 @@ namespace SchedulerBot.Data.Services
                 eventInDb = await db.Events
                     .Include(e => e.Calendar)
                     .Include(e => e.Mentions)
+                    .Include(e => e.RSVPs)
                     .FirstOrDefaultAsync(e => e.Id == evt.Id);
                 eventInDb.Name = evt.Name;
                 eventInDb.StartTimestamp = evt.StartTimestamp;
@@ -254,6 +255,8 @@ namespace SchedulerBot.Data.Services
             {
                 evt = await db.Events
                     .Include(e => e.Calendar)
+                    .Include(e => e.Mentions)
+                    .Include(e => e.RSVPs)
                     .FirstOrDefaultAsync(e => e.Id == eventId);
                 switch (evt.Repeat)
                 {
@@ -291,6 +294,7 @@ namespace SchedulerBot.Data.Services
                 events = await db.Events
                     .Include(e => e.Calendar)
                     .Include(e => e.Mentions)
+                    .Include(e => e.RSVPs)
                     .Where(e => e.StartsInHours(hours) || e.RemindInHours(hours))
                     .ToListAsync();
             }
@@ -314,6 +318,7 @@ namespace SchedulerBot.Data.Services
                 events = await db.Events
                     .Include(e => e.Calendar)
                     .Include(e => e.Mentions)
+                    .Include(e => e.RSVPs)
                     .Where(e => guildIds.Contains(e.Calendar.Id) && (e.StartsInHours(hours) || e.RemindInHours(hours)))
                     .ToListAsync();
             }
