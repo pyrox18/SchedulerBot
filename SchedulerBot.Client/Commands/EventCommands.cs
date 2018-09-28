@@ -288,6 +288,9 @@ namespace SchedulerBot.Client.Commands
                 return;
             }
 
+            var defaultChannelId = await _calendarService.GetCalendarDefaultChannelAsync(ctx.Guild.Id);
+            await _eventScheduler.RescheduleEvent(evt, ctx.Client, defaultChannelId);
+
             if (evt.RSVPs.Any(r => r.UserId == ctx.Member.Id))
             {
                 await ctx.RespondAsync($"Added RSVP for user {ctx.Member.GetUsernameAndDiscriminator()} for event {evt.Name}.");
