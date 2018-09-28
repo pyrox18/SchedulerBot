@@ -38,6 +38,7 @@ namespace SchedulerBot.Data.Services
         public async Task<List<Event>> GetEventsAsync(ulong calendarId)
         {
             List<Event> orderedEvents;
+            string timezone;
 
             using (var db = _contextFactory.CreateDbContext())
             {
@@ -52,25 +53,19 @@ namespace SchedulerBot.Data.Services
                     .Where(e => e.Calendar.Id == calendarId)
                     .ToListAsync();
 
-                var timezone = await db.Calendars
+                timezone = await db.Calendars
                     .Where(c => c.Id == calendarId)
                     .Select(c => c.Timezone)
                     .FirstOrDefaultAsync();
 
                 orderedEvents = events.OrderBy(e => e.StartTimestamp).ToList();
-                var tz = DateTimeZoneProviders.Tzdb[timezone];
-                foreach (var evt in orderedEvents)
-                {
-                    Instant instant = Instant.FromDateTimeOffset(evt.StartTimestamp);
-                    LocalDateTime dt = new ZonedDateTime(instant, DateTimeZoneProviders.Tzdb[timezone]).LocalDateTime;
-                    ZonedDateTime zdt = tz.AtStrictly(dt);
-                    evt.StartTimestamp = zdt.ToDateTimeOffset();
+            }
 
-                    instant = Instant.FromDateTimeOffset(evt.EndTimestamp);
-                    dt = new ZonedDateTime(instant, DateTimeZoneProviders.Tzdb[timezone]).LocalDateTime;
-                    zdt = tz.AtStrictly(dt);
-                    evt.EndTimestamp = zdt.ToDateTimeOffset();
-                }
+            for (int i = 0; i < orderedEvents.Count; i++)
+            {
+                Event evt = orderedEvents[i];
+                AdjustTimestampsToTimezone(ref evt, timezone);
+                orderedEvents[i] = evt;
             }
 
             return orderedEvents;
@@ -115,16 +110,7 @@ namespace SchedulerBot.Data.Services
                     .FirstOrDefaultAsync();
             }
 
-            var tz = DateTimeZoneProviders.Tzdb[timezone];
-            Instant instant = Instant.FromDateTimeOffset(deletedEvent.StartTimestamp);
-            LocalDateTime dt = new ZonedDateTime(instant, DateTimeZoneProviders.Tzdb[timezone]).LocalDateTime;
-            ZonedDateTime zdt = tz.AtStrictly(dt);
-            deletedEvent.StartTimestamp = zdt.ToDateTimeOffset();
-
-            instant = Instant.FromDateTimeOffset(deletedEvent.EndTimestamp);
-            dt = new ZonedDateTime(instant, DateTimeZoneProviders.Tzdb[timezone]).LocalDateTime;
-            zdt = tz.AtStrictly(dt);
-            deletedEvent.EndTimestamp = zdt.ToDateTimeOffset();
+            AdjustTimestampsToTimezone(ref deletedEvent, timezone);
 
             return deletedEvent;
         }
@@ -218,16 +204,7 @@ namespace SchedulerBot.Data.Services
                     .FirstOrDefaultAsync();
             }
 
-            var tz = DateTimeZoneProviders.Tzdb[timezone];
-            Instant instant = Instant.FromDateTimeOffset(evt.StartTimestamp);
-            LocalDateTime dt = new ZonedDateTime(instant, DateTimeZoneProviders.Tzdb[timezone]).LocalDateTime;
-            ZonedDateTime zdt = tz.AtStrictly(dt);
-            evt.StartTimestamp = zdt.ToDateTimeOffset();
-
-            instant = Instant.FromDateTimeOffset(evt.EndTimestamp);
-            dt = new ZonedDateTime(instant, DateTimeZoneProviders.Tzdb[timezone]).LocalDateTime;
-            zdt = tz.AtStrictly(dt);
-            evt.EndTimestamp = zdt.ToDateTimeOffset();
+            AdjustTimestampsToTimezone(ref evt, timezone);
 
             return evt;
         }
@@ -264,16 +241,7 @@ namespace SchedulerBot.Data.Services
                     .FirstOrDefaultAsync();
             }
 
-            var tz = DateTimeZoneProviders.Tzdb[timezone];
-            Instant instant = Instant.FromDateTimeOffset(evt.StartTimestamp);
-            LocalDateTime dt = new ZonedDateTime(instant, DateTimeZoneProviders.Tzdb[timezone]).LocalDateTime;
-            ZonedDateTime zdt = tz.AtStrictly(dt);
-            evt.StartTimestamp = zdt.ToDateTimeOffset();
-
-            instant = Instant.FromDateTimeOffset(evt.EndTimestamp);
-            dt = new ZonedDateTime(instant, DateTimeZoneProviders.Tzdb[timezone]).LocalDateTime;
-            zdt = tz.AtStrictly(dt);
-            evt.EndTimestamp = zdt.ToDateTimeOffset();
+            AdjustTimestampsToTimezone(ref eventInDb, timezone);
 
             return eventInDb;
         }
@@ -284,7 +252,9 @@ namespace SchedulerBot.Data.Services
 
             using (var db = _contextFactory.CreateDbContext())
             {
-                evt = await db.Events.FirstOrDefaultAsync(e => e.Id == eventId);
+                evt = await db.Events
+                    .Include(e => e.Calendar)
+                    .FirstOrDefaultAsync(e => e.Id == eventId);
                 switch (evt.Repeat)
                 {
                     case RepeatType.Daily:
@@ -307,6 +277,8 @@ namespace SchedulerBot.Data.Services
                 await db.SaveChangesAsync();
             }
 
+            AdjustTimestampsToTimezone(ref evt, evt.Calendar.Timezone);
+
             return evt;
         }
 
@@ -321,6 +293,13 @@ namespace SchedulerBot.Data.Services
                     .Include(e => e.Mentions)
                     .Where(e => e.StartsInHours(hours) || e.RemindInHours(hours))
                     .ToListAsync();
+            }
+
+            for (int i = 0; i < events.Count; i++)
+            {
+                Event evt = events[i];
+                AdjustTimestampsToTimezone(ref evt, evt.Calendar.Timezone);
+                events[i] = evt;
             }
 
             return events;
@@ -339,12 +318,20 @@ namespace SchedulerBot.Data.Services
                     .ToListAsync();
             }
 
+            for (int i = 0; i < events.Count; i++)
+            {
+                Event evt = events[i];
+                AdjustTimestampsToTimezone(ref evt, evt.Calendar.Timezone);
+                events[i] = evt;
+            }
+
             return events;
         }
 
         public async Task<Event> ToggleRSVPByIndexAsync(ulong calendarId, ulong userId, int index)
         {
             Event evt;
+            string timezone;
 
             using (var db = _contextFactory.CreateDbContext())
             {
@@ -362,6 +349,7 @@ namespace SchedulerBot.Data.Services
 
                 evt = events[index];
                 evt = await db.Events
+                    .Include(e => e.Mentions)
                     .Include(e => e.RSVPs)
                     .Where(e => e == evt)
                     .FirstOrDefaultAsync();
@@ -386,7 +374,14 @@ namespace SchedulerBot.Data.Services
                 }
 
                 await db.SaveChangesAsync();
+
+                timezone = await db.Calendars
+                    .Where(c => c.Id == calendarId)
+                    .Select(c => c.Timezone)
+                    .FirstOrDefaultAsync();
             }
+
+            AdjustTimestampsToTimezone(ref evt, timezone);
 
             return evt;
         }
@@ -437,6 +432,21 @@ namespace SchedulerBot.Data.Services
 
                 await db.SaveChangesAsync();
             }
+
+        }
+
+        private void AdjustTimestampsToTimezone(ref Event evt, string timezone)
+        {
+            var tz = DateTimeZoneProviders.Tzdb[timezone];
+            Instant instant = Instant.FromDateTimeOffset(evt.StartTimestamp);
+            LocalDateTime dt = new ZonedDateTime(instant, DateTimeZoneProviders.Tzdb[timezone]).LocalDateTime;
+            ZonedDateTime zdt = tz.AtStrictly(dt);
+            evt.StartTimestamp = zdt.ToDateTimeOffset();
+
+            instant = Instant.FromDateTimeOffset(evt.EndTimestamp);
+            dt = new ZonedDateTime(instant, DateTimeZoneProviders.Tzdb[timezone]).LocalDateTime;
+            zdt = tz.AtStrictly(dt);
+            evt.EndTimestamp = zdt.ToDateTimeOffset();
         }
     }
 }
