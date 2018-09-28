@@ -10,7 +10,6 @@ This codebase represents SchedulerBot version 2 and above, which was rewritten t
 
 - [Microsoft .NET Core 2.1](https://www.microsoft.com/net/download)
 - [PostgreSQL 10+](https://www.postgresql.org/download/)
-- [Redis 4.0.9+](https://redis.io/download)
 
 ## Migrating from v1.0.x to v2.0
 
@@ -85,7 +84,14 @@ Alternatively, open the solution in Visual Studio and debug the `SchedulerBot.Cl
 
 ## Docker Support
 
-This project has support for Docker and Docker Compose. Simply run `docker-compose up` from the solution root to start the container, while supplying a suitable `ASPNETCORE_ENVIRONMENT` environment variable. Note that the `Development` environment is not supported due to different configuration file path handling.
+This project has support for Docker.
+
+To build and run:
+
+```bash
+$ docker build . -t schedulerbot:dev
+$ docker run -e "ASPNETCORE_ENVIRONMENT=Development" -d schedulerbot:dev
+```
 
 ## Production Configuration
 

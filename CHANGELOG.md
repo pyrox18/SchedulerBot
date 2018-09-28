@@ -2,7 +2,7 @@
 
 This changelog is formatted based on [Keep a Changelog](http://keepachangelog.com/) and this project attempts to adhere to [Semantic Versioning](http://semver.org) as much as possible.
 
-## Unreleased
+## v2.0.0 - 2018-09-28
 
 The entire bot is rewritten in .NET Core, with the DSharpPlus library. The application now uses PostgreSQL as the database layer.
 
@@ -20,6 +20,7 @@ The entire bot is rewritten in .NET Core, with the DSharpPlus library. The appli
   - EventRSVP
   - Time
 - Introduced a new "All" permission node, which denies permissions for all other nodes but does not overwrite any existing permissions that have been set.
+- Added shard count to the `info` command.
 
 ### Changed
 
@@ -46,6 +47,7 @@ The entire bot is rewritten in .NET Core, with the DSharpPlus library. The appli
 
 - Removed admin `eval` and `shell` commands.
 - Removed event descriptions and repeat types from being displayed in the base `event list` command. Each event's details can instead be viewed with the new `event list <event number>` command.
+- Removed the application's dependency on Redis.
 
 ### Fixed
 
