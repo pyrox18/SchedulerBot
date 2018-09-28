@@ -260,5 +260,12 @@ paket-files/
 __pycache__/
 *.pyc
 
-# App settings
+# App settings and config files
 SchedulerBot.Client/appsettings.*.json
+SchedulerBot.MigrationTool/appsettings.*.json
+
+# Visual Studio Code
+.vscode/
+
+# Environment variable file
+.env
