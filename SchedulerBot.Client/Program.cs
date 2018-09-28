@@ -179,20 +179,6 @@ namespace SchedulerBot.Client
                 services.AddSingleton<IRavenClient, RavenClient>();
             }
 
-            // Redis lock factory configuration
-            var endpoints = new List<RedLockEndPoint>
-            {
-                new DnsEndPoint(Configuration.GetConnectionString("Redis"), 6379)
-            };
-            var redlockFactory = RedLockFactory.Create(endpoints, loggerFactory);
-            services.AddSingleton<IDistributedLockFactory>(redlockFactory);
-
-            //services.AddEntityFrameworkNpgsql()
-            //    .AddDbContext<SchedulerBotContext>(options =>
-            //    {
-            //        options.UseNpgsql(connectionString);
-            //    });
-
             services.AddSingleton(new SchedulerBotContextFactory(connectionString));
 
             services.AddSingleton<ICalendarService, CalendarService>()
@@ -225,69 +211,25 @@ namespace SchedulerBot.Client
             };
 
             var calendarService = ServiceProvider.GetService<ICalendarService>();
-            var redlockFactory = ServiceProvider.GetService<IDistributedLockFactory>();
-            using (var redlock = await redlockFactory.CreateLockAsync(e.Guild.Id.ToString(), TimeSpan.FromSeconds(15), TimeSpan.FromSeconds(10), TimeSpan.FromSeconds(0.5)))
-            {
-                if (redlock.IsAcquired)
-                {
-                    await calendarService.CreateCalendarAsync(calendar);
-                }
-                else
-                {
-                    throw new RedisLockAcquireException($"Cannot acquire lock for guild {e.Guild.Id}");
-                }
-            }
+            await calendarService.CreateCalendarAsync(calendar);
         }
 
         private async Task OnGuildDelete(GuildDeleteEventArgs e)
         {
             var calendarService = ServiceProvider.GetService<ICalendarService>();
-            var redlockFactory = ServiceProvider.GetService<IDistributedLockFactory>();
-            using (var redlock = await redlockFactory.CreateLockAsync(e.Guild.Id.ToString(), TimeSpan.FromSeconds(15), TimeSpan.FromSeconds(10), TimeSpan.FromSeconds(0.5)))
-            {
-                if (redlock.IsAcquired)
-                {
-                    await calendarService.DeleteCalendarAsync(e.Guild.Id);
-                }
-                else
-                {
-                    throw new RedisLockAcquireException($"Cannot acquire lock for guild {e.Guild.Id}");
-                }
-            }
+            await calendarService.DeleteCalendarAsync(e.Guild.Id);
         }
 
         private async Task OnGuildMemberRemove(GuildMemberRemoveEventArgs e)
         {
             var permissionService = ServiceProvider.GetService<IPermissionService>();
-            var redlockFactory = ServiceProvider.GetService<IDistributedLockFactory>();
-            using (var redlock = await redlockFactory.CreateLockAsync(e.Guild.Id.ToString(), TimeSpan.FromSeconds(15), TimeSpan.FromSeconds(10), TimeSpan.FromSeconds(0.5)))
-            {
-                if (redlock.IsAcquired)
-                {
-                    await permissionService.RemoveUserPermissionsAsync(e.Guild.Id, e.Member.Id);
-                }
-                else
-                {
-                    throw new RedisLockAcquireException($"Cannot acquire lock for guild {e.Guild.Id}");
-                }
-            }
+            await permissionService.RemoveUserPermissionsAsync(e.Guild.Id, e.Member.Id);
         }
 
         private async Task OnGuildRoleDelete(GuildRoleDeleteEventArgs e)
         {
             var permissionService = ServiceProvider.GetService<IPermissionService>();
-            var redlockFactory = ServiceProvider.GetService<IDistributedLockFactory>();
-            using (var redlock = await redlockFactory.CreateLockAsync(e.Guild.Id.ToString(), TimeSpan.FromSeconds(15), TimeSpan.FromSeconds(10), TimeSpan.FromSeconds(0.5)))
-            {
-                if (redlock.IsAcquired)
-                {
-                    await permissionService.RemoveRolePermissionsAsync(e.Guild.Id, e.Role.Id);
-                }
-                else
-                {
-                    throw new RedisLockAcquireException($"Cannot acquire lock for guild {e.Guild.Id}");
-                }
-            }
+            await permissionService.RemoveRolePermissionsAsync(e.Guild.Id, e.Role.Id);
         }
 
         private async Task OnClientReady(ReadyEventArgs e)

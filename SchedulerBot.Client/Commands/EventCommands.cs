@@ -5,7 +5,6 @@ using System.Threading.Tasks;
 using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Attributes;
 using DSharpPlus.Interactivity;
-using RedLockNet;
 using SchedulerBot.Client.Attributes;
 using SchedulerBot.Client.Factories;
 using SchedulerBot.Client.Exceptions;
@@ -26,15 +25,13 @@ namespace SchedulerBot.Client.Commands
         private readonly IEventService _eventService;
         private readonly IPermissionService _permissionService;
         private readonly IEventScheduler _eventScheduler;
-        private readonly IDistributedLockFactory _redlockFactory;
 
-        public EventCommands(ICalendarService calendarService, IEventService eventService, IPermissionService permissionService, IEventScheduler eventScheduler, IDistributedLockFactory redlockFactory)
+        public EventCommands(ICalendarService calendarService, IEventService eventService, IPermissionService permissionService, IEventScheduler eventScheduler)
         {
             _calendarService = calendarService;
             _eventService = eventService;
             _permissionService = permissionService;
             _eventScheduler = eventScheduler;
-            _redlockFactory = redlockFactory;
         }
 
         [GroupCommand, Description("Create an event.")]
@@ -78,24 +75,14 @@ namespace SchedulerBot.Client.Commands
             }
 
             Event savedEvent;
-            using (var redlock = await _redlockFactory.CreateLockAsync(ctx.Guild.Id.ToString(), TimeSpan.FromSeconds(15), TimeSpan.FromSeconds(10), TimeSpan.FromSeconds(0.5)))
+            try
             {
-                if (redlock.IsAcquired)
-                {
-                    try
-                    {
-                        savedEvent = await _eventService.CreateEventAsync(ctx.Guild.Id, evt);
-                    }
-                    catch (CalendarNotFoundException)
-                    {
-                        await ctx.RespondAsync("Calendar not initialised. Run `init <timezone>` to initialise the calendar.");
-                        return;
-                    }
-                }
-                else
-                {
-                    throw new RedisLockAcquireException($"Cannot acquire lock for guild {ctx.Guild.Id}");
-                }
+                savedEvent = await _eventService.CreateEventAsync(ctx.Guild.Id, evt);
+            }
+            catch (CalendarNotFoundException)
+            {
+                await ctx.RespondAsync("Calendar not initialised. Run `init <timezone>` to initialise the calendar.");
+                return;
             }
 
             var defaultChannelId = await _calendarService.GetCalendarDefaultChannelAsync(ctx.Guild.Id);
@@ -247,17 +234,7 @@ namespace SchedulerBot.Client.Commands
             }
 
             Event savedEvent;
-            using (var redlock = await _redlockFactory.CreateLockAsync(ctx.Guild.Id.ToString(), TimeSpan.FromSeconds(15), TimeSpan.FromSeconds(10), TimeSpan.FromSeconds(0.5)))
-            {
-                if (redlock.IsAcquired)
-                {
-                    savedEvent = await _eventService.UpdateEventAsync(evt);
-                }
-                else
-                {
-                    throw new RedisLockAcquireException($"Cannot acquire lock for guild {ctx.Guild.Id}");
-                }
-            }
+            savedEvent = await _eventService.UpdateEventAsync(evt);
 
             var defaultChannelId = await _calendarService.GetCalendarDefaultChannelAsync(ctx.Guild.Id);
             await _eventScheduler.RescheduleEvent(evt, ctx.Client, defaultChannelId);
@@ -285,34 +262,24 @@ namespace SchedulerBot.Client.Commands
             }
 
             Event evt;
-            using (var redlock = await _redlockFactory.CreateLockAsync(ctx.Guild.Id.ToString(), TimeSpan.FromSeconds(15), TimeSpan.FromSeconds(10), TimeSpan.FromSeconds(0.5)))
+            try
             {
-                if (redlock.IsAcquired)
-                {
-                    try
-                    {
-                        evt = await _eventService.ToggleRSVPByIndexAsync(ctx.Guild.Id, ctx.Member.Id, index - 1);
-                    }
-                    catch (ArgumentOutOfRangeException)
-                    {
-                        await ctx.RespondAsync("Event not found.");
-                        return;
-                    }
-                    catch (CalendarNotFoundException)
-                    {
-                        await ctx.RespondAsync("Calendar not initialised. Run `init <timezone>` to initialise the calendar.");
-                        return;
-                    }
-                    catch (ActiveEventException)
-                    {
-                        await ctx.RespondAsync("Cannot add or remove RSVP on an event already in progress.");
-                        return;
-                    }
-                }
-                else
-                {
-                    throw new RedisLockAcquireException($"Cannot acquire lock for guild {ctx.Guild.Id}");
-                }
+                evt = await _eventService.ToggleRSVPByIndexAsync(ctx.Guild.Id, ctx.Member.Id, index - 1);
+            }
+            catch (ArgumentOutOfRangeException)
+            {
+                await ctx.RespondAsync("Event not found.");
+                return;
+            }
+            catch (CalendarNotFoundException)
+            {
+                await ctx.RespondAsync("Calendar not initialised. Run `init <timezone>` to initialise the calendar.");
+                return;
+            }
+            catch (ActiveEventException)
+            {
+                await ctx.RespondAsync("Cannot add or remove RSVP on an event already in progress.");
+                return;
             }
 
             if (evt == null)
@@ -337,14 +304,12 @@ namespace SchedulerBot.Client.Commands
             private readonly IEventService _eventService;
             private readonly IPermissionService _permissionService;
             private readonly IEventScheduler _eventScheduler;
-            private readonly IDistributedLockFactory _redlockFactory;
 
-            public DeleteCommands(IEventService eventService, IPermissionService permissionService, IEventScheduler eventScheduler, IDistributedLockFactory redlockFactory)
+            public DeleteCommands(IEventService eventService, IPermissionService permissionService, IEventScheduler eventScheduler)
             {
                 _eventService = eventService;
                 _permissionService = permissionService;
                 _eventScheduler = eventScheduler;
-                _redlockFactory = redlockFactory;
             }
 
             [GroupCommand, Description("Delete an event.")]
@@ -366,29 +331,19 @@ namespace SchedulerBot.Client.Commands
                 }
 
                 Event deletedEvent;
-                using (var redlock = await _redlockFactory.CreateLockAsync(ctx.Guild.Id.ToString(), TimeSpan.FromSeconds(15), TimeSpan.FromSeconds(10), TimeSpan.FromSeconds(0.5)))
+                try
                 {
-                    if (redlock.IsAcquired)
-                    {
-                        try
-                        {
-                            deletedEvent = await _eventService.DeleteEventAsync(ctx.Guild.Id, index - 1);
-                        }
-                        catch (ArgumentOutOfRangeException)
-                        {
-                            await ctx.RespondAsync("Event not found.");
-                            return;
-                        }
-                        catch (CalendarNotFoundException)
-                        {
-                            await ctx.RespondAsync("Calendar not initialised. Run `init <timezone>` to initialise the calendar.");
-                            return;
-                        }
-                    }
-                    else
-                    {
-                        throw new RedisLockAcquireException($"Cannot acquire lock for guild {ctx.Guild.Id}");
-                    }
+                    deletedEvent = await _eventService.DeleteEventAsync(ctx.Guild.Id, index - 1);
+                }
+                catch (ArgumentOutOfRangeException)
+                {
+                    await ctx.RespondAsync("Event not found.");
+                    return;
+                }
+                catch (CalendarNotFoundException)
+                {
+                    await ctx.RespondAsync("Calendar not initialised. Run `init <timezone>` to initialise the calendar.");
+                    return;
                 }
 
                 if (deletedEvent == null)
@@ -416,24 +371,14 @@ namespace SchedulerBot.Client.Commands
                 }
 
                 List<Event> deletedEvents;
-                using (var redlock = await _redlockFactory.CreateLockAsync(ctx.Guild.Id.ToString(), TimeSpan.FromSeconds(15), TimeSpan.FromSeconds(10), TimeSpan.FromSeconds(0.5)))
+                try
                 {
-                    if (redlock.IsAcquired)
-                    {
-                        try
-                        {
-                            deletedEvents = await _eventService.DeleteAllEventsAsync(ctx.Guild.Id);
-                        }
-                        catch (CalendarNotFoundException)
-                        {
-                            await ctx.RespondAsync("Calendar not initialised. Run `init <timezone>` to initialise the calendar.");
-                            return;
-                        }
-                    }
-                    else
-                    {
-                        throw new RedisLockAcquireException($"Cannot acquire lock for guild {ctx.Guild.Id}");
-                    }
+                    deletedEvents = await _eventService.DeleteAllEventsAsync(ctx.Guild.Id);
+                }
+                catch (CalendarNotFoundException)
+                {
+                    await ctx.RespondAsync("Calendar not initialised. Run `init <timezone>` to initialise the calendar.");
+                    return;
                 }
                 
                 foreach (var evt in deletedEvents)

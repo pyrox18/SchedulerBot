@@ -16,13 +16,11 @@ namespace SchedulerBot.Client.Scheduler
     public class EventScheduler : IEventScheduler
     {
         private readonly IEventService _eventService;
-        private readonly IDistributedLockFactory _redlockFactory;
         public IScheduler Scheduler { get; set; }
 
-        public EventScheduler(IEventService eventService, IDistributedLockFactory redlockFactory)
+        public EventScheduler(IEventService eventService)
         {
             _eventService = eventService;
-            _redlockFactory = redlockFactory;
             InitialiseScheduler().GetAwaiter().GetResult();
         }
 
@@ -138,10 +136,8 @@ namespace SchedulerBot.Client.Scheduler
                         ["eventId"] = evt.Id,
                         ["client"] = client,
                         ["channelId"] = channelId,
-                        ["guildId"] = guildId ?? evt.Calendar.Id,
                         ["eventService"] = _eventService,
-                        ["eventScheduler"] = this,
-                        ["redlockFactory"] = _redlockFactory
+                        ["eventScheduler"] = this
                     })
                     .Build();
 
@@ -159,9 +155,7 @@ namespace SchedulerBot.Client.Scheduler
                 {
                     ["client"] = client,
                     ["eventId"] = evt.Id,
-                    ["guildId"] = guildId ?? evt.Calendar.Id,
-                    ["eventService"] = _eventService,
-                    ["redlockFactory"] = _redlockFactory
+                    ["eventService"] = _eventService
                 };
 
                 IJobDetail deleteJob = JobBuilder.Create<EventDeleteJob>()
