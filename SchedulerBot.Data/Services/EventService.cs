@@ -452,6 +452,14 @@ namespace SchedulerBot.Data.Services
             dt = new ZonedDateTime(instant, DateTimeZoneProviders.Tzdb[timezone]).LocalDateTime;
             zdt = tz.AtStrictly(dt);
             evt.EndTimestamp = zdt.ToDateTimeOffset();
+
+            if (evt.ReminderTimestamp != null)
+            {
+                instant = Instant.FromDateTimeOffset((DateTimeOffset)evt.ReminderTimestamp);
+                dt = new ZonedDateTime(instant, DateTimeZoneProviders.Tzdb[timezone]).LocalDateTime;
+                zdt = tz.AtStrictly(dt);
+                evt.ReminderTimestamp = zdt.ToDateTimeOffset();
+            }
         }
     }
 }
