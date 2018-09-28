@@ -296,7 +296,24 @@ namespace SchedulerBot.Data.Services
 
             using (var db = _contextFactory.CreateDbContext())
             {
-                evt = await GetEventByIndexAsync(calendarId, index);
+                var isCalendarExists = await db.Calendars.AnyAsync(c => c.Id == calendarId);
+                if (!isCalendarExists)
+                {
+                    throw new CalendarNotFoundException();
+                }
+
+                var events = await db.Calendars
+                    .Where(c => c.Id == calendarId)
+                    .Select(c => c.Events)
+                    .FirstOrDefaultAsync();
+                events = events.OrderBy(e => e.StartTimestamp).ToList();
+
+                evt = events[index];
+                evt = await db.Events
+                    .Include(e => e.RSVPs)
+                    .Where(e => e == evt)
+                    .FirstOrDefaultAsync();
+
                 if (evt.StartTimestamp <= DateTimeOffset.Now)
                 {
                     throw new ActiveEventException();
