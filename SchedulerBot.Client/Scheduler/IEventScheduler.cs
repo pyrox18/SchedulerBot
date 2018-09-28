@@ -9,7 +9,7 @@ namespace SchedulerBot.Client.Scheduler
     {
         Task Start();
         Task Shutdown();
-        Task PollAndScheduleEvents(DiscordShardedClient client);
+        Task PollAndScheduleEvents(DiscordClient client);
         Task ScheduleEvent(Event evt, DiscordClient client, ulong channelId, ulong? guildId = null);
         Task UnscheduleEvent(Event evt);
         Task UnscheduleEvent(Guid eventId);

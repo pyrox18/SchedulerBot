@@ -242,17 +242,12 @@ namespace SchedulerBot.Client
             await e.Client.UpdateStatusAsync(new DiscordActivity(string.Format(Configuration.GetSection("Bot").GetValue<string>("Status"), version)));
 
             // Start event polling
-            logger.LogInformation("Starting initial event poll");
-            await PollAndScheduleEvents();
-            logger.LogInformation("Initial event poll completed");
-            logger.LogInformation("Starting poll timer");
-            Timer t = new Timer(60 * 60 * 1000)
-            {
-                AutoReset = true
-            };
-            t.Elapsed += new ElapsedEventHandler(PollerTimerElapsed);
-            t.Start();
-            logger.LogInformation("Poll timer started");
+            logger.LogInformation($"Starting initial event poll for shard {e.Client.ShardId}");
+            await PollAndScheduleEvents(e.Client);
+            logger.LogInformation($"Initial event poll completed for shard {e.Client.ShardId}");
+            logger.LogInformation($"Starting poll timer for shard {e.Client.ShardId}");
+            StartEventPollTimer(e.Client);
+            logger.LogInformation($"Poll timer started for shard {e.Client.ShardId}");
         }
 
         private async Task OnCommandError(CommandErrorEventArgs e)
@@ -306,17 +301,22 @@ namespace SchedulerBot.Client
             return prefix.Length;
         }
 
-        private async void PollerTimerElapsed(object sender, ElapsedEventArgs e)
+        private void StartEventPollTimer(DiscordClient client)
         {
-            await PollAndScheduleEvents();
+            Timer t = new Timer(60 * 60 * 1000)
+            {
+                AutoReset = true
+            };
+            t.Elapsed += new ElapsedEventHandler(async (sender, e) => await PollAndScheduleEvents(client));
+            t.Start();
         }
 
-        private async Task PollAndScheduleEvents()
+        private async Task PollAndScheduleEvents(DiscordClient client)
         {
             var logger = ServiceProvider.GetService<ILogger<Program>>();
             var eventScheduler = ServiceProvider.GetService<IEventScheduler>();
-            logger.LogInformation("Polling for events");
-            await eventScheduler.PollAndScheduleEvents(Client);
+            logger.LogInformation($"Polling for events for shard {client.ShardId}");
+            await eventScheduler.PollAndScheduleEvents(client);
         }
 
         private void OnLogMessageReceived(object sender, DebugLogMessageEventArgs e)
