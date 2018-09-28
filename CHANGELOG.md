@@ -2,6 +2,14 @@
 
 This changelog is formatted based on [Keep a Changelog](http://keepachangelog.com/) and this project attempts to adhere to [Semantic Versioning](http://semver.org) as much as possible.
 
+## v2.0.2 - 2018-09-29
+
+### Fixed
+
+- Fixed an issue where the bot does not poll for events after the initial event poll due to old code that was not removed.
+- Fixed a potential issue where event polling would be done multiple times per timer elapsed event based on the number of shards present on the sharded client.
+- Fixed an issue where the Raven client was not properly being registered as a service.
+
 ## v2.0.1 - 2018-09-28
 
 ### Fixed
