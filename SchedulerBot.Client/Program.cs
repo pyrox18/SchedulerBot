@@ -176,7 +176,7 @@ namespace SchedulerBot.Client
             {
                 var dsn = Configuration.GetSection("Raven").GetValue<string>("DSN");
                 var ravenClient = new RavenClient(dsn);
-                services.AddSingleton<IRavenClient, RavenClient>();
+                services.AddSingleton<IRavenClient>(ravenClient);
             }
 
             services.AddSingleton(new SchedulerBotContextFactory(connectionString));
