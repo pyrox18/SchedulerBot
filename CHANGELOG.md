@@ -2,6 +2,15 @@
 
 This changelog is formatted based on [Keep a Changelog](http://keepachangelog.com/) and this project attempts to adhere to [Semantic Versioning](http://semver.org) as much as possible.
 
+## v2.0.3 - 2018-09-29
+
+### Fixed
+
+- Placed additional job trigger existence checks in the event scheduler to fix an error where duplicate event repeat jobs would be attempted to be added.
+- Fixed an error where attempting to delete an event at an index that is out of range would result in an uncaught exception.
+- Added ignore conditions for invalid operation exceptions that arise from attempting to call commands that do not exist.
+- Fixed an issue where the bot would throw an exception when modifying the timezone through the settings command on an uninitialised calendar.
+
 ## v2.0.2 - 2018-09-29
 
 ### Fixed
