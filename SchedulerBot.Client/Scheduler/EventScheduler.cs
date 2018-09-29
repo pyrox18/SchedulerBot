@@ -91,7 +91,6 @@ namespace SchedulerBot.Client.Scheduler
 
             if (!evt.HasStarted())
             {
-
                 IJobDetail notifyJob = JobBuilder.Create<EventNotifyJob>()
                     .WithIdentity(evt.Id.ToString(), "eventNotifications")
                     .UsingJobData(notifyJobDataMap)
@@ -103,8 +102,10 @@ namespace SchedulerBot.Client.Scheduler
                     .ForJob(notifyJob)
                     .Build();
 
-
-                await Scheduler.ScheduleJob(notifyJob, notifyTrigger);
+                if (!await Scheduler.CheckExists(notifyTrigger.Key))
+                {
+                    await Scheduler.ScheduleJob(notifyJob, notifyTrigger);
+                }
 
                 if (evt.ReminderTimestamp != null && !evt.HasReminderPassed())
                 {
@@ -119,7 +120,10 @@ namespace SchedulerBot.Client.Scheduler
                         .ForJob(reminderJob)
                         .Build();
 
-                    await Scheduler.ScheduleJob(reminderJob, reminderTrigger);
+                    if (!await Scheduler.CheckExists(reminderTrigger.Key))
+                    {
+                        await Scheduler.ScheduleJob(reminderJob, reminderTrigger);
+                    }
                 }
             }
 
@@ -143,7 +147,10 @@ namespace SchedulerBot.Client.Scheduler
                     .ForJob(repeatJob)
                     .Build();
 
-                await Scheduler.ScheduleJob(repeatJob, repeatTrigger);
+                if (!await Scheduler.CheckExists(repeatTrigger.Key))
+                {
+                    await Scheduler.ScheduleJob(repeatJob, repeatTrigger);
+                }
             }
             else
             {
@@ -165,7 +172,10 @@ namespace SchedulerBot.Client.Scheduler
                     .ForJob(deleteJob)
                     .Build();
 
-                await Scheduler.ScheduleJob(deleteJob, deleteTrigger);
+                if (!await Scheduler.CheckExists(deleteTrigger.Key))
+                {
+                    await Scheduler.ScheduleJob(deleteJob, deleteTrigger);
+                }
             }
         }
 

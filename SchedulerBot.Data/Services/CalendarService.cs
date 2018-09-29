@@ -148,7 +148,7 @@ namespace SchedulerBot.Data.Services
                 calendar = await db.Calendars
                     .Include(c => c.Events)
                     .FirstOrDefaultAsync(c => c.Id == calendarId);
-                if (calendar == null)
+                if (calendar == null || string.IsNullOrEmpty(calendar.Timezone))
                 {
                     throw new CalendarNotFoundException();
                 }

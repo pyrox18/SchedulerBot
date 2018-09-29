@@ -94,6 +94,10 @@ namespace SchedulerBot.Data.Services
                     .Select(c => c.Events)
                     .FirstOrDefaultAsync();
                 events = events.OrderBy(e => e.StartTimestamp).ToList();
+                if (index + 1 > events.Count)
+                {
+                    throw new EventNotFoundException();
+                }
 
                 deletedEvent = await db.Events
                     .Include(e => e.Mentions)
