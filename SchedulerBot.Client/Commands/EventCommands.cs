@@ -343,6 +343,11 @@ namespace SchedulerBot.Client.Commands
                     await ctx.RespondAsync("Event not found.");
                     return;
                 }
+                catch (EventNotFoundException)
+                {
+                    await ctx.RespondAsync("Event not found.");
+                    return;
+                }
                 catch (CalendarNotFoundException)
                 {
                     await ctx.RespondAsync("Calendar not initialised. Run `init <timezone>` to initialise the calendar.");
