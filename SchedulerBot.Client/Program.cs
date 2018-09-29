@@ -253,7 +253,7 @@ namespace SchedulerBot.Client
         private async Task OnCommandError(CommandErrorEventArgs e)
         {
             var exceptionType = e.Exception.GetType();
-            if (exceptionType != typeof(CommandNotFoundException) && exceptionType != typeof(ArgumentException) && exceptionType != typeof(UnauthorizedException))
+            if (exceptionType != typeof(CommandNotFoundException) && exceptionType != typeof(ArgumentException) && exceptionType != typeof(UnauthorizedException) && exceptionType != typeof(InvalidOperationException))
             {
                 var logger = ServiceProvider.GetService<ILogger<Program>>();
                 var errorId = Guid.NewGuid();
