@@ -140,10 +140,17 @@ namespace SchedulerBot.Client.Parsers
                                     else
                                     {
                                         mention.Type = MentionType.User;
-                                        mentionIdString = value.Substring(2);
+                                        if (value.StartsWith("<@!"))
+                                        {
+                                            mentionIdString = value.Substring(3);
+                                        }
+                                        else
+                                        {
+                                            mentionIdString = value.Substring(2);
+                                        }
                                     }
                                     mentionIdString = mentionIdString.TrimEnd('>');
-                                    mention.TargetId = UInt64.Parse(mentionIdString);
+                                    mention.TargetId = ulong.Parse(mentionIdString);
                                     evt.Mentions.Add(mention);
                                 }
                             }
