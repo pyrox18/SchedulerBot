@@ -260,6 +260,7 @@ namespace SchedulerBot.Client
                 logger.LogError($"{errorId}: {e.Exception.Message}\n{e.Exception.StackTrace}");
 
                 var ravenClient = ServiceProvider.GetService<IRavenClient>();
+                string sentryEventId = string.Empty;
                 if (ravenClient != null)
                 {
                     e.Exception.Data.Add("ErrorEventId", errorId.ToString());
@@ -269,12 +270,16 @@ namespace SchedulerBot.Client
                     e.Exception.Data.Add("UserId", e.Context.Member.Id);
                     e.Exception.Data.Add("ShardId", e.Context.Client.ShardId);
 
-                    await ravenClient.CaptureAsync(new SentryEvent(e.Exception));
+                    sentryEventId = await ravenClient.CaptureAsync(new SentryEvent(e.Exception));
                 }
 
                 var sb = new StringBuilder();
                 sb.AppendLine("An error has occurred. Please report this in the support server using the `support` command.");
                 sb.AppendLine($"Error event ID: {errorId}");
+                if (!string.IsNullOrEmpty(sentryEventId))
+                {
+                    sb.AppendLine($"Sentry event ID: {sentryEventId}");
+                }
                 sb.AppendLine("```");
                 sb.AppendLine($"{e.Exception.Message}");
                 sb.AppendLine("```");

@@ -140,10 +140,17 @@ namespace SchedulerBot.Client.Parsers
                                     else
                                     {
                                         mention.Type = MentionType.User;
-                                        mentionIdString = value.Substring(2);
+                                        if (value.StartsWith("<@!"))
+                                        {
+                                            mentionIdString = value.Substring(3);
+                                        }
+                                        else
+                                        {
+                                            mentionIdString = value.Substring(2);
+                                        }
                                     }
                                     mentionIdString = mentionIdString.TrimEnd('>');
-                                    mention.TargetId = UInt64.Parse(mentionIdString);
+                                    mention.TargetId = ulong.Parse(mentionIdString);
                                     evt.Mentions.Add(mention);
                                 }
                             }
@@ -199,9 +206,14 @@ namespace SchedulerBot.Client.Parsers
             }
 
             var results = DateTimeRecognizer.RecognizeDateTime(bodyString, Culture.English);
-            if (results.Count > 0 && results.First().TypeName.StartsWith("datetimeV2"))
+            if (results.Count > 0 && results.Any(r => r.TypeName.StartsWith("datetimeV2")))
             {
-                var first = results.First();
+                var first = results.FirstOrDefault(r => r.Resolution != null);
+                if (first == null)
+                {
+                    throw new EventParseException();
+                }
+
                 var resolutionValues = (IList<Dictionary<string, string>>)first.Resolution["values"];
 
                 var subType = first.TypeName.Split('.').Last();
