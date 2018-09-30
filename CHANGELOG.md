@@ -2,7 +2,7 @@
 
 This changelog is formatted based on [Keep a Changelog](http://keepachangelog.com/) and this project attempts to adhere to [Semantic Versioning](http://semver.org) as much as possible.
 
-## [Unreleased]
+## v2.0.4 - 2018-09-30
 
 ### Added
 
@@ -12,6 +12,7 @@ This changelog is formatted based on [Keep a Changelog](http://keepachangelog.co
 
 - Added handling for nickname mention strings in the event parser.
 - Added null checks for the arguments string in the event update command.
+- Fixed an issue where the event parser was detecting special occasions such as "Halloween" as a valid date.
 
 ## v2.0.3 - 2018-09-29
 
