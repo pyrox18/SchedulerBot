@@ -188,6 +188,12 @@ namespace SchedulerBot.Client.Commands
                 return;
             }
 
+            if (string.IsNullOrEmpty(args))
+            {
+                await ctx.RespondAsync("No arguments given for updating the event.");
+                return;
+            }
+
             var timezone = await _calendarService.GetCalendarTimezoneAsync(ctx.Guild.Id);
             if (string.IsNullOrEmpty(timezone))
             {
