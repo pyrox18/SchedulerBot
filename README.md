@@ -17,6 +17,8 @@ A data migration tool is available for migrating data from a MongoDB database th
 
 ## Installation and Usage
 
+All command examples given assume the use of a Bash shell.
+
 1. Clone the repository.
 
 ```bash
