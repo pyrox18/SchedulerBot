@@ -234,6 +234,7 @@ namespace SchedulerBot.Data.Services
                 eventInDb.Name = evt.Name;
                 eventInDb.StartTimestamp = evt.StartTimestamp;
                 eventInDb.EndTimestamp = evt.EndTimestamp;
+                eventInDb.ReminderTimestamp = evt.ReminderTimestamp;
                 eventInDb.Description = evt.Description;
                 eventInDb.Repeat = evt.Repeat;
                 eventInDb.Mentions = evt.Mentions;
