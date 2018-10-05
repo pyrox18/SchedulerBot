@@ -479,6 +479,7 @@ namespace SchedulerBot.Data.Services
             int currentMonth = dt.Month;
             int nextMonth = dt.AddMonths(1).Month;
             int weekdayIndex = 0;
+            bool isLastWeekday = false;
             DateTimeOffset m = dt;
             List<DateTimeOffset> monthList = new List<DateTimeOffset>();
             List<DateTimeOffset> nextMonthList = new List<DateTimeOffset>();
@@ -513,20 +514,22 @@ namespace SchedulerBot.Data.Services
                 if (m.Month == nextMonth)
                 {
                     nextMonthList.Add(m);
-                    weekdayIndex++;
                 }
             } while (m.Month == nextMonth);
 
             // monthList     = [m-7, m-7,   m, m+7, m+7, m+7]
             // nextMonthList = [  n, n+7, n+7, n+7, n+7]
 
-            if (weekdayIndex < nextMonthList.Count)
-            {
-                return nextMonthList[weekdayIndex];
-            }
-            else
+            // Repeat on last weekday of the month?
+            isLastWeekday = weekdayIndex == monthList.Count - 1;
+
+            if (isLastWeekday)
             {  // eg. last Monday of the month
                 return nextMonthList[nextMonthList.Count - 1];
+            }
+            else // if (weekdayIndex < nextMonthList.Count)
+            {
+                return nextMonthList[weekdayIndex];
             }
         }
     }
