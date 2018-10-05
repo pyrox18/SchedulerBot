@@ -2,6 +2,18 @@
 
 This changelog is formatted based on [Keep a Changelog](http://keepachangelog.com/) and this project attempts to adhere to [Semantic Versioning](http://semver.org) as much as possible.
 
+## v2.0.5 - 2018-10-05
+
+### Changed
+
+- Updated the README to clarify instructions and configuration settings.
+
+### Fixed
+
+- Fixed an issue where event update commands were not saving reminder flags.
+- Fixed an issue where seasons such as "Fall" and "Autumn" were detected as non-resolvable date ranges, which was not handled properly.
+- Modified handling of timestamps that are potentially ambiguous due to daylight savings.
+
 ## v2.0.4 - 2018-09-30
 
 ### Added
