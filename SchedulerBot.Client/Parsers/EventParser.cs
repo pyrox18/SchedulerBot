@@ -208,7 +208,25 @@ namespace SchedulerBot.Client.Parsers
             var results = DateTimeRecognizer.RecognizeDateTime(bodyString, Culture.English);
             if (results.Count > 0 && results.Any(r => r.TypeName.StartsWith("datetimeV2")))
             {
-                var first = results.FirstOrDefault(r => r.Resolution != null);
+                var first = results
+                    .Where(r => r.Resolution != null)
+                    .SkipWhile(r =>
+                    {
+                        var v = (IList<Dictionary<string, string>>)r.Resolution["values"];
+                        var returnValue = v.Any(x =>
+                        {
+                            try
+                            {
+                                return x["value"] == "not resolved";
+                            }
+                            catch (KeyNotFoundException)
+                            {
+                                return false;
+                            }
+                        });
+                        return returnValue;
+                    })
+                    .FirstOrDefault();
                 if (first == null)
                 {
                     throw new EventParseException();
@@ -227,7 +245,7 @@ namespace SchedulerBot.Client.Parsers
                         value = string.Format("{0}{1}", DateTime.Now.Year, value);
                     }
                     LocalDateTime startDateTime = _dateOnlyPattern.Parse(value).Value;
-                    ZonedDateTime zonedStartDateTime = tz.AtStrictly(startDateTime);
+                    ZonedDateTime zonedStartDateTime = tz.AtLeniently(startDateTime);
 
                     if (IsFuture(zonedStartDateTime.ToDateTimeOffset()))
                     {
@@ -250,7 +268,7 @@ namespace SchedulerBot.Client.Parsers
                         value = string.Format("{0}{1}", DateTime.Now.Year, value);
                     }
                     LocalDateTime startDateTime = _dateTimePattern.Parse(value).Value;
-                    ZonedDateTime zonedStartDateTime = tz.AtStrictly(startDateTime);
+                    ZonedDateTime zonedStartDateTime = tz.AtLeniently(startDateTime);
 
                     if (IsFuture(zonedStartDateTime.ToDateTimeOffset()))
                     {
@@ -298,8 +316,8 @@ namespace SchedulerBot.Client.Parsers
                         to = _dateTimePattern.Parse(toString).Value;
                     }
 
-                    ZonedDateTime zonedFrom = tz.AtStrictly(from);
-                    ZonedDateTime zonedTo = tz.AtStrictly(to);
+                    ZonedDateTime zonedFrom = tz.AtLeniently(from);
+                    ZonedDateTime zonedTo = tz.AtLeniently(to);
                     if (IsFuture(zonedFrom.ToDateTimeOffset()) && IsFuture(zonedTo.ToDateTimeOffset()))
                     {
                         evt.StartTimestamp = zonedFrom.ToDateTimeOffset();
@@ -322,7 +340,7 @@ namespace SchedulerBot.Client.Parsers
                     string dateTimeString = string.Format("{0} {1}", today.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture), timeString);
 
                     LocalDateTime startDateTime = _dateTimePattern.Parse(dateTimeString).Value;
-                    ZonedDateTime zonedStartDateTime = tz.AtStrictly(startDateTime);
+                    ZonedDateTime zonedStartDateTime = tz.AtLeniently(startDateTime);
 
                     if (IsFuture(zonedStartDateTime.ToDateTimeOffset()))
                     {
@@ -344,9 +362,9 @@ namespace SchedulerBot.Client.Parsers
                     string toDateTimeString = string.Format("{0} {1}", today.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture), toString);
 
                     LocalDateTime startDateTime = _dateTimePattern.Parse(fromDateTimeString).Value;
-                    ZonedDateTime zonedStartDateTime = tz.AtStrictly(startDateTime);
+                    ZonedDateTime zonedStartDateTime = tz.AtLeniently(startDateTime);
                     LocalDateTime endDateTime = _dateTimePattern.Parse(toDateTimeString).Value;
-                    ZonedDateTime zonedEndDateTime = tz.AtStrictly(endDateTime);
+                    ZonedDateTime zonedEndDateTime = tz.AtLeniently(endDateTime);
 
                     if (IsFuture(zonedStartDateTime.ToDateTimeOffset()) && IsFuture(zonedEndDateTime.ToDateTimeOffset()))
                     {
