@@ -245,7 +245,7 @@ namespace SchedulerBot.Client.Parsers
                         value = string.Format("{0}{1}", DateTime.Now.Year, value);
                     }
                     LocalDateTime startDateTime = _dateOnlyPattern.Parse(value).Value;
-                    ZonedDateTime zonedStartDateTime = tz.AtStrictly(startDateTime);
+                    ZonedDateTime zonedStartDateTime = tz.AtLeniently(startDateTime);
 
                     if (IsFuture(zonedStartDateTime.ToDateTimeOffset()))
                     {
@@ -268,7 +268,7 @@ namespace SchedulerBot.Client.Parsers
                         value = string.Format("{0}{1}", DateTime.Now.Year, value);
                     }
                     LocalDateTime startDateTime = _dateTimePattern.Parse(value).Value;
-                    ZonedDateTime zonedStartDateTime = tz.AtStrictly(startDateTime);
+                    ZonedDateTime zonedStartDateTime = tz.AtLeniently(startDateTime);
 
                     if (IsFuture(zonedStartDateTime.ToDateTimeOffset()))
                     {
@@ -316,8 +316,8 @@ namespace SchedulerBot.Client.Parsers
                         to = _dateTimePattern.Parse(toString).Value;
                     }
 
-                    ZonedDateTime zonedFrom = tz.AtStrictly(from);
-                    ZonedDateTime zonedTo = tz.AtStrictly(to);
+                    ZonedDateTime zonedFrom = tz.AtLeniently(from);
+                    ZonedDateTime zonedTo = tz.AtLeniently(to);
                     if (IsFuture(zonedFrom.ToDateTimeOffset()) && IsFuture(zonedTo.ToDateTimeOffset()))
                     {
                         evt.StartTimestamp = zonedFrom.ToDateTimeOffset();
@@ -340,7 +340,7 @@ namespace SchedulerBot.Client.Parsers
                     string dateTimeString = string.Format("{0} {1}", today.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture), timeString);
 
                     LocalDateTime startDateTime = _dateTimePattern.Parse(dateTimeString).Value;
-                    ZonedDateTime zonedStartDateTime = tz.AtStrictly(startDateTime);
+                    ZonedDateTime zonedStartDateTime = tz.AtLeniently(startDateTime);
 
                     if (IsFuture(zonedStartDateTime.ToDateTimeOffset()))
                     {
@@ -362,9 +362,9 @@ namespace SchedulerBot.Client.Parsers
                     string toDateTimeString = string.Format("{0} {1}", today.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture), toString);
 
                     LocalDateTime startDateTime = _dateTimePattern.Parse(fromDateTimeString).Value;
-                    ZonedDateTime zonedStartDateTime = tz.AtStrictly(startDateTime);
+                    ZonedDateTime zonedStartDateTime = tz.AtLeniently(startDateTime);
                     LocalDateTime endDateTime = _dateTimePattern.Parse(toDateTimeString).Value;
-                    ZonedDateTime zonedEndDateTime = tz.AtStrictly(endDateTime);
+                    ZonedDateTime zonedEndDateTime = tz.AtLeniently(endDateTime);
 
                     if (IsFuture(zonedStartDateTime.ToDateTimeOffset()) && IsFuture(zonedEndDateTime.ToDateTimeOffset()))
                     {
