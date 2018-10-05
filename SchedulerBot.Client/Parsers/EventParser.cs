@@ -93,7 +93,7 @@ namespace SchedulerBot.Client.Parsers
                                 case "m":
                                     evt.Repeat = RepeatType.Monthly;
                                     break;
-                                case "mv":
+                                case "mw":
                                     evt.Repeat = RepeatType.MonthlyWeekday;
                                     break;
                                 case "n":
