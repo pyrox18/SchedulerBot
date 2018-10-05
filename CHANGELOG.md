@@ -2,6 +2,14 @@
 
 This changelog is formatted based on [Keep a Changelog](http://keepachangelog.com/) and this project attempts to adhere to [Semantic Versioning](http://semver.org) as much as possible.
 
+## [Unreleased]
+
+### Changed
+
+- Calendar, event and permission services are now injected as scoped services into command handlers.
+- Database context injection is now handled by the dependency injection container.
+- LoggerFactory now respects the log level set in the application configuration.
+
 ## v2.0.5 - 2018-10-05
 
 ### Changed
