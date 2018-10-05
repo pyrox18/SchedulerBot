@@ -17,6 +17,8 @@ A data migration tool is available for migrating data from a MongoDB database th
 
 ## Installation and Usage
 
+All command examples given assume the use of a Bash shell.
+
 1. Clone the repository.
 
 ```bash
@@ -25,35 +27,25 @@ $ git clone https://github.com/pyrox18/SchedulerBot.git
 
 2. Create a Discord Developer App with an app bot user at https://discordapp.com/developers/applications/me, and note the app bot user token to place in the configuration file.
 3. Ensure that a local PostgreSQL instance is running, and create a database called `schedulerbot`.
-4. Create an `appsettings.Development.json` file in `SchedulerBot/SchedulerBot.Client` with the following contents:
+4. The provided `appsettings.json` file in `SchedulerBot/SchedulerBot.Client` comes with default settings for the client to run. To override any of these settings, create an `appsettings.Development.json` file in `SchedulerBot/SchedulerBot.Client` with the key-value pairs that you want to override with the same hierarchy:
 
 ```json
 {
   "Logging": {
     "LogLevel": {
-      "Default": "Debug",
-      "System": "Information",
-      "Microsoft": "Information"
+      "Default": "Debug"
     }
   },
   "ConnectionStrings": {
-    "SchedulerBotContext": "Server=localhost;Database=schedulerbot",
-	"Redis": "localhost"
+    "SchedulerBotContext": "Server=localhost;Database=schedulerbot;Username=someuser;Password=abc123"
   },
   "Bot": {
-    "Token": "YOUR_BOT_TOKEN_HERE",
-    "Prefixes": ["+"],
-    "Status": "+help | v{0}",
-    "Links": {
-      "BotInvite": "INVITE_LINK_HERE",
-      "SupportServer": "SUPPORT_SERVER_LINK_HERE",
-      "TimezoneList": "http://bit.ly/tz-timezones"
-    }
+    "Token": "YOUR_BOT_TOKEN_HERE"
   }
 }
 ```
 
-Replace `YOUR_BOT_TOKEN_HERE` with the app bot user token generated earlier. Replace `INVITE_LINK_HERE` and `SUPPORT_SERVER_LINK_HERE` with links to a bot invite and a support server, respectively (or omit them if you don't use them).
+Replace `YOUR_BOT_TOKEN_HERE` with the app bot user token generated earlier.
 
 5. Restore the solution's dependencies.
 
@@ -95,39 +87,27 @@ $ docker run -e "ASPNETCORE_ENVIRONMENT=Development" -d schedulerbot:dev
 
 ## Production Configuration
 
-Production application settings should be placed in a `appsettings.Production.json` file in the `SchedulerBot.Client` project directory. The contents are similar to the `appsettings.Development.json` file, with some exceptions.
+Production application settings should be placed in a `appsettings.Production.json` file in the `SchedulerBot.Client` project directory. The contents are similar to the `appsettings.Development.json` file, with the addition of a section for providing the DSN to report errors to for the Sentry error reporting service.
 
 ```json
 {
-  "Logging": {
-    "LogLevel": {
-      "Default": "Information",
-      "System": "Information",
-      "Microsoft": "Information"
-    }
-  },
   "ConnectionStrings": {
-    "SchedulerBotContext": "Server=localhost;Database=schedulerbot",
-	"Redis": "localhost"
+    "SchedulerBotContext": "Server=localhost;Database=schedulerbot;Username=someuser;Password=abc123"
   },
   "Bot": {
-    "Token": "YOUR_BOT_TOKEN_HERE",
-    "Prefixes": [ "+" ],
-    "Status": "+help | v{0}",
-	"Links": {
-      "BotInvite": "INVITE_LINK_HERE",
-      "SupportServer": "SUPPORT_SERVER_LINK_HERE",
-      "TimezoneList": "http://bit.ly/tz-timezones"
-	}
-  },
+    "Token": "YOUR_BOT_TOKEN_HERE"
+  }
   "Raven": {
   	"DSN": "https://<key>@sentry.io/<project>"
   }
 }
 ```
 
-- The default log level is set to "Information".
-- An additional section called "Raven" is present, which specifies the DSN to report errors to for the Sentry error reporting service.
+Alternatively, these settings can be set with environment variables when running the client. Separate hierarchical keys and array index keys with the `__` (double underscore) separator.
+
+```bash
+$ ASPNETCORE_ENVIRONMENT=Production Bot__Token=YOUR_BOT_TOKEN_HERE Prefixes__0=++ Raven__DSN=https://abc@sentry.io/bot dotnet SchedulerBot.Client.dll
+```
 
 ## License
 

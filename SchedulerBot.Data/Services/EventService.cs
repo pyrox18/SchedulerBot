@@ -234,6 +234,7 @@ namespace SchedulerBot.Data.Services
                 eventInDb.Name = evt.Name;
                 eventInDb.StartTimestamp = evt.StartTimestamp;
                 eventInDb.EndTimestamp = evt.EndTimestamp;
+                eventInDb.ReminderTimestamp = evt.ReminderTimestamp;
                 eventInDb.Description = evt.Description;
                 eventInDb.Repeat = evt.Repeat;
                 eventInDb.Mentions = evt.Mentions;
@@ -449,19 +450,19 @@ namespace SchedulerBot.Data.Services
             var tz = DateTimeZoneProviders.Tzdb[timezone];
             Instant instant = Instant.FromDateTimeOffset(evt.StartTimestamp);
             LocalDateTime dt = new ZonedDateTime(instant, DateTimeZoneProviders.Tzdb[timezone]).LocalDateTime;
-            ZonedDateTime zdt = tz.AtStrictly(dt);
+            ZonedDateTime zdt = tz.AtLeniently(dt);
             evt.StartTimestamp = zdt.ToDateTimeOffset();
 
             instant = Instant.FromDateTimeOffset(evt.EndTimestamp);
             dt = new ZonedDateTime(instant, DateTimeZoneProviders.Tzdb[timezone]).LocalDateTime;
-            zdt = tz.AtStrictly(dt);
+            zdt = tz.AtLeniently(dt);
             evt.EndTimestamp = zdt.ToDateTimeOffset();
 
             if (evt.ReminderTimestamp != null)
             {
                 instant = Instant.FromDateTimeOffset((DateTimeOffset)evt.ReminderTimestamp);
                 dt = new ZonedDateTime(instant, DateTimeZoneProviders.Tzdb[timezone]).LocalDateTime;
-                zdt = tz.AtStrictly(dt);
+                zdt = tz.AtLeniently(dt);
                 evt.ReminderTimestamp = zdt.ToDateTimeOffset();
             }
         }
