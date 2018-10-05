@@ -479,18 +479,18 @@ namespace SchedulerBot.Data.Services
             int currentMonth = dt.Month;
             int nextMonth = dt.AddMonths(1).Month;
             int weekdayIndex = 0;
-            DateTimeOffset m;
+            DateTimeOffset m = dt;
             List<DateTimeOffset> monthList = new List<DateTimeOffset>();
             List<DateTimeOffset> nextMonthList = new List<DateTimeOffset>();
 
             // Generate all the 1st, 2nd, 3rd, etc weekday information for the current month
-            monthList.Add(dt);
+            monthList.Add(m);
             do
             {  // Go back one week at a time until we hit the previous month
                 m = m.AddDays(-7);
                 if (m.Month == currentMonth)
                 {
-                    monthList.insert(0, m);
+                    monthList.Insert(0, m);
                     weekdayIndex++;  // eg. the nth Monday of the month
                 }
             } while (m.Month == currentMonth);
