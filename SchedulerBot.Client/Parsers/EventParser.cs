@@ -208,7 +208,25 @@ namespace SchedulerBot.Client.Parsers
             var results = DateTimeRecognizer.RecognizeDateTime(bodyString, Culture.English);
             if (results.Count > 0 && results.Any(r => r.TypeName.StartsWith("datetimeV2")))
             {
-                var first = results.FirstOrDefault(r => r.Resolution != null);
+                var first = results
+                    .Where(r => r.Resolution != null)
+                    .SkipWhile(r =>
+                    {
+                        var v = (IList<Dictionary<string, string>>)r.Resolution["values"];
+                        var returnValue = v.Any(x =>
+                        {
+                            try
+                            {
+                                return x["value"] == "not resolved";
+                            }
+                            catch (KeyNotFoundException)
+                            {
+                                return false;
+                            }
+                        });
+                        return returnValue;
+                    })
+                    .FirstOrDefault();
                 if (first == null)
                 {
                     throw new EventParseException();
