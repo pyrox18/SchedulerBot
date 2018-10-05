@@ -502,7 +502,7 @@ namespace SchedulerBot.Data.Services
                 m = m.AddDays(7);
                 if (m.Month == currentMonth)
                 {
-                    monthList.Insert(0, m);
+                    monthList.Add(m);
                 }
             } while (m.Month == currentMonth);
 
