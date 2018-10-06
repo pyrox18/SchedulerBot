@@ -40,7 +40,20 @@ namespace SchedulerBot.Client.Factories
                 embed.AddField("Reminder", "N/A", true);
             }
 
-            embed.AddField("Repeat", evt.Repeat == RepeatType.None ? "N/A" : evt.Repeat.ToString());
+            string repeatString;
+            switch (evt.Repeat)
+            {
+                case RepeatType.None:
+                    repeatString = "N/A";
+                    break;
+                case RepeatType.MonthlyWeekday:
+                    repeatString = "Monthly by weekday";
+                    break;
+                default:
+                    repeatString = evt.Repeat.ToString();
+                    break;
+            }
+            embed.AddField("Repeat", repeatString);
 
             StringBuilder mentionStringBuilder = new StringBuilder();
             if (evt.Mentions != null)
