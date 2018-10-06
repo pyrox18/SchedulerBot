@@ -90,6 +90,7 @@ namespace SchedulerBot.Client.Commands
             embed.AddField("Users", _shardedClientInformationService.GetTotalUserCount().ToString(), true);
             embed.AddField("Shard Number", $"{ctx.Client.ShardId + 1}/{ctx.Client.ShardCount}", true);
             embed.AddField("Uptime", $"{uptime.Days} day(s), {uptime.Hours} hour(s), {uptime.Minutes} minute(s), {uptime.Seconds} second(s)");
+            embed.AddField("Like the bot?", "[Support us on Patreon!](https://patreon.com/SchedulerBot)");
 
             await ctx.RespondAsync(embed: embed.Build());
         }
