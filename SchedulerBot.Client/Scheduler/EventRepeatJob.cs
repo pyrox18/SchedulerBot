@@ -2,7 +2,6 @@
 using System.Threading.Tasks;
 using DSharpPlus;
 using Quartz;
-using RedLockNet;
 using SchedulerBot.Client.Exceptions;
 using SchedulerBot.Data.Models;
 using SchedulerBot.Data.Services;

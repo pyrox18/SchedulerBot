@@ -82,29 +82,34 @@ namespace SchedulerBot.Client.Parsers
                     switch (key)
                     {
                         case "repeat":
-                            switch (values[0])
+                            if (values.Count == 0) evt.Repeat = RepeatType.None;
+                            else
                             {
-                                case "d":
-                                    evt.Repeat = RepeatType.Daily;
-                                    break;
-                                case "w":
-                                    evt.Repeat = RepeatType.Weekly;
-                                    break;
-                                case "m":
-                                    evt.Repeat = RepeatType.Monthly;
-                                    break;
-                                case "mw":
-                                    evt.Repeat = RepeatType.MonthlyWeekday;
-                                    break;
-                                case "n":
-                                    evt.Repeat = RepeatType.None;
-                                    break;
-                                default:
-                                    if (evt.Repeat != RepeatType.Daily && evt.Repeat != RepeatType.Weekly && evt.Repeat != RepeatType.Monthly && evt.Repeat != RepeatType.MonthlyWeekday)
-                                    {
+
+                                switch (values[0])
+                                {
+                                    case "d":
+                                        evt.Repeat = RepeatType.Daily;
+                                        break;
+                                    case "w":
+                                        evt.Repeat = RepeatType.Weekly;
+                                        break;
+                                    case "m":
+                                        evt.Repeat = RepeatType.Monthly;
+                                        break;
+                                    case "mw":
+                                        evt.Repeat = RepeatType.MonthlyWeekday;
+                                        break;
+                                    case "n":
                                         evt.Repeat = RepeatType.None;
-                                    }
-                                    break;
+                                        break;
+                                    default:
+                                        if (evt.Repeat != RepeatType.Daily && evt.Repeat != RepeatType.Weekly && evt.Repeat != RepeatType.Monthly && evt.Repeat != RepeatType.MonthlyWeekday)
+                                        {
+                                            evt.Repeat = RepeatType.None;
+                                        }
+                                        break;
+                                }
                             }
                             break;
                         case "desc":
