@@ -93,11 +93,14 @@ namespace SchedulerBot.Client.Parsers
                                 case "m":
                                     evt.Repeat = RepeatType.Monthly;
                                     break;
+                                case "mw":
+                                    evt.Repeat = RepeatType.MonthlyWeekday;
+                                    break;
                                 case "n":
                                     evt.Repeat = RepeatType.None;
                                     break;
                                 default:
-                                    if (evt.Repeat != RepeatType.Daily && evt.Repeat != RepeatType.Weekly && evt.Repeat != RepeatType.Monthly)
+                                    if (evt.Repeat != RepeatType.Daily && evt.Repeat != RepeatType.Weekly && evt.Repeat != RepeatType.Monthly && evt.Repeat != RepeatType.MonthlyWeekday)
                                     {
                                         evt.Repeat = RepeatType.None;
                                     }

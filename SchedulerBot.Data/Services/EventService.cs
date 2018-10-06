@@ -239,6 +239,10 @@ namespace SchedulerBot.Data.Services
                     evt.StartTimestamp = evt.StartTimestamp.AddMonths(1);
                     evt.EndTimestamp = evt.EndTimestamp.AddMonths(1);
                     break;
+                case RepeatType.MonthlyWeekday:
+                    evt.StartTimestamp = RepeatMonthlyWeekday(evt.StartTimestamp);
+                    evt.EndTimestamp = RepeatMonthlyWeekday(evt.EndTimestamp);
+                    break;
                 case RepeatType.None:
                 default:
                     break;
@@ -376,6 +380,10 @@ namespace SchedulerBot.Data.Services
                                 evt.StartTimestamp = evt.StartTimestamp.AddMonths(1);
                                 evt.EndTimestamp = evt.EndTimestamp.AddMonths(1);
                                 break;
+                            case RepeatType.MonthlyWeekday:
+                                evt.StartTimestamp = RepeatMonthlyWeekday(evt.StartTimestamp);
+                                evt.EndTimestamp = RepeatMonthlyWeekday(evt.EndTimestamp);
+                                break;
                             default:
                                 break;
                         }
@@ -405,6 +413,61 @@ namespace SchedulerBot.Data.Services
                 dt = new ZonedDateTime(instant, DateTimeZoneProviders.Tzdb[timezone]).LocalDateTime;
                 zdt = tz.AtLeniently(dt);
                 evt.ReminderTimestamp = zdt.ToDateTimeOffset();
+            }
+        }
+
+        private DateTimeOffset RepeatMonthlyWeekday(DateTimeOffset dt)
+        {
+            int currentMonth = dt.Month;
+            int nextMonth = dt.AddMonths(1).Month;
+            int weekdayIndex = 0;
+            DateTimeOffset m = dt;
+            List<DateTimeOffset> monthList = new List<DateTimeOffset>();
+            List<DateTimeOffset> nextMonthList = new List<DateTimeOffset>();
+
+            // Generate all the 1st, 2nd, 3rd, etc weekday information for the current month
+            monthList.Add(m);
+            do
+            {  // Go back one week at a time until we hit the previous month
+                m = m.AddDays(-7);
+                if (m.Month == currentMonth)
+                {
+                    monthList.Insert(0, m);
+                    weekdayIndex++;  // eg. the nth Monday of the month
+                }
+            } while (m.Month == currentMonth);
+
+            m = dt;
+            do
+            {  // Go forward one week at a time until we hit the next month
+                m = m.AddDays(7);
+                if (m.Month == currentMonth)
+                {
+                    monthList.Add(m);
+                }
+            } while (m.Month == currentMonth);
+
+            // Do the same thing for the month after
+            nextMonthList.Add(m);
+            do
+            {
+                m = m.AddDays(7);
+                if (m.Month == nextMonth)
+                {
+                    nextMonthList.Add(m);
+                }
+            } while (m.Month == nextMonth);
+
+            // monthList     = [m-7, m-7,   m, m+7, m+7, m+7]
+            // nextMonthList = [  n, n+7, n+7, n+7, n+7]
+
+            if (weekdayIndex < nextMonthList.Count)
+            {
+                return nextMonthList[weekdayIndex];
+            }
+            else
+            {  // eg. last Monday of the month
+                return nextMonthList[nextMonthList.Count - 1];
             }
         }
     }
