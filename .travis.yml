@@ -1,0 +1,13 @@
+sudo: required
+
+services:
+  - docker
+
+script:
+  - docker build -t schedulerbot/travis .
+  - if [ "$TRAVIS_BRANCH" == "master" ]; then
+      echo "Master branch deploy";
+    else
+      echo "Running on non-master branch, so no deployment done"
+    fi
+
