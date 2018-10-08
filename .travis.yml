@@ -1,15 +1,22 @@
 sudo: required
-
 language: minimal
-
 services:
-  - docker
-
+- docker
 script:
-  - docker build -t schedulerbot/travis .
-  - if [ "$TRAVIS_BRANCH" == "master" ]; then
-      echo "Master branch deploy";
-    else
-      echo "Running on non-master branch, so no deployment done";
-    fi
-
+- docker build -t schedulerbot/travis .
+before_install:
+- openssl aes-256-cbc -K $encrypted_ae8e9dcaa3a0_key -iv $encrypted_ae8e9dcaa3a0_iv
+  -in deploy.key.enc -out deploy.key -d
+after_success:
+- if [ "$TRAVIS_BRANCH" == "master" ]; then
+    echo "Master branch deploy";
+    eval "$(ssh-agent -s)";
+    chmod 600 .travis/deploy.key;
+    ssh-add .travis/deploy.key;
+    ssh-keyscan 178.128.21.160 >> ~/.ssh/known_hosts;
+    git remote add deploy dokku@178.128.21.160:schedulerbot-prod;
+    git config --global push.default simple;
+    git push deploy master;
+  else
+    echo "Running on non-master branch, so no deployment done";
+  fi

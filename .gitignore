@@ -269,3 +269,7 @@ SchedulerBot.MigrationTool/appsettings.*.json
 
 # Environment variable file
 .env
+
+# Travis SSH keys
+.travis/*.key
+.travis/*.key.pub
