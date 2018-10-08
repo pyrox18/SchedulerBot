@@ -14,6 +14,7 @@ using SchedulerBot.Data.Services;
 namespace SchedulerBot.Client.Commands
 {
     [Group("settings")]
+    [ModuleLifespan(ModuleLifespan.Transient)]
     [Description("Change settings for the bot.")]
     public class SettingsCommands : BaseCommandModule
     {

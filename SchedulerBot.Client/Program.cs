@@ -179,16 +179,16 @@ namespace SchedulerBot.Client
 
             // Configure database
             services.AddEntityFrameworkNpgsql()
-                .AddDbContextPool<SchedulerBotContext>(options =>
+                .AddDbContext<SchedulerBotContext>(options =>
                 {
                     options.UseNpgsql(connectionString);
                     options.UseLoggerFactory(loggerFactory);
-                });
+                }, ServiceLifetime.Transient);
 
-            services.AddScoped<ICalendarService, CalendarService>()
-                .AddScoped<IEventService, EventService>()
-                .AddScoped<IPermissionService, PermissionService>()
-                .AddScoped<IShardedClientInformationService, ShardedClientInformationService>(s => new ShardedClientInformationService(Client));
+            services.AddTransient<ICalendarService, CalendarService>()
+                .AddTransient<IEventService, EventService>()
+                .AddTransient<IPermissionService, PermissionService>()
+                .AddTransient<IShardedClientInformationService, ShardedClientInformationService>(s => new ShardedClientInformationService(Client));
                 
             // Scheduler service
             services.AddSingleton<IEventScheduler, EventScheduler>();
