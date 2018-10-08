@@ -178,7 +178,7 @@ namespace SchedulerBot.Client.Commands
                 var options = new Dictionary<string, string>
                 {
                     ["--desc <description>"] = "Set event description",
-                    ["--repeat d|w|m"] = "Set event to repeat daily/weekly/monthly",
+                    ["--repeat d|w|m|mw"] = "Set event to repeat daily/weekly/monthly/monthly by weekday",
                     ["--mention <mentions>"] = "Add users/roles to mention when the event starts",
                     ["--remind <period>"] = "Set a reminder that will trigger a certain period of time before the event starts"
                 };
@@ -252,7 +252,7 @@ namespace SchedulerBot.Client.Commands
                 {
                     ["<event details>"] = "Name and date/time of the event in natural language",
                     ["--desc <description>"] = "Set event description",
-                    ["--repeat d|w|m"] = "Set event to repeat daily/weekly/monthly",
+                    ["--repeat d|w|m|mw"] = "Set event to repeat daily/weekly/monthly/monthly by weekday",
                     ["--mention <mentions>"] = "Add users/roles to mention when the event starts",
                     ["--remind <period>"] = "Set a reminder that will trigger a certain period of time before the event starts"
                 };

@@ -56,6 +56,7 @@ namespace SchedulerBot.Data.Models
         None,
         Daily,
         Weekly,
-        Monthly
+        Monthly,
+        MonthlyWeekday
     }
 }

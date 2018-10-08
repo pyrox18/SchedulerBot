@@ -15,122 +15,85 @@ namespace SchedulerBot.Data.Services
 {
     public class CalendarService : ICalendarService
     {
-        private readonly SchedulerBotContextFactory _contextFactory;
+        private readonly SchedulerBotContext _context;
         private readonly string _defaultPrefix;
 
-        public CalendarService(SchedulerBotContextFactory contextFactory, IConfigurationRoot configuration)
+        public CalendarService(SchedulerBotContext context, IConfigurationRoot configuration)
         {
-            _contextFactory = contextFactory;
+            _context = context;
             _defaultPrefix = configuration.GetSection("Bot").GetSection("Prefixes").Get<string[]>()[0];
         }
 
         public async Task<Calendar> CreateCalendarAsync(Calendar calendar)
         {
-            using (var db = _contextFactory.CreateDbContext())
-            {
-                await db.Calendars.AddAsync(calendar);
-                await db.SaveChangesAsync();
-            }
+            await _context.Calendars.AddAsync(calendar);
+            await _context.SaveChangesAsync();
 
             return calendar;
         }
 
         public async Task<bool> DeleteCalendarAsync(ulong calendarId)
         {
-            using (var db = _contextFactory.CreateDbContext())
-            {
-                var permissionsToRemove = await db.Permissions.Where(p => p.Calendar.Id == calendarId).ToListAsync();
-                var calendarToRemove = await db.Calendars.FirstOrDefaultAsync(c => c.Id == calendarId);
+            var permissionsToRemove = await _context.Permissions.Where(p => p.Calendar.Id == calendarId).ToListAsync();
+            var calendarToRemove = await _context.Calendars.FirstOrDefaultAsync(c => c.Id == calendarId);
 
-                db.Permissions.RemoveRange(permissionsToRemove);
-                db.Calendars.Remove(calendarToRemove);
-                await db.SaveChangesAsync();
-            }
+            _context.Permissions.RemoveRange(permissionsToRemove);
+            _context.Calendars.Remove(calendarToRemove);
+            await _context.SaveChangesAsync();
 
             return true;
         }
 
         public async Task<string> GetCalendarPrefixAsync(ulong calendarId)
         {
-            string prefix;
-
-            using (var db = _contextFactory.CreateDbContext())
-            {
-                prefix = await db.Calendars
-                    .Where(c => c.Id == calendarId)
-                    .Select(c => c.Prefix)
-                    .FirstOrDefaultAsync();
-            }
-
-            return prefix;
+            return await _context.Calendars
+                .Where(c => c.Id == calendarId)
+                .Select(c => c.Prefix)
+                .FirstOrDefaultAsync();
         }
 
         public async Task<string> UpdateCalendarPrefixAsync(ulong calendarId, string newPrefix)
         {
-            Calendar calendar;
-
-            using (var db = _contextFactory.CreateDbContext())
+            var calendar = await _context.Calendars.FirstOrDefaultAsync(c => c.Id == calendarId);
+            if (calendar == null)
             {
-                calendar = await db.Calendars.FirstOrDefaultAsync(c => c.Id == calendarId);
-                if (calendar == null)
-                {
-                    throw new CalendarNotFoundException();
-                }
-
-                calendar.Prefix = newPrefix;
-                await db.SaveChangesAsync();
+                throw new CalendarNotFoundException();
             }
+
+            calendar.Prefix = newPrefix;
+            await _context.SaveChangesAsync();
 
             return calendar.Prefix;
         }
 
         public async Task<ulong> GetCalendarDefaultChannelAsync(ulong calendarId)
         {
-            ulong defaultChannel;
-
-            using (var db = _contextFactory.CreateDbContext())
-            {
-                defaultChannel = await db.Calendars
-                    .Where(c => c.Id == calendarId)
-                    .Select(c => c.DefaultChannel)
-                    .FirstOrDefaultAsync();
-            }
-
-            return defaultChannel;
+            return await _context.Calendars
+                .Where(c => c.Id == calendarId)
+                .Select(c => c.DefaultChannel)
+                .FirstOrDefaultAsync();
         }
 
         public async Task<ulong> UpdateCalendarDefaultChannelAsync(ulong calendarId, ulong newDefaultChannel)
         {
-            Calendar calendar;
-
-            using (var db = _contextFactory.CreateDbContext())
+            var calendar = await _context.Calendars.FirstOrDefaultAsync(c => c.Id == calendarId);
+            if (calendar == null)
             {
-                calendar = await db.Calendars.FirstOrDefaultAsync(c => c.Id == calendarId);
-                if (calendar == null)
-                {
-                    throw new CalendarNotFoundException();
-                }
-
-                calendar.DefaultChannel = newDefaultChannel;
-                await db.SaveChangesAsync();
+                throw new CalendarNotFoundException();
             }
+
+            calendar.DefaultChannel = newDefaultChannel;
+            await _context.SaveChangesAsync();
             
             return calendar.DefaultChannel;
         }
 
         public async Task<string> GetCalendarTimezoneAsync(ulong calendarId)
         {
-            string timezone;
-
-            using (var db = _contextFactory.CreateDbContext())
-            {
-                timezone = await db.Calendars
-                    .Where(c => c.Id == calendarId)
-                    .Select(c => c.Timezone)
-                    .FirstOrDefaultAsync();
-            }
-
-            return timezone;
+            return await _context.Calendars
+                .Where(c => c.Id == calendarId)
+                .Select(c => c.Timezone)
+                .FirstOrDefaultAsync();
         }
 
         public async Task<string> UpdateCalendarTimezoneAsync(ulong calendarId, string newTimezone)
@@ -141,88 +104,78 @@ namespace SchedulerBot.Data.Services
                 throw new InvalidTimeZoneException("Invalid TZ timezone");
             }
 
-            Calendar calendar;
-            
-            using (var db = _contextFactory.CreateDbContext())
+            var calendar = await _context.Calendars
+                .Include(c => c.Events)
+                .FirstOrDefaultAsync(c => c.Id == calendarId);
+            if (calendar == null || string.IsNullOrEmpty(calendar.Timezone))
             {
-                calendar = await db.Calendars
-                    .Include(c => c.Events)
-                    .FirstOrDefaultAsync(c => c.Id == calendarId);
-                if (calendar == null || string.IsNullOrEmpty(calendar.Timezone))
-                {
-                    throw new CalendarNotFoundException();
-                }
-
-                var oldTz = DateTimeZoneProviders.Tzdb[calendar.Timezone];
-                var earliestEvent = calendar.Events.OrderBy(e => e.StartTimestamp).FirstOrDefault();
-                if (earliestEvent != null)
-                {
-                    Instant instant = Instant.FromDateTimeOffset(earliestEvent.StartTimestamp);
-                    LocalDateTime dt = new ZonedDateTime(instant, oldTz).LocalDateTime;
-                    ZonedDateTime zdt = tz.AtStrictly(dt);
-                    if (zdt.ToInstant().ToDateTimeOffset() < SystemClock.Instance.GetCurrentInstant().ToDateTimeOffset())
-                    {
-                        throw new ExistingEventInNewTimezonePastException();
-                    }
-                }
-
-                calendar.Timezone = newTimezone;
-                foreach (var evt in calendar.Events)
-                {
-                    Instant startInstant = Instant.FromDateTimeOffset(evt.StartTimestamp);
-                    Instant endInstant = Instant.FromDateTimeOffset(evt.EndTimestamp);
-                    LocalDateTime startDt = new ZonedDateTime(startInstant, oldTz).LocalDateTime;
-                    LocalDateTime endDt = new ZonedDateTime(endInstant, oldTz).LocalDateTime;
-                    ZonedDateTime startZdt = tz.AtStrictly(startDt);
-                    ZonedDateTime endZdt = tz.AtStrictly(endDt);
-                    evt.StartTimestamp = startZdt.ToDateTimeOffset();
-                    evt.EndTimestamp = endZdt.ToDateTimeOffset();
-                }
-                await db.SaveChangesAsync();
+                throw new CalendarNotFoundException();
             }
+
+            var oldTz = DateTimeZoneProviders.Tzdb[calendar.Timezone];
+            var earliestEvent = calendar.Events.OrderBy(e => e.StartTimestamp).FirstOrDefault();
+            if (earliestEvent != null)
+            {
+                Instant instant = Instant.FromDateTimeOffset(earliestEvent.StartTimestamp);
+                LocalDateTime dt = new ZonedDateTime(instant, oldTz).LocalDateTime;
+                ZonedDateTime zdt = tz.AtStrictly(dt);
+                if (zdt.ToInstant().ToDateTimeOffset() < SystemClock.Instance.GetCurrentInstant().ToDateTimeOffset())
+                {
+                    throw new ExistingEventInNewTimezonePastException();
+                }
+            }
+
+            calendar.Timezone = newTimezone;
+            foreach (var evt in calendar.Events)
+            {
+                Instant startInstant = Instant.FromDateTimeOffset(evt.StartTimestamp);
+                Instant endInstant = Instant.FromDateTimeOffset(evt.EndTimestamp);
+                LocalDateTime startDt = new ZonedDateTime(startInstant, oldTz).LocalDateTime;
+                LocalDateTime endDt = new ZonedDateTime(endInstant, oldTz).LocalDateTime;
+                ZonedDateTime startZdt = tz.AtStrictly(startDt);
+                ZonedDateTime endZdt = tz.AtStrictly(endDt);
+                evt.StartTimestamp = startZdt.ToDateTimeOffset();
+                evt.EndTimestamp = endZdt.ToDateTimeOffset();
+            }
+            await _context.SaveChangesAsync();
 
             return calendar.Timezone;
         }
 
         public async Task<bool?> InitialiseCalendar(ulong calendarId, string timezone, ulong defaultChannelId)
         {
-            using (var db = _contextFactory.CreateDbContext())
+            var calendar = await _context.Calendars.FirstOrDefaultAsync(c => c.Id == calendarId);
+            if (calendar == null)
             {
-                var calendar = await db.Calendars.FirstOrDefaultAsync(c => c.Id == calendarId);
-                if (calendar == null)
+                calendar = new Calendar
                 {
-                    calendar = new Calendar
-                    {
-                        Id = calendarId,
-                        Prefix = _defaultPrefix,
-                        Events = new List<Event>()
-                    };
-                    await db.Calendars.AddAsync(calendar);
-                    await db.SaveChangesAsync();
-                }
-
-                if (!string.IsNullOrEmpty(calendar.Timezone))
-                {
-                    return null;
-                }
-                var tz = DateTimeZoneProviders.Tzdb.GetZoneOrNull(timezone);
-                if (tz == null)
-                {
-                    return false;
-                }
-                calendar.Timezone = timezone;
-                calendar.DefaultChannel = defaultChannelId;
-                await db.SaveChangesAsync();
+                    Id = calendarId,
+                    Prefix = _defaultPrefix,
+                    Events = new List<Event>()
+                };
+                await _context.Calendars.AddAsync(calendar);
+                await _context.SaveChangesAsync();
             }
+
+            if (!string.IsNullOrEmpty(calendar.Timezone))
+            {
+                return null;
+            }
+            var tz = DateTimeZoneProviders.Tzdb.GetZoneOrNull(timezone);
+            if (tz == null)
+            {
+                return false;
+            }
+            calendar.Timezone = timezone;
+            calendar.DefaultChannel = defaultChannelId;
+            await _context.SaveChangesAsync();
+
             return true;
         }
 
         public async Task<Calendar> TryGetCalendarAsync(ulong calendarId)
         {
-            using (var db = _contextFactory.CreateDbContext())
-            {
-                return await db.Calendars.FirstOrDefaultAsync(c => c.Id == calendarId);
-            }
+            return await _context.Calendars.FirstOrDefaultAsync(c => c.Id == calendarId);
         }
     }
 }

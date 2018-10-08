@@ -7,7 +7,6 @@ using DSharpPlus.Entities;
 using DSharpPlus.Exceptions;
 using Quartz;
 using Quartz.Impl;
-using RedLockNet;
 using SchedulerBot.Data.Models;
 using SchedulerBot.Data.Services;
 

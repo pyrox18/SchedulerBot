@@ -2,6 +2,26 @@
 
 This changelog is formatted based on [Keep a Changelog](http://keepachangelog.com/) and this project attempts to adhere to [Semantic Versioning](http://semver.org) as much as possible.
 
+## v2.1.0 - 2018-10-08
+
+### Added
+
+- Added a new option to repeat events monthly by weekday. (e.g. repeat on the first Monday of every month)
+- Added a Patreon link to the info command.
+- Added a BACKERS.md file to display Patreon backers.
+- Added support for Travis CI as a CI/CD service for the repository.
+
+### Changed
+
+- Calendar, event and permission services are now injected as scoped services into command handlers.
+- Database context injection is now handled by the dependency injection container.
+- LoggerFactory now respects the log level set in the application configuration.
+- Packages have been updated.
+
+### Fixed
+
+- Fixed bad input handling in the event parser for when the repeat flag is supplied without an argument.
+
 ## v2.0.5 - 2018-10-05
 
 ### Changed

@@ -16,7 +16,6 @@ using DSharpPlus.EventArgs;
 using DSharpPlus.Exceptions;
 using DSharpPlus.Interactivity;
 using NLog.Extensions.Logging;
-using RedLockNet;
 using SharpRaven;
 using SharpRaven.Data;
 using SchedulerBot.Client.Commands;
@@ -25,11 +24,7 @@ using SchedulerBot.Client.Scheduler;
 using SchedulerBot.Data;
 using SchedulerBot.Data.Models;
 using SchedulerBot.Data.Services;
-using RedLockNet.SERedis.Configuration;
-using System.Net;
-using RedLockNet.SERedis;
 using DSharpPlus.CommandsNext.Exceptions;
-using SchedulerBot.Client.Exceptions;
 using SchedulerBot.Client.Services;
 
 namespace SchedulerBot.Client
@@ -158,13 +153,16 @@ namespace SchedulerBot.Client
         {
             var services = new ServiceCollection();
             var connectionString = Configuration.GetConnectionString("SchedulerBotContext");
+            var logLevel = Enum.Parse<Microsoft.Extensions.Logging.LogLevel>(Configuration.GetSection("Logging").GetSection("LogLevel").GetValue<string>("Default"));
 
-            var loggerFactory = new LoggerFactory();
+            var loggerFactory = new LoggerFactory(new List<ILoggerProvider>(), new LoggerFilterOptions
+            {
+                MinLevel = logLevel
+            });
             services.AddSingleton<ILoggerFactory>(loggerFactory);
             services.AddSingleton(typeof(ILogger<>), typeof(Logger<>));
             services.AddLogging(options =>
             {
-                var logLevel = Enum.Parse<Microsoft.Extensions.Logging.LogLevel>(Configuration.GetSection("Logging").GetSection("LogLevel").GetValue<string>("Default"));
                 options.SetMinimumLevel(logLevel);
             });
 
@@ -179,12 +177,18 @@ namespace SchedulerBot.Client
                 services.AddSingleton<IRavenClient>(ravenClient);
             }
 
-            services.AddSingleton(new SchedulerBotContextFactory(connectionString));
+            // Configure database
+            services.AddEntityFrameworkNpgsql()
+                .AddDbContextPool<SchedulerBotContext>(options =>
+                {
+                    options.UseNpgsql(connectionString);
+                    options.UseLoggerFactory(loggerFactory);
+                });
 
-            services.AddSingleton<ICalendarService, CalendarService>()
-                .AddSingleton<IEventService, EventService>()
-                .AddSingleton<IPermissionService, PermissionService>()
-                .AddSingleton<IShardedClientInformationService, ShardedClientInformationService>(s => new ShardedClientInformationService(Client));
+            services.AddScoped<ICalendarService, CalendarService>()
+                .AddScoped<IEventService, EventService>()
+                .AddScoped<IPermissionService, PermissionService>()
+                .AddScoped<IShardedClientInformationService, ShardedClientInformationService>(s => new ShardedClientInformationService(Client));
                 
             // Scheduler service
             services.AddSingleton<IEventScheduler, EventScheduler>();

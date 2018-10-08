@@ -10,9 +10,9 @@ namespace SchedulerBot.Data.Services
 {
     public class PermissionService : IPermissionService
     {
-        private readonly SchedulerBotContextFactory _contextFactory;
+        private readonly SchedulerBotContext _context;
 
-        public PermissionService(SchedulerBotContextFactory contextFactory) => _contextFactory = contextFactory;
+        public PermissionService(SchedulerBotContext context) => _context = context;
 
         public List<string> GetPermissionNodes()
         {
@@ -21,31 +21,24 @@ namespace SchedulerBot.Data.Services
 
         public async Task<bool> RemoveUserPermissionsAsync(ulong calendarId, ulong userId)
         {
-            using (var db = _contextFactory.CreateDbContext())
-            {
-                var permissions = await db.Permissions
-                    .Where(p => p.Calendar.Id == calendarId && p.Type == PermissionType.User && p.TargetId == userId)
-                    .ToListAsync();
+            var permissions = await _context.Permissions
+                .Where(p => p.Calendar.Id == calendarId && p.Type == PermissionType.User && p.TargetId == userId)
+                .ToListAsync();
 
-                db.Permissions.RemoveRange(permissions);
-                await db.SaveChangesAsync();
-            }
+            _context.Permissions.RemoveRange(permissions);
+            await _context.SaveChangesAsync();
 
             return true;
         }
 
         public async Task<bool> RemoveRolePermissionsAsync(ulong calendarId, ulong roleId)
         {
-            using (var db = _contextFactory.CreateDbContext())
-            {
-                var permissions = await db.Permissions
-                    .Where(p => p.Calendar.Id == calendarId && (p.Type == PermissionType.Role || p.Type == PermissionType.Everyone) && p.TargetId == roleId)
-                    .ToListAsync();
+            var permissions = await _context.Permissions
+                .Where(p => p.Calendar.Id == calendarId && (p.Type == PermissionType.Role || p.Type == PermissionType.Everyone) && p.TargetId == roleId)
+                .ToListAsync();
 
-                db.Permissions.RemoveRange(permissions);
-                await db.SaveChangesAsync();
-
-            }
+            _context.Permissions.RemoveRange(permissions);
+            await _context.SaveChangesAsync();
 
             return true;
         }
@@ -59,36 +52,31 @@ namespace SchedulerBot.Data.Services
                 throw new PermissionNodeNotFoundException();
             }
 
-            Permission permission;
+            var existingPermission = await _context.Permissions
+                .FirstOrDefaultAsync(
+                    p => p.Calendar.Id == calendarId
+                    && (p.Type == PermissionType.Role || p.Type == PermissionType.Everyone)
+                    && p.Node == Enum.Parse<PermissionNode>(actualNode)
+                    && p.TargetId == roleId
+                );
 
-            using (var db = _contextFactory.CreateDbContext())
+            if (existingPermission != null)
             {
-                var existingPermission = await db.Permissions
-                    .FirstOrDefaultAsync(
-                        p => p.Calendar.Id == calendarId
-                        && (p.Type == PermissionType.Role || p.Type == PermissionType.Everyone)
-                        && p.Node == Enum.Parse<PermissionNode>(actualNode)
-                        && p.TargetId == roleId
-                    );
-
-                if (existingPermission != null)
-                {
-                    return existingPermission;
-                }
-
-                permission = new Permission
-                {
-                    Id = Guid.NewGuid(),
-                    Calendar = await db.Calendars.FirstOrDefaultAsync(c => c.Id == calendarId),
-                    Type = roleId == calendarId ? PermissionType.Everyone : PermissionType.Role,
-                    Node = Enum.Parse<PermissionNode>(actualNode),
-                    TargetId = roleId,
-                    IsDenied = true
-                };
-
-                await db.Permissions.AddAsync(permission);
-                await db.SaveChangesAsync();
+                return existingPermission;
             }
+
+            var permission = new Permission
+            {
+                Id = Guid.NewGuid(),
+                Calendar = await _context.Calendars.FirstOrDefaultAsync(c => c.Id == calendarId),
+                Type = roleId == calendarId ? PermissionType.Everyone : PermissionType.Role,
+                Node = Enum.Parse<PermissionNode>(actualNode),
+                TargetId = roleId,
+                IsDenied = true
+            };
+
+            await _context.Permissions.AddAsync(permission);
+            await _context.SaveChangesAsync();
 
             return permission;
         }
@@ -102,23 +90,18 @@ namespace SchedulerBot.Data.Services
                 throw new PermissionNodeNotFoundException();
             }
 
-            Permission permission;
-
-            using (var db = _contextFactory.CreateDbContext())
+            var permission = new Permission
             {
-                permission = new Permission
-                {
-                    Id = Guid.NewGuid(),
-                    Calendar = await db.Calendars.FirstOrDefaultAsync(c => c.Id == calendarId),
-                    Type = PermissionType.User,
-                    Node = Enum.Parse<PermissionNode>(actualNode),
-                    TargetId = userId,
-                    IsDenied = true
-                };
+                Id = Guid.NewGuid(),
+                Calendar = await _context.Calendars.FirstOrDefaultAsync(c => c.Id == calendarId),
+                Type = PermissionType.User,
+                Node = Enum.Parse<PermissionNode>(actualNode),
+                TargetId = userId,
+                IsDenied = true
+            };
 
-                await db.Permissions.AddAsync(permission);
-                await db.SaveChangesAsync();
-            }
+            await _context.Permissions.AddAsync(permission);
+            await _context.SaveChangesAsync();
 
             return permission;
         }
@@ -132,32 +115,27 @@ namespace SchedulerBot.Data.Services
                 throw new PermissionNodeNotFoundException();
             }
 
-            Permission existingPermission;
+            var existingPermission = await _context.Permissions
+                .FirstOrDefaultAsync(
+                    p => p.Calendar.Id == calendarId
+                    && (p.Type == PermissionType.Role || p.Type == PermissionType.Everyone)
+                    && p.Node == Enum.Parse<PermissionNode>(actualNode) 
+                    && p.TargetId == roleId
+                );
 
-            using (var db = _contextFactory.CreateDbContext())
+            if (existingPermission == null)
             {
-                existingPermission = await db.Permissions
-                    .FirstOrDefaultAsync(
-                        p => p.Calendar.Id == calendarId
-                        && (p.Type == PermissionType.Role || p.Type == PermissionType.Everyone)
-                        && p.Node == Enum.Parse<PermissionNode>(actualNode) 
-                        && p.TargetId == roleId
-                    );
-
-                if (existingPermission == null)
+                existingPermission = new Permission
                 {
-                    existingPermission = new Permission
-                    {
-                        Node = Enum.Parse<PermissionNode>(actualNode),
-                        IsDenied = false
-                    };
-                    return existingPermission;
-                }
-
-                db.Permissions.Remove(existingPermission);
-                await db.SaveChangesAsync();
-                existingPermission.IsDenied = false;
+                    Node = Enum.Parse<PermissionNode>(actualNode),
+                    IsDenied = false
+                };
+                return existingPermission;
             }
+
+            _context.Permissions.Remove(existingPermission);
+            await _context.SaveChangesAsync();
+            existingPermission.IsDenied = false;
 
             return existingPermission;
         }
@@ -171,29 +149,24 @@ namespace SchedulerBot.Data.Services
                 throw new PermissionNodeNotFoundException();
             }
 
-            Permission existingPermission;
+            var existingPermission = await _context.Permissions
+                .FirstOrDefaultAsync(
+                    p => p.Calendar.Id == calendarId 
+                    && p.Type == PermissionType.User
+                    && p.Node == Enum.Parse<PermissionNode>(actualNode) 
+                    && p.TargetId == userId
+                );
 
-            using (var db = _contextFactory.CreateDbContext())
+            if (existingPermission == null)
             {
-                existingPermission = await db.Permissions
-                    .FirstOrDefaultAsync(
-                        p => p.Calendar.Id == calendarId 
-                        && p.Type == PermissionType.User
-                        && p.Node == Enum.Parse<PermissionNode>(actualNode) 
-                        && p.TargetId == userId
-                    );
-
-                if (existingPermission == null)
-                {
-                    existingPermission.Node = Enum.Parse<PermissionNode>(actualNode);
-                    existingPermission.IsDenied = false;
-                    return existingPermission;
-                }
-
-                db.Permissions.Remove(existingPermission);
-                await db.SaveChangesAsync();
+                existingPermission.Node = Enum.Parse<PermissionNode>(actualNode);
                 existingPermission.IsDenied = false;
+                return existingPermission;
             }
+
+            _context.Permissions.Remove(existingPermission);
+            await _context.SaveChangesAsync();
+            existingPermission.IsDenied = false;
 
             return existingPermission;
         }
@@ -207,61 +180,34 @@ namespace SchedulerBot.Data.Services
                 throw new PermissionNodeNotFoundException();
             }
 
-            List<Permission> permissions;
-
-            using (var db = _contextFactory.CreateDbContext())
-            {
-                permissions = await db.Permissions
-                    .Where(p => p.Calendar.Id == calendarId && p.Node == Enum.Parse<PermissionNode>(actualNode))
-                    .ToListAsync();
-            }
-
-            return permissions;
+            return await _context.Permissions
+                .Where(p => p.Calendar.Id == calendarId && p.Node == Enum.Parse<PermissionNode>(actualNode))
+                .ToListAsync();
         }
 
         public async Task<List<Permission>> GetPermissionsForRoleAsync(ulong calendarId, ulong roleId)
         {
-            List<Permission> permissions;
-            
-            using (var db = _contextFactory.CreateDbContext())
-            {
-                permissions = await db.Permissions
-                    .Where(p => p.Calendar.Id == calendarId && (p.Type == PermissionType.Role || p.Type == PermissionType.Everyone) && p.TargetId == roleId)
-                    .OrderBy(p => p.Node)
-                    .ToListAsync();
-            }
-
-            return permissions;
+            return await _context.Permissions
+                .Where(p => p.Calendar.Id == calendarId && (p.Type == PermissionType.Role || p.Type == PermissionType.Everyone) && p.TargetId == roleId)
+                .OrderBy(p => p.Node)
+                .ToListAsync();
         }
 
         public async Task<List<Permission>> GetPermissionsForUserAsync(ulong calendarId, ulong userId)
         {
-            List<Permission> permissions;
-
-            using (var db = _contextFactory.CreateDbContext())
-            {
-                permissions = await db.Permissions
-                    .Where(p => p.Calendar.Id == calendarId && p.Type == PermissionType.User && p.TargetId == userId)
-                    .OrderBy(p => p.Node)
-                    .ToListAsync();
-            }
-
-            return permissions;
+            return await _context.Permissions
+                .Where(p => p.Calendar.Id == calendarId && p.Type == PermissionType.User && p.TargetId == userId)
+                .OrderBy(p => p.Node)
+                .ToListAsync();
         }
 
         public async Task<bool> CheckPermissionsAsync(PermissionNode node, ulong calendarId, ulong userId, IEnumerable<ulong> roleIds)
         {
-            bool isNotPermitted;
-            using (var db = _contextFactory.CreateDbContext())
-            {
-                isNotPermitted = await db.Permissions.AnyAsync(
-                    p => p.Calendar.Id == calendarId
-                    && (p.Node == node || p.Node == PermissionNode.All)
-                    && ((p.Type == PermissionType.Everyone) || (p.Type == PermissionType.User && p.TargetId == userId) || (p.Type == PermissionType.Role && roleIds.Contains(p.TargetId)))
-                );
-            }
-
-            return !isNotPermitted;
+            return await _context.Permissions.AnyAsync(
+                p => p.Calendar.Id == calendarId
+                && (p.Node == node || p.Node == PermissionNode.All)
+                && ((p.Type == PermissionType.Everyone) || (p.Type == PermissionType.User && p.TargetId == userId) || (p.Type == PermissionType.Role && roleIds.Contains(p.TargetId)))
+            );
         }
     }
 }
