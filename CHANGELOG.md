@@ -2,6 +2,13 @@
 
 This changelog is formatted based on [Keep a Changelog](http://keepachangelog.com/) and this project attempts to adhere to [Semantic Versioning](http://semver.org) as much as possible.
 
+## v2.1.1 - 2018-10-09
+
+### Changed
+
+- Reverted to using normal `DbContext` injection instead of `DbContextPool` to enable lifespan modification.
+- The database context, services and command modules now use transient lifespans. This potentially fixes concurrency errors being thrown by Entity Framework Core.
+
 ## v2.1.0 - 2018-10-08
 
 ### Added

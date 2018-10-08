@@ -6,6 +6,7 @@ using SchedulerBot.Data.Services;
 
 namespace SchedulerBot.Client.Commands
 {
+    [ModuleLifespan(ModuleLifespan.Transient)]
     public class InitializerCommands : BaseCommandModule
     {
         private readonly ICalendarService _calendarService;

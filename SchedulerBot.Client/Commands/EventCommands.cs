@@ -18,6 +18,7 @@ using SchedulerBot.Data.Services;
 namespace SchedulerBot.Client.Commands
 {
     [Group("event")]
+    [ModuleLifespan(ModuleLifespan.Transient)]
     [Description("Commands for managing events.")]
     public class EventCommands : BaseCommandModule
     {
@@ -308,6 +309,7 @@ namespace SchedulerBot.Client.Commands
         }
 
         [Group("delete")]
+        [ModuleLifespan(ModuleLifespan.Transient)]
         public class DeleteCommands : BaseCommandModule
         {
             private readonly IEventService _eventService;
