@@ -244,20 +244,6 @@ namespace SchedulerBot.Client
         {
             var logger = ServiceProvider.GetService<ILogger<Program>>();
 
-            // Cache guild prefixes
-            logger.LogInformation($"Caching guild prefixes for shard {e.Client.ShardId}");
-            var cache = ServiceProvider.GetRequiredService<IMemoryCache>();
-            var calendarService = ServiceProvider.GetRequiredService<ICalendarService>();
-            foreach (var guildId in e.Client.Guilds.Keys)
-            {
-                string prefix = await calendarService.GetCalendarPrefixAsync(guildId);
-                if (string.IsNullOrEmpty(prefix))
-                {
-                    prefix = Configuration.GetSection("Bot").GetSection("Prefixes").Get<string[]>()[0];
-                }
-                cache.Set($"prefix:{guildId}", prefix, new MemoryCacheEntryOptions().SetSlidingExpiration(TimeSpan.FromMinutes(3)));
-            }
-
             // Set status
             logger.LogInformation("Updating status");
             var version = Assembly.GetEntryAssembly().GetCustomAttribute<AssemblyInformationalVersionAttribute>().InformationalVersion;
