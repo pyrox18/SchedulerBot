@@ -179,11 +179,11 @@ namespace SchedulerBot.Client
 
             // Configure database
             services.AddEntityFrameworkNpgsql()
-                .AddDbContext<SchedulerBotContext>(options =>
+                .AddDbContextPool<SchedulerBotContext>(options =>
                 {
                     options.UseNpgsql(connectionString);
                     options.UseLoggerFactory(loggerFactory);
-                }, ServiceLifetime.Transient);
+                });
 
             services.AddTransient<ICalendarService, CalendarService>()
                 .AddTransient<IEventService, EventService>()
