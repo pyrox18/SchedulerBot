@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Attributes;
 using DSharpPlus.Entities;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Configuration;
 using SchedulerBot.Client.Attributes;
 using SchedulerBot.Client.Extensions;
@@ -23,14 +24,16 @@ namespace SchedulerBot.Client.Commands
         private readonly IPermissionService _permissionService;
         private readonly IEventScheduler _eventScheduler;
         private readonly IConfigurationRoot _configuration;
+        private readonly IMemoryCache _cache;
 
-        public SettingsCommands(ICalendarService calendarService, IEventService eventService, IPermissionService permissionService, IEventScheduler eventScheduler, IConfigurationRoot configuration)
+        public SettingsCommands(ICalendarService calendarService, IEventService eventService, IPermissionService permissionService, IEventScheduler eventScheduler, IConfigurationRoot configuration, IMemoryCache cache)
         {
             _calendarService = calendarService;
             _eventService = eventService;
             _permissionService = permissionService;
             _eventScheduler = eventScheduler;
             _configuration = configuration;
+            _cache = cache;
         }
 
         [GroupCommand]
@@ -118,6 +121,9 @@ namespace SchedulerBot.Client.Commands
                 await ctx.RespondAsync("Calendar not initialised. Run `init <timezone>` to initialise the calendar.");
                 return;
             }
+
+            // Update prefix cache
+            _cache.Set($"prefix:{ctx.Guild.Id}", newPrefix, new MemoryCacheEntryOptions().SetSlidingExpiration(TimeSpan.FromMinutes(3)));
 
             await ctx.RespondAsync($"Prefix set to `{newPrefix}`.");
         }

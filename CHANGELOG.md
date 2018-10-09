@@ -2,6 +2,21 @@
 
 This changelog is formatted based on [Keep a Changelog](http://keepachangelog.com/) and this project attempts to adhere to [Semantic Versioning](http://semver.org) as much as possible.
 
+## v2.1.2 - 2018-10-09
+
+### Added
+
+- Added caching for guild prefixes, which indirectly reduces context availability exhaustion.
+- Added semaphore locks for write tasks performed by the event scheduler, as the scheduler uses the same context for all jobs.
+
+### Changed
+
+- Reverted database context to use a scoped lifespan, and changed to a context pool injection. Services and command modules still use transient lifespans.
+
+### Fixed
+
+- Fixed an issue with the Travis CI configuration where the code was being deployed when making a pull request to the master branch.
+
 ## v2.1.1 - 2018-10-09
 
 ### Changed

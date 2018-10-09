@@ -6,6 +6,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Timers;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -169,6 +170,9 @@ namespace SchedulerBot.Client
             // Add configuration as a service
             services.AddSingleton(Configuration);
 
+            // Add cache service for caching prefixes
+            services.AddMemoryCache();
+
             // Add Raven client as a service for production environment
             if (Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") == "Production")
             {
@@ -179,11 +183,11 @@ namespace SchedulerBot.Client
 
             // Configure database
             services.AddEntityFrameworkNpgsql()
-                .AddDbContext<SchedulerBotContext>(options =>
+                .AddDbContextPool<SchedulerBotContext>(options =>
                 {
                     options.UseNpgsql(connectionString);
                     options.UseLoggerFactory(loggerFactory);
-                }, ServiceLifetime.Transient);
+                });
 
             services.AddTransient<ICalendarService, CalendarService>()
                 .AddTransient<IEventService, EventService>()
@@ -240,6 +244,20 @@ namespace SchedulerBot.Client
         {
             var logger = ServiceProvider.GetService<ILogger<Program>>();
 
+            // Cache guild prefixes
+            logger.LogInformation($"Caching guild prefixes for shard {e.Client.ShardId}");
+            var cache = ServiceProvider.GetRequiredService<IMemoryCache>();
+            var calendarService = ServiceProvider.GetRequiredService<ICalendarService>();
+            foreach (var guildId in e.Client.Guilds.Keys)
+            {
+                string prefix = await calendarService.GetCalendarPrefixAsync(guildId);
+                if (string.IsNullOrEmpty(prefix))
+                {
+                    prefix = Configuration.GetSection("Bot").GetSection("Prefixes").Get<string[]>()[0];
+                }
+                cache.Set($"prefix:{guildId}", prefix, new MemoryCacheEntryOptions().SetSlidingExpiration(TimeSpan.FromMinutes(3)));
+            }
+
             // Set status
             logger.LogInformation("Updating status");
             var version = Assembly.GetEntryAssembly().GetCustomAttribute<AssemblyInformationalVersionAttribute>().InformationalVersion;
@@ -293,16 +311,28 @@ namespace SchedulerBot.Client
 
         private async Task<int> ResolvePrefix(DiscordMessage msg)
         {
-            var calendarService = ServiceProvider.GetService<ICalendarService>();
-            var prefix = await calendarService.GetCalendarPrefixAsync(msg.Channel.GuildId);
-            var defaultPrefix = Configuration.GetSection("Bot").GetSection("Prefixes").Get<string[]>()[0];
-
-            if (string.IsNullOrEmpty(prefix) && msg.Content.StartsWith(defaultPrefix))
+            var cache = ServiceProvider.GetRequiredService<IMemoryCache>();
+            if (!cache.TryGetValue($"prefix:{msg.Channel.GuildId}", out string prefix))
             {
-                return defaultPrefix.Length;
+                Console.WriteLine("Cache miss");
+                var calendarService = ServiceProvider.GetService<ICalendarService>();
+                prefix = await calendarService.GetCalendarPrefixAsync(msg.Channel.GuildId);
+                var defaultPrefix = Configuration.GetSection("Bot").GetSection("Prefixes").Get<string[]>()[0];
+                
+                if (string.IsNullOrEmpty(prefix))
+                {
+                    prefix = defaultPrefix;
+                }
+
+                // Store prefix in cache
+                cache.Set($"prefix:{msg.Channel.GuildId}", prefix, new MemoryCacheEntryOptions().SetSlidingExpiration(TimeSpan.FromMinutes(3)));
+            }
+            else
+            {
+                Console.WriteLine("Cache hit");
             }
 
-            if (string.IsNullOrEmpty(prefix) || !msg.Content.StartsWith(prefix))
+            if (!msg.Content.StartsWith(prefix))
             {
                 return -1;
             }
