@@ -300,7 +300,6 @@ namespace SchedulerBot.Client
             var cache = ServiceProvider.GetRequiredService<IMemoryCache>();
             if (!cache.TryGetValue($"prefix:{msg.Channel.GuildId}", out string prefix))
             {
-                Console.WriteLine("Cache miss");
                 var calendarService = ServiceProvider.GetService<ICalendarService>();
                 prefix = await calendarService.GetCalendarPrefixAsync(msg.Channel.GuildId);
                 var defaultPrefix = Configuration.GetSection("Bot").GetSection("Prefixes").Get<string[]>()[0];
@@ -312,10 +311,6 @@ namespace SchedulerBot.Client
 
                 // Store prefix in cache
                 cache.Set($"prefix:{msg.Channel.GuildId}", prefix, new MemoryCacheEntryOptions().SetSlidingExpiration(TimeSpan.FromMinutes(3)));
-            }
-            else
-            {
-                Console.WriteLine("Cache hit");
             }
 
             if (!msg.Content.StartsWith(prefix))
