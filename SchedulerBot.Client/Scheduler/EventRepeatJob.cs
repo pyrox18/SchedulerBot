@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading;
 using System.Threading.Tasks;
 using DSharpPlus;
 using Quartz;
@@ -18,9 +19,18 @@ namespace SchedulerBot.Client.Scheduler
             var channelId = (ulong)jobDataMap["channelId"];
             var eventService = (IEventService)jobDataMap["eventService"];
             var eventScheduler = (IEventScheduler)jobDataMap["eventScheduler"];
+            var semaphore = (SemaphoreSlim)jobDataMap["semaphore"];
 
             Event evt;
-            evt = await eventService.ApplyRepeatAsync(eventId);
+            await semaphore.WaitAsync();
+            try
+            {
+                evt = await eventService.ApplyRepeatAsync(eventId);
+            }
+            finally
+            {
+                semaphore.Release();
+            }
 
             await eventScheduler.ScheduleEvent(evt, client, channelId);
         }
