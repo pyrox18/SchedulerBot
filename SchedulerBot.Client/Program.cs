@@ -154,16 +154,13 @@ namespace SchedulerBot.Client
         {
             var services = new ServiceCollection();
             var connectionString = Configuration.GetConnectionString("SchedulerBotContext");
-            var logLevel = Enum.Parse<Microsoft.Extensions.Logging.LogLevel>(Configuration.GetSection("Logging").GetSection("LogLevel").GetValue<string>("Default"));
 
-            var loggerFactory = new LoggerFactory(new List<ILoggerProvider>(), new LoggerFilterOptions
-            {
-                MinLevel = logLevel
-            });
+            var loggerFactory = new LoggerFactory();
             services.AddSingleton<ILoggerFactory>(loggerFactory);
             services.AddSingleton(typeof(ILogger<>), typeof(Logger<>));
             services.AddLogging(options =>
             {
+                var logLevel = Enum.Parse<Microsoft.Extensions.Logging.LogLevel>(Configuration.GetSection("Logging").GetSection("LogLevel").GetValue<string>("Default"));
                 options.SetMinimumLevel(logLevel);
             });
 
@@ -182,17 +179,12 @@ namespace SchedulerBot.Client
             }
 
             // Configure database
-            services.AddEntityFrameworkNpgsql()
-                .AddDbContextPool<SchedulerBotContext>(options =>
-                {
-                    options.UseNpgsql(connectionString);
-                    options.UseLoggerFactory(loggerFactory);
-                });
+            services.AddSingleton(new SchedulerBotContextFactory(connectionString));
 
-            services.AddTransient<ICalendarService, CalendarService>()
-                .AddTransient<IEventService, EventService>()
-                .AddTransient<IPermissionService, PermissionService>()
-                .AddTransient<IShardedClientInformationService, ShardedClientInformationService>(s => new ShardedClientInformationService(Client));
+            services.AddSingleton<ICalendarService, CalendarService>()
+                .AddSingleton<IEventService, EventService>()
+                .AddSingleton<IPermissionService, PermissionService>()
+                .AddSingleton<IShardedClientInformationService, ShardedClientInformationService>(s => new ShardedClientInformationService(Client));
                 
             // Scheduler service
             services.AddSingleton<IEventScheduler, EventScheduler>();
