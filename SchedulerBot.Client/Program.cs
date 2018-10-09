@@ -154,16 +154,13 @@ namespace SchedulerBot.Client
         {
             var services = new ServiceCollection();
             var connectionString = Configuration.GetConnectionString("SchedulerBotContext");
-            var logLevel = Enum.Parse<Microsoft.Extensions.Logging.LogLevel>(Configuration.GetSection("Logging").GetSection("LogLevel").GetValue<string>("Default"));
 
-            var loggerFactory = new LoggerFactory(new List<ILoggerProvider>(), new LoggerFilterOptions
-            {
-                MinLevel = logLevel
-            });
+            var loggerFactory = new LoggerFactory();
             services.AddSingleton<ILoggerFactory>(loggerFactory);
             services.AddSingleton(typeof(ILogger<>), typeof(Logger<>));
             services.AddLogging(options =>
             {
+                var logLevel = Enum.Parse<Microsoft.Extensions.Logging.LogLevel>(Configuration.GetSection("Logging").GetSection("LogLevel").GetValue<string>("Default"));
                 options.SetMinimumLevel(logLevel);
             });
 
@@ -182,17 +179,12 @@ namespace SchedulerBot.Client
             }
 
             // Configure database
-            services.AddEntityFrameworkNpgsql()
-                .AddDbContextPool<SchedulerBotContext>(options =>
-                {
-                    options.UseNpgsql(connectionString);
-                    options.UseLoggerFactory(loggerFactory);
-                });
+            services.AddSingleton(new SchedulerBotContextFactory(connectionString));
 
-            services.AddTransient<ICalendarService, CalendarService>()
-                .AddTransient<IEventService, EventService>()
-                .AddTransient<IPermissionService, PermissionService>()
-                .AddTransient<IShardedClientInformationService, ShardedClientInformationService>(s => new ShardedClientInformationService(Client));
+            services.AddSingleton<ICalendarService, CalendarService>()
+                .AddSingleton<IEventService, EventService>()
+                .AddSingleton<IPermissionService, PermissionService>()
+                .AddSingleton<IShardedClientInformationService, ShardedClientInformationService>(s => new ShardedClientInformationService(Client));
                 
             // Scheduler service
             services.AddSingleton<IEventScheduler, EventScheduler>();
@@ -243,20 +235,6 @@ namespace SchedulerBot.Client
         private async Task OnClientReady(ReadyEventArgs e)
         {
             var logger = ServiceProvider.GetService<ILogger<Program>>();
-
-            // Cache guild prefixes
-            logger.LogInformation($"Caching guild prefixes for shard {e.Client.ShardId}");
-            var cache = ServiceProvider.GetRequiredService<IMemoryCache>();
-            var calendarService = ServiceProvider.GetRequiredService<ICalendarService>();
-            foreach (var guildId in e.Client.Guilds.Keys)
-            {
-                string prefix = await calendarService.GetCalendarPrefixAsync(guildId);
-                if (string.IsNullOrEmpty(prefix))
-                {
-                    prefix = Configuration.GetSection("Bot").GetSection("Prefixes").Get<string[]>()[0];
-                }
-                cache.Set($"prefix:{guildId}", prefix, new MemoryCacheEntryOptions().SetSlidingExpiration(TimeSpan.FromMinutes(3)));
-            }
 
             // Set status
             logger.LogInformation("Updating status");
@@ -314,7 +292,6 @@ namespace SchedulerBot.Client
             var cache = ServiceProvider.GetRequiredService<IMemoryCache>();
             if (!cache.TryGetValue($"prefix:{msg.Channel.GuildId}", out string prefix))
             {
-                Console.WriteLine("Cache miss");
                 var calendarService = ServiceProvider.GetService<ICalendarService>();
                 prefix = await calendarService.GetCalendarPrefixAsync(msg.Channel.GuildId);
                 var defaultPrefix = Configuration.GetSection("Bot").GetSection("Prefixes").Get<string[]>()[0];
@@ -326,10 +303,6 @@ namespace SchedulerBot.Client
 
                 // Store prefix in cache
                 cache.Set($"prefix:{msg.Channel.GuildId}", prefix, new MemoryCacheEntryOptions().SetSlidingExpiration(TimeSpan.FromMinutes(3)));
-            }
-            else
-            {
-                Console.WriteLine("Cache hit");
             }
 
             if (!msg.Content.StartsWith(prefix))

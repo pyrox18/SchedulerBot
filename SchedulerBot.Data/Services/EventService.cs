@@ -11,46 +11,55 @@ namespace SchedulerBot.Data.Services
 {
     public class EventService : IEventService
     {
-        private readonly SchedulerBotContext _context;
+        private readonly SchedulerBotContextFactory _contextFactory;
 
-        public EventService(SchedulerBotContext context) => _context = context;
+        public EventService(SchedulerBotContextFactory contextFactory) => _contextFactory = contextFactory;
 
         public async Task<Event> CreateEventAsync(ulong calendarId, Event evt)
         {
-            var calendar = await _context.Calendars
-                .Include(c => c.Events)
-                .FirstOrDefaultAsync(c => c.Id == calendarId);
-            if (calendar == null)
+            using (var db = _contextFactory.CreateDbContext())
             {
-                throw new CalendarNotFoundException();
-            }
+                var calendar = await db.Calendars
+                    .Include(c => c.Events)
+                    .FirstOrDefaultAsync(c => c.Id == calendarId);
+                if (calendar == null)
+                {
+                    throw new CalendarNotFoundException();
+                }
 
-            evt.Id = Guid.NewGuid();
-            calendar.Events.Add(evt);
-            await _context.SaveChangesAsync();
+                evt.Id = Guid.NewGuid();
+                calendar.Events.Add(evt);
+                await db.SaveChangesAsync();
+            }
 
             return evt;
         }
 
         public async Task<List<Event>> GetEventsAsync(ulong calendarId)
         {
-            var isCalendarExists = await _context.Calendars.AnyAsync(c => c.Id == calendarId);
-            if (!isCalendarExists)
+            List<Event> orderedEvents;
+            string timezone;
+
+            using (var db = _contextFactory.CreateDbContext())
             {
-                throw new CalendarNotFoundException();
+                var isCalendarExists = await db.Calendars.AnyAsync(c => c.Id == calendarId);
+                if (!isCalendarExists)
+                {
+                    throw new CalendarNotFoundException();
+                }
+
+                var events = await db.Events
+                    .Include(e => e.Mentions)
+                    .Where(e => e.Calendar.Id == calendarId)
+                    .ToListAsync();
+
+                timezone = await db.Calendars
+                    .Where(c => c.Id == calendarId)
+                    .Select(c => c.Timezone)
+                    .FirstOrDefaultAsync();
+
+                orderedEvents = events.OrderBy(e => e.StartTimestamp).ToList();
             }
-
-            var events = await _context.Events
-                .Include(e => e.Mentions)
-                .Where(e => e.Calendar.Id == calendarId)
-                .ToListAsync();
-
-            var timezone = await _context.Calendars
-                .Where(c => c.Id == calendarId)
-                .Select(c => c.Timezone)
-                .FirstOrDefaultAsync();
-
-            var orderedEvents = events.OrderBy(e => e.StartTimestamp).ToList();
 
             for (int i = 0; i < orderedEvents.Count; i++)
             {
@@ -72,35 +81,38 @@ namespace SchedulerBot.Data.Services
             Event deletedEvent;
             string timezone;
 
-            var isCalendarExists = await _context.Calendars.AnyAsync(c => c.Id == calendarId);
-            if (!isCalendarExists)
+            using (var db = _contextFactory.CreateDbContext())
             {
-                throw new CalendarNotFoundException();
+                var isCalendarExists = await db.Calendars.AnyAsync(c => c.Id == calendarId);
+                if (!isCalendarExists)
+                {
+                    throw new CalendarNotFoundException();
+                }
+
+                var events = await db.Calendars
+                    .Where(c => c.Id == calendarId)
+                    .Select(c => c.Events)
+                    .FirstOrDefaultAsync();
+                events = events.OrderBy(e => e.StartTimestamp).ToList();
+                if (index + 1 > events.Count)
+                {
+                    throw new EventNotFoundException();
+                }
+
+                deletedEvent = await db.Events
+                    .Include(e => e.Mentions)
+                    .Include(e => e.RSVPs)
+                    .FirstOrDefaultAsync(e => e.Id == events[index].Id);
+                db.EventMentions.RemoveRange(deletedEvent.Mentions);
+                db.EventRSVPs.RemoveRange(deletedEvent.RSVPs);
+                db.Events.Remove(deletedEvent);
+                await db.SaveChangesAsync();
+
+                timezone = await db.Calendars
+                    .Where(c => c.Id == calendarId)
+                    .Select(c => c.Timezone)
+                    .FirstOrDefaultAsync();
             }
-
-            var events = await _context.Calendars
-                .Where(c => c.Id == calendarId)
-                .Select(c => c.Events)
-                .FirstOrDefaultAsync();
-            events = events.OrderBy(e => e.StartTimestamp).ToList();
-            if (index + 1 > events.Count)
-            {
-                throw new EventNotFoundException();
-            }
-
-            deletedEvent = await _context.Events
-                .Include(e => e.Mentions)
-                .Include(e => e.RSVPs)
-                .FirstOrDefaultAsync(e => e.Id == events[index].Id);
-            _context.EventMentions.RemoveRange(deletedEvent.Mentions);
-            _context.EventRSVPs.RemoveRange(deletedEvent.RSVPs);
-            _context.Events.Remove(deletedEvent);
-            await _context.SaveChangesAsync();
-
-            timezone = await _context.Calendars
-                .Where(c => c.Id == calendarId)
-                .Select(c => c.Timezone)
-                .FirstOrDefaultAsync();
 
             AdjustTimestampsToTimezone(ref deletedEvent, timezone);
 
@@ -109,42 +121,52 @@ namespace SchedulerBot.Data.Services
 
         public async Task<Event> DeleteEventAsync(Guid eventId)
         {
-            var evt = await _context.Events
-                .Include(e => e.Mentions)
-                .Include(e => e.RSVPs)
-                .FirstOrDefaultAsync(e => e.Id == eventId);
-            _context.EventMentions.RemoveRange(evt.Mentions);
-            _context.EventRSVPs.RemoveRange(evt.RSVPs);
-            _context.Events.Remove(evt);
-            await _context.SaveChangesAsync();
+            Event evt;
+
+            using (var db = _contextFactory.CreateDbContext())
+            {
+                evt = await db.Events
+                    .Include(e => e.Mentions)
+                    .Include(e => e.RSVPs)
+                    .FirstOrDefaultAsync(e => e.Id == eventId);
+                db.EventMentions.RemoveRange(evt.Mentions);
+                db.EventRSVPs.RemoveRange(evt.RSVPs);
+                db.Events.Remove(evt);
+                await db.SaveChangesAsync();
+            }
 
             return evt;
         }
 
         public async Task<List<Event>> DeleteAllEventsAsync(ulong calendarId)
         {
-            var isCalendarExists = await _context.Calendars.AnyAsync(c => c.Id == calendarId);
-            if (!isCalendarExists)
+            List<Event> events;
+
+            using (var db = _contextFactory.CreateDbContext())
             {
-                throw new CalendarNotFoundException();
+                var isCalendarExists = await db.Calendars.AnyAsync(c => c.Id == calendarId);
+                if (!isCalendarExists)
+                {
+                    throw new CalendarNotFoundException();
+                }
+
+                events = await db.Events
+                    .Where(e => e.Calendar.Id == calendarId)
+                    .ToListAsync();
+
+                var mentions = await db.EventMentions
+                    .Where(m => m.Event.Calendar.Id == calendarId)
+                    .ToListAsync();
+
+                var rsvps = await db.EventRSVPs
+                    .Where(r => r.Event.Calendar.Id == calendarId)
+                    .ToListAsync();
+
+                db.Events.RemoveRange(events);
+                db.EventMentions.RemoveRange(mentions);
+                db.EventRSVPs.RemoveRange(rsvps);
+                await db.SaveChangesAsync();
             }
-
-            var events = await _context.Events
-                .Where(e => e.Calendar.Id == calendarId)
-                .ToListAsync();
-
-            var mentions = await _context.EventMentions
-                .Where(m => m.Event.Calendar.Id == calendarId)
-                .ToListAsync();
-
-            var rsvps = await _context.EventRSVPs
-                .Where(r => r.Event.Calendar.Id == calendarId)
-                .ToListAsync();
-
-            _context.Events.RemoveRange(events);
-            _context.EventMentions.RemoveRange(mentions);
-            _context.EventRSVPs.RemoveRange(rsvps);
-            await _context.SaveChangesAsync();
 
             return events;
         }
@@ -156,29 +178,35 @@ namespace SchedulerBot.Data.Services
                 throw new ArgumentOutOfRangeException("Index must be greater than 0");
             }
 
-            var isCalendarExists = await _context.Calendars.AnyAsync(c => c.Id == calendarId);
-            if (!isCalendarExists)
+            Event evt;
+            string timezone;
+
+            using (var db = _contextFactory.CreateDbContext())
             {
-                throw new CalendarNotFoundException();
+                var isCalendarExists = await db.Calendars.AnyAsync(c => c.Id == calendarId);
+                if (!isCalendarExists)
+                {
+                    throw new CalendarNotFoundException();
+                }
+
+                var events = await db.Calendars
+                    .Where(c => c.Id == calendarId)
+                    .Select(c => c.Events)
+                    .FirstOrDefaultAsync();
+                events = events.OrderBy(e => e.StartTimestamp).ToList();
+
+                evt = events[index];
+                evt = await db.Events
+                    .Include(e => e.Mentions)
+                    .Include(e => e.RSVPs)
+                    .Where(e => e == evt)
+                    .FirstOrDefaultAsync();
+
+                timezone = await db.Calendars
+                    .Where(c => c.Id == calendarId)
+                    .Select(c => c.Timezone)
+                    .FirstOrDefaultAsync();
             }
-
-            var events = await _context.Calendars
-                .Where(c => c.Id == calendarId)
-                .Select(c => c.Events)
-                .FirstOrDefaultAsync();
-            events = events.OrderBy(e => e.StartTimestamp).ToList();
-
-            var evt = events[index];
-            evt = await _context.Events
-                .Include(e => e.Mentions)
-                .Include(e => e.RSVPs)
-                .Where(e => e == evt)
-                .FirstOrDefaultAsync();
-
-            var timezone = await _context.Calendars
-                .Where(c => c.Id == calendarId)
-                .Select(c => c.Timezone)
-                .FirstOrDefaultAsync();
 
             AdjustTimestampsToTimezone(ref evt, timezone);
 
@@ -187,31 +215,37 @@ namespace SchedulerBot.Data.Services
 
         public async Task<Event> UpdateEventAsync(Event evt)
         {
-            var mentionsToDelete = await _context.EventMentions
-                .Where(m => m.Event.Id == evt.Id)
-                .ToListAsync();
-            _context.EventMentions.RemoveRange(mentionsToDelete);
-            await _context.SaveChangesAsync();
+            Event eventInDb;
+            string timezone;
 
-            var eventInDb = await _context.Events
-                .Include(e => e.Calendar)
-                .Include(e => e.Mentions)
-                .Include(e => e.RSVPs)
-                .FirstOrDefaultAsync(e => e.Id == evt.Id);
-            eventInDb.Name = evt.Name;
-            eventInDb.StartTimestamp = evt.StartTimestamp;
-            eventInDb.EndTimestamp = evt.EndTimestamp;
-            eventInDb.ReminderTimestamp = evt.ReminderTimestamp;
-            eventInDb.Description = evt.Description;
-            eventInDb.Repeat = evt.Repeat;
-            eventInDb.Mentions = evt.Mentions;
+            using (var db = _contextFactory.CreateDbContext())
+            {
+                var mentionsToDelete = await db.EventMentions
+                    .Where(m => m.Event.Id == evt.Id)
+                    .ToListAsync();
+                db.EventMentions.RemoveRange(mentionsToDelete);
+                await db.SaveChangesAsync();
 
-            await _context.SaveChangesAsync();
+                eventInDb = await db.Events
+                    .Include(e => e.Calendar)
+                    .Include(e => e.Mentions)
+                    .Include(e => e.RSVPs)
+                    .FirstOrDefaultAsync(e => e.Id == evt.Id);
+                eventInDb.Name = evt.Name;
+                eventInDb.StartTimestamp = evt.StartTimestamp;
+                eventInDb.EndTimestamp = evt.EndTimestamp;
+                eventInDb.ReminderTimestamp = evt.ReminderTimestamp;
+                eventInDb.Description = evt.Description;
+                eventInDb.Repeat = evt.Repeat;
+                eventInDb.Mentions = evt.Mentions;
 
-            var timezone = await _context.Calendars
-                .Where(c => c.Id == eventInDb.Calendar.Id)
-                .Select(c => c.Timezone)
-                .FirstOrDefaultAsync();
+                await db.SaveChangesAsync();
+
+                timezone = await db.Calendars
+                    .Where(c => c.Id == eventInDb.Calendar.Id)
+                    .Select(c => c.Timezone)
+                    .FirstOrDefaultAsync();
+            }
 
             AdjustTimestampsToTimezone(ref eventInDb, timezone);
 
@@ -220,35 +254,40 @@ namespace SchedulerBot.Data.Services
 
         public async Task<Event> ApplyRepeatAsync(Guid eventId)
         {
-            var evt = await _context.Events
-                .Include(e => e.Calendar)
-                .Include(e => e.Mentions)
-                .Include(e => e.RSVPs)
-                .FirstOrDefaultAsync(e => e.Id == eventId);
-            switch (evt.Repeat)
-            {
-                case RepeatType.Daily:
-                    evt.StartTimestamp = evt.StartTimestamp.AddDays(1);
-                    evt.EndTimestamp = evt.EndTimestamp.AddDays(1);
-                    break;
-                case RepeatType.Weekly:
-                    evt.StartTimestamp = evt.StartTimestamp.AddDays(7);
-                    evt.EndTimestamp = evt.EndTimestamp.AddDays(7);
-                    break;
-                case RepeatType.Monthly:
-                    evt.StartTimestamp = evt.StartTimestamp.AddMonths(1);
-                    evt.EndTimestamp = evt.EndTimestamp.AddMonths(1);
-                    break;
-                case RepeatType.MonthlyWeekday:
-                    evt.StartTimestamp = RepeatMonthlyWeekday(evt.StartTimestamp);
-                    evt.EndTimestamp = RepeatMonthlyWeekday(evt.EndTimestamp);
-                    break;
-                case RepeatType.None:
-                default:
-                    break;
-            }
+            Event evt;
 
-            await _context.SaveChangesAsync();
+            using (var db = _contextFactory.CreateDbContext())
+            {
+                evt = await db.Events
+                    .Include(e => e.Calendar)
+                    .Include(e => e.Mentions)
+                    .Include(e => e.RSVPs)
+                    .FirstOrDefaultAsync(e => e.Id == eventId);
+                switch (evt.Repeat)
+                {
+                    case RepeatType.Daily:
+                        evt.StartTimestamp = evt.StartTimestamp.AddDays(1);
+                        evt.EndTimestamp = evt.EndTimestamp.AddDays(1);
+                        break;
+                    case RepeatType.Weekly:
+                        evt.StartTimestamp = evt.StartTimestamp.AddDays(7);
+                        evt.EndTimestamp = evt.EndTimestamp.AddDays(7);
+                        break;
+                    case RepeatType.Monthly:
+                        evt.StartTimestamp = evt.StartTimestamp.AddMonths(1);
+                        evt.EndTimestamp = evt.EndTimestamp.AddMonths(1);
+                        break;
+                    case RepeatType.MonthlyWeekday:
+                        evt.StartTimestamp = RepeatMonthlyWeekday(evt.StartTimestamp);
+                        evt.EndTimestamp = RepeatMonthlyWeekday(evt.EndTimestamp);
+                        break;
+                    case RepeatType.None:
+                    default:
+                        break;
+                }
+
+                await db.SaveChangesAsync();
+            }
 
             AdjustTimestampsToTimezone(ref evt, evt.Calendar.Timezone);
 
@@ -257,12 +296,17 @@ namespace SchedulerBot.Data.Services
 
         public async Task<List<Event>> GetEventsInHourIntervalAsync(double hours)
         {
-            var events = await _context.Events
-                .Include(e => e.Calendar)
-                .Include(e => e.Mentions)
-                .Include(e => e.RSVPs)
-                .Where(e => e.StartsInHours(hours) || e.RemindInHours(hours))
-                .ToListAsync();
+            List<Event> events;
+
+            using (var db = _contextFactory.CreateDbContext())
+            {
+                events = await db.Events
+                    .Include(e => e.Calendar)
+                    .Include(e => e.Mentions)
+                    .Include(e => e.RSVPs)
+                    .Where(e => e.StartsInHours(hours) || e.RemindInHours(hours))
+                    .ToListAsync();
+            }
 
             for (int i = 0; i < events.Count; i++)
             {
@@ -276,12 +320,17 @@ namespace SchedulerBot.Data.Services
 
         public async Task<List<Event>> GetEventsInHourIntervalAsync(double hours, IEnumerable<ulong> guildIds)
         {
-            var events = await _context.Events
-                .Include(e => e.Calendar)
-                .Include(e => e.Mentions)
-                .Include(e => e.RSVPs)
-                .Where(e => guildIds.Contains(e.Calendar.Id) && (e.StartsInHours(hours) || e.RemindInHours(hours)))
-                .ToListAsync();
+            List<Event> events;
+
+            using (var db = _contextFactory.CreateDbContext())
+            {
+                events = await db.Events
+                    .Include(e => e.Calendar)
+                    .Include(e => e.Mentions)
+                    .Include(e => e.RSVPs)
+                    .Where(e => guildIds.Contains(e.Calendar.Id) && (e.StartsInHours(hours) || e.RemindInHours(hours)))
+                    .ToListAsync();
+            }
 
             for (int i = 0; i < events.Count; i++)
             {
@@ -295,50 +344,56 @@ namespace SchedulerBot.Data.Services
 
         public async Task<Event> ToggleRSVPByIndexAsync(ulong calendarId, ulong userId, int index)
         {
-            var isCalendarExists = await _context.Calendars.AnyAsync(c => c.Id == calendarId);
-            if (!isCalendarExists)
+            Event evt;
+            string timezone;
+
+            using (var db = _contextFactory.CreateDbContext())
             {
-                throw new CalendarNotFoundException();
-            }
-
-            var events = await _context.Calendars
-                .Where(c => c.Id == calendarId)
-                .Select(c => c.Events)
-                .FirstOrDefaultAsync();
-            events = events.OrderBy(e => e.StartTimestamp).ToList();
-
-            var evt = events[index];
-            evt = await _context.Events
-                .Include(e => e.Mentions)
-                .Include(e => e.RSVPs)
-                .Where(e => e == evt)
-                .FirstOrDefaultAsync();
-
-            if (evt.StartTimestamp <= DateTimeOffset.Now)
-            {
-                throw new ActiveEventException();
-            }
-
-            var rsvp = evt.RSVPs.FirstOrDefault(r => r.UserId == userId);
-            if (rsvp == null)
-            {
-                evt.RSVPs.Add(new EventRSVP
+                var isCalendarExists = await db.Calendars.AnyAsync(c => c.Id == calendarId);
+                if (!isCalendarExists)
                 {
-                    UserId = userId
-                });
-            }
-            else
-            {
-                evt.RSVPs.Remove(rsvp);
-                _context.EventRSVPs.Remove(rsvp);
-            }
+                    throw new CalendarNotFoundException();
+                }
 
-            await _context.SaveChangesAsync();
+                var events = await db.Calendars
+                    .Where(c => c.Id == calendarId)
+                    .Select(c => c.Events)
+                    .FirstOrDefaultAsync();
+                events = events.OrderBy(e => e.StartTimestamp).ToList();
 
-            var timezone = await _context.Calendars
-                .Where(c => c.Id == calendarId)
-                .Select(c => c.Timezone)
-                .FirstOrDefaultAsync();
+                evt = events[index];
+                evt = await db.Events
+                    .Include(e => e.Mentions)
+                    .Include(e => e.RSVPs)
+                    .Where(e => e == evt)
+                    .FirstOrDefaultAsync();
+
+                if (evt.StartTimestamp <= DateTimeOffset.Now)
+                {
+                    throw new ActiveEventException();
+                }
+
+                var rsvp = evt.RSVPs.FirstOrDefault(r => r.UserId == userId);
+                if (rsvp == null)
+                {
+                    evt.RSVPs.Add(new EventRSVP
+                    {
+                        UserId = userId
+                    });
+                }
+                else
+                {
+                    evt.RSVPs.Remove(rsvp);
+                    db.EventRSVPs.Remove(rsvp);
+                }
+
+                await db.SaveChangesAsync();
+
+                timezone = await db.Calendars
+                    .Where(c => c.Id == calendarId)
+                    .Select(c => c.Timezone)
+                    .FirstOrDefaultAsync();
+            }
 
             AdjustTimestampsToTimezone(ref evt, timezone);
 
@@ -347,51 +402,55 @@ namespace SchedulerBot.Data.Services
 
         public async Task ApplyDeleteAndRepeatPastEventsAsync()
         {
-            var events = await _context.Events
-                .Include(e => e.Mentions)
-                .Include(e => e.RSVPs)
-                .Where(e => e.EndTimestamp < DateTimeOffset.Now)
-                .ToListAsync();
-
-            foreach (var evt in events)
+            using (var db = _contextFactory.CreateDbContext())
             {
-                if (evt.Repeat == RepeatType.None)
-                {
-                    _context.EventMentions.RemoveRange(evt.Mentions);
-                    _context.EventRSVPs.RemoveRange(evt.RSVPs);
-                    _context.Events.Remove(evt);
-                }
-                else
-                {
+                var events = await db.Events
+                    .Include(e => e.Mentions)
+                    .Include(e => e.RSVPs)
+                    .Where(e => e.EndTimestamp < DateTimeOffset.Now)
+                    .ToListAsync();
 
-                    while (evt.StartTimestamp < DateTimeOffset.Now)
+                foreach (var evt in events)
+                {
+                    if (evt.Repeat == RepeatType.None)
                     {
-                        switch (evt.Repeat)
+                        db.EventMentions.RemoveRange(evt.Mentions);
+                        db.EventRSVPs.RemoveRange(evt.RSVPs);
+                        db.Events.Remove(evt);
+                    }
+                    else
+                    {
+
+                        while (evt.StartTimestamp < DateTimeOffset.Now)
                         {
-                            case RepeatType.Daily:
-                                evt.StartTimestamp = evt.StartTimestamp.AddDays(1);
-                                evt.EndTimestamp = evt.EndTimestamp.AddDays(1);
-                                break;
-                            case RepeatType.Weekly:
-                                evt.StartTimestamp = evt.StartTimestamp.AddDays(7);
-                                evt.EndTimestamp = evt.EndTimestamp.AddDays(7);
-                                break;
-                            case RepeatType.Monthly:
-                                evt.StartTimestamp = evt.StartTimestamp.AddMonths(1);
-                                evt.EndTimestamp = evt.EndTimestamp.AddMonths(1);
-                                break;
-                            case RepeatType.MonthlyWeekday:
-                                evt.StartTimestamp = RepeatMonthlyWeekday(evt.StartTimestamp);
-                                evt.EndTimestamp = RepeatMonthlyWeekday(evt.EndTimestamp);
-                                break;
-                            default:
-                                break;
+                            switch (evt.Repeat)
+                            {
+                                case RepeatType.Daily:
+                                    evt.StartTimestamp = evt.StartTimestamp.AddDays(1);
+                                    evt.EndTimestamp = evt.EndTimestamp.AddDays(1);
+                                    break;
+                                case RepeatType.Weekly:
+                                    evt.StartTimestamp = evt.StartTimestamp.AddDays(7);
+                                    evt.EndTimestamp = evt.EndTimestamp.AddDays(7);
+                                    break;
+                                case RepeatType.Monthly:
+                                    evt.StartTimestamp = evt.StartTimestamp.AddMonths(1);
+                                    evt.EndTimestamp = evt.EndTimestamp.AddMonths(1);
+                                    break;
+                                case RepeatType.MonthlyWeekday:
+                                    evt.StartTimestamp = RepeatMonthlyWeekday(evt.StartTimestamp);
+                                    evt.EndTimestamp = RepeatMonthlyWeekday(evt.EndTimestamp);
+                                    break;
+                                default:
+                                    break;
+                            }
                         }
                     }
                 }
+
+                await db.SaveChangesAsync();
             }
 
-            await _context.SaveChangesAsync();
         }
 
         private void AdjustTimestampsToTimezone(ref Event evt, string timezone)
