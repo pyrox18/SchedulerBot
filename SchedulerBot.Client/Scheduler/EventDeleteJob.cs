@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading;
 using System.Threading.Tasks;
 using DSharpPlus;
 using Quartz;
@@ -14,8 +15,17 @@ namespace SchedulerBot.Client.Scheduler
             JobDataMap jobDataMap = context.MergedJobDataMap;
             Guid eventId = (Guid)jobDataMap["eventId"];
             IEventService eventService = (IEventService)jobDataMap["eventService"];
+            var semaphore = (SemaphoreSlim)jobDataMap["semaphore"];
 
-            await eventService.DeleteEventAsync(eventId);
+            await semaphore.WaitAsync();
+            try
+            {
+                await eventService.DeleteEventAsync(eventId);
+            }
+            finally
+            {
+                semaphore.Release();
+            }
         }
     }
 }

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Specialized;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using DSharpPlus;
 using DSharpPlus.Entities;
@@ -15,11 +16,13 @@ namespace SchedulerBot.Client.Scheduler
     public class EventScheduler : IEventScheduler
     {
         private readonly IEventService _eventService;
+        private readonly SemaphoreSlim semaphore;
         public IScheduler Scheduler { get; set; }
 
         public EventScheduler(IEventService eventService)
         {
             _eventService = eventService;
+            semaphore = new SemaphoreSlim(1, 1);
             InitialiseScheduler().GetAwaiter().GetResult();
         }
 
@@ -136,7 +139,8 @@ namespace SchedulerBot.Client.Scheduler
                         ["client"] = client,
                         ["channelId"] = channelId,
                         ["eventService"] = _eventService,
-                        ["eventScheduler"] = this
+                        ["eventScheduler"] = this,
+                        ["semaphore"] = semaphore
                     })
                     .Build();
 
@@ -157,7 +161,8 @@ namespace SchedulerBot.Client.Scheduler
                 {
                     ["client"] = client,
                     ["eventId"] = evt.Id,
-                    ["eventService"] = _eventService
+                    ["eventService"] = _eventService,
+                    ["semaphore"] = semaphore
                 };
 
                 IJobDetail deleteJob = JobBuilder.Create<EventDeleteJob>()
