@@ -9,7 +9,6 @@ using SchedulerBot.Client.Builders;
 namespace SchedulerBot.Client.Commands
 {
     [Group("help")]
-    [ModuleLifespan(ModuleLifespan.Transient)]
     public class HelpCommands : BaseCommandModule
     {
         private readonly IConfigurationRoot _configuration;
@@ -164,7 +163,6 @@ namespace SchedulerBot.Client.Commands
         }
 
         [Group("event")]
-        [ModuleLifespan(ModuleLifespan.Transient)]
         public class EventHelpCommands : BaseCommandModule
         {
             [GroupCommand]
@@ -331,7 +329,6 @@ namespace SchedulerBot.Client.Commands
         }
 
         [Group("perms")]
-        [ModuleLifespan(ModuleLifespan.Transient)]
         public class PermissionHelpCommands : BaseCommandModule
         {
             [GroupCommand]
@@ -460,7 +457,6 @@ namespace SchedulerBot.Client.Commands
         }
 
         [Group("settings")]
-        [ModuleLifespan(ModuleLifespan.Transient)]
         public class SettingsHelpCommands : BaseCommandModule
         {
             private readonly IConfigurationRoot _configuration;
