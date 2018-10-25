@@ -2,6 +2,12 @@
 
 This changelog is formatted based on [Keep a Changelog](http://keepachangelog.com/) and this project attempts to adhere to [Semantic Versioning](http://semver.org) as much as possible.
 
+## v2.1.4 - 2018-10-25
+
+### Changed
+
+- Changed the default bot invite link, as the old link did not include permissions to send messages with embeds.
+
 ## v2.1.3 - 2018-10-09
 
 ### Changed
