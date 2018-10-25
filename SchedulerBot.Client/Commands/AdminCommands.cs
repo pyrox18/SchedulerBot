@@ -6,7 +6,6 @@ using DSharpPlus.CommandsNext.Attributes;
 namespace SchedulerBot.Client.Commands
 {
     [Hidden, RequireOwner]
-    [ModuleLifespan(ModuleLifespan.Transient)]
     public class AdminCommands : BaseCommandModule
     {
         [Command("admincheck"), Description("Checks if the user is the bot owner.")]

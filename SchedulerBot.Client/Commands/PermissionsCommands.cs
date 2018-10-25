@@ -14,7 +14,6 @@ using SchedulerBot.Data.Services;
 namespace SchedulerBot.Client.Commands
 {
     [Group("perms")] 
-    [ModuleLifespan(ModuleLifespan.Transient)]
     [Description("View and modify permissions for other commands.")]
     public class PermissionsCommands : BaseCommandModule
     {

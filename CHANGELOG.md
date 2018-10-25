@@ -2,6 +2,22 @@
 
 This changelog is formatted based on [Keep a Changelog](http://keepachangelog.com/) and this project attempts to adhere to [Semantic Versioning](http://semver.org) as much as possible.
 
+## v2.1.4 - 2018-10-25
+
+### Changed
+
+- Changed the default bot invite link, as the old link did not include permissions to send messages with embeds.
+
+## v2.1.3 - 2018-10-09
+
+### Changed
+
+- Reverted commit 7d4b85e due to ineffectiveness of typical dependency injection patterns related to database contexts for the bot framework.
+
+### Removed
+
+- Removed guild prefix pre-caching due to extremely high initial time consumption on production workloads. Prefixes are now cached whenever they are first attempted to be resolved.
+
 ## v2.1.2 - 2018-10-09
 
 ### Added
