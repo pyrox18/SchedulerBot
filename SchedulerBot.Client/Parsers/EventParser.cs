@@ -23,8 +23,8 @@ namespace SchedulerBot.Client.Parsers
             var evt = new Event();
 
             var bodyString = ParseEventInputBody(args);
-            ParseEventTimestamps(bodyString, timezone, ref evt);
-            ParseEventInputFlags(args, ref evt, timezone);
+            ParseEventTimestamps(bodyString, timezone, evt);
+            ParseEventInputFlags(args, evt, timezone);
 
             return evt;
         }
@@ -34,9 +34,9 @@ namespace SchedulerBot.Client.Parsers
             var bodyString = ParseEventInputBody(args);
             if (!string.IsNullOrEmpty(bodyString))
             {
-                ParseEventTimestamps(bodyString, timezone, ref evt);
+                ParseEventTimestamps(bodyString, timezone, evt);
             }
-            ParseEventInputFlags(args, ref evt, timezone);
+            ParseEventInputFlags(args, evt, timezone);
 
             return evt;
         }
@@ -61,7 +61,7 @@ namespace SchedulerBot.Client.Parsers
             return string.Join(' ', body.ToArray());
         }
 
-        private static void ParseEventInputFlags(string[] args, ref Event evt, string timezone)
+        private static void ParseEventInputFlags(string[] args, Event evt, string timezone)
         {
             uint i = 0;
             int argsLength = args.Length;
@@ -205,7 +205,7 @@ namespace SchedulerBot.Client.Parsers
             }
         }
 
-        private static void ParseEventTimestamps(string bodyString, string timezone, ref Event evt)
+        private static void ParseEventTimestamps(string bodyString, string timezone, Event evt)
         {
             var tz = DateTimeZoneProviders.Tzdb.GetZoneOrNull(timezone);
             if (tz == null)
