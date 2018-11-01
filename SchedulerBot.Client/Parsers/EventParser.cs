@@ -293,8 +293,19 @@ namespace SchedulerBot.Client.Parsers
                 {
                     string timex = resolutionValues.First()["timex"].TrimStart('(').TrimEnd(')');
                     string[] timexSplit = timex.Split(',');
-                    string fromString = resolutionValues.First()["start"];
-                    string toString = resolutionValues.First()["end"];
+                    string fromString = "";
+                    string toString = "";
+
+                    try
+                    {
+                        fromString = resolutionValues.First()["start"];
+                        toString = resolutionValues.First()["end"];
+                    }
+                    catch (KeyNotFoundException)
+                    {
+                        throw new EventParseException();
+                    }
+
                     if (timexSplit[0].StartsWith("XXXX-"))
                     {
                         fromString = fromString.Substring(4);
@@ -365,8 +376,19 @@ namespace SchedulerBot.Client.Parsers
                 {
                     var clock = SystemClock.Instance;
                     LocalDate today = clock.InZone(tz).GetCurrentDate();
-                    string fromString = resolutionValues.First()["start"];
-                    string toString = resolutionValues.First()["end"];
+                    string fromString = "";
+                    string toString = "";
+
+                    try
+                    {
+                        fromString = resolutionValues.First()["start"];
+                        toString = resolutionValues.First()["end"];
+                    }
+                    catch (KeyNotFoundException)
+                    {
+                        throw new EventParseException();
+                    }
+
                     string fromDateTimeString = string.Format("{0} {1}", today.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture), fromString);
                     string toDateTimeString = string.Format("{0} {1}", today.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture), toString);
 
