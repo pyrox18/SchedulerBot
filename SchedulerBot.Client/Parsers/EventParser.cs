@@ -34,7 +34,7 @@ namespace SchedulerBot.Client.Parsers
             var bodyString = ParseEventInputBody(args);
             if (!string.IsNullOrEmpty(bodyString))
             {
-                ParseEventTimestamps(bodyString, timezone, ref evt);
+                ParseEventTimestamps(bodyString, timezone, ref evt, true);
             }
             ParseEventInputFlags(args, ref evt, timezone);
 
@@ -205,8 +205,9 @@ namespace SchedulerBot.Client.Parsers
             }
         }
 
-        private static void ParseEventTimestamps(string bodyString, string timezone, ref Event evt)
+        private static void ParseEventTimestamps(string bodyString, string timezone, ref Event evt, bool isUpdate = false)
         {
+            string newBodyString = "";
             var tz = DateTimeZoneProviders.Tzdb.GetZoneOrNull(timezone);
             if (tz == null)
             {
@@ -393,11 +394,41 @@ namespace SchedulerBot.Client.Parsers
                     throw new EventParseException();
                 }
 
-                evt.Name = bodyString.RemoveCaseInsensitive(first.Text);
+                newBodyString = bodyString.RemoveCaseInsensitive(first.Text);
+
+                if (isUpdate)
+                {
+                    if (!string.IsNullOrEmpty(newBodyString))
+                    {
+                        // Update the event name
+                        evt.Name = newBodyString;
+                    }
+                }
+                else
+                {
+                    if (string.IsNullOrEmpty(newBodyString))
+                    {
+                        // This is not fine. Name is required for creating new events
+                        throw new EventParseException();
+                    }
+                    else
+                    {
+                        evt.Name = newBodyString;
+                    }
+                }
             }
             else
             {
-                throw new EventParseException();
+                if (results.Count == 0 && isUpdate)
+                {
+                    // User has entered a new event name, so update the name
+                    // Note: bodyString is assumed not null and not empty
+                    evt.Name = bodyString;
+                }
+                else
+                {
+                    throw new EventParseException();
+                }
             }
 
         }
