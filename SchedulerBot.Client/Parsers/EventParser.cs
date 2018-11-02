@@ -362,15 +362,12 @@ namespace SchedulerBot.Client.Parsers
                     LocalDateTime startDateTime = _dateTimePattern.Parse(dateTimeString).Value;
                     ZonedDateTime zonedStartDateTime = tz.AtLeniently(startDateTime);
 
-                    if (IsFuture(zonedStartDateTime.ToDateTimeOffset()))
+                    if (!IsFuture(zonedStartDateTime.ToDateTimeOffset()))
                     {
-                        evt.StartTimestamp = zonedStartDateTime.ToDateTimeOffset();
-                        evt.EndTimestamp = zonedStartDateTime.ToDateTimeOffset().AddHours(1);
+                        zonedStartDateTime = zonedStartDateTime.PlusHours(24);
                     }
-                    else
-                    {
-                        throw new DateTimeInPastException();
-                    }
+                    evt.StartTimestamp = zonedStartDateTime.ToDateTimeOffset();
+                    evt.EndTimestamp = zonedStartDateTime.ToDateTimeOffset().AddHours(1);
                 }
                 else if (subType.Contains("time") && subType.Contains("range"))
                 {
