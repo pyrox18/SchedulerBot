@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using Xunit;
 using SchedulerBot.Client.Parsers;
 using SchedulerBot.Data.Models;
+using SchedulerBot.Client.Exceptions;
 
 namespace SchedulerBot.Client.UnitTests
 {
@@ -28,6 +29,17 @@ namespace SchedulerBot.Client.UnitTests
                         Mentions = new List<EventMention>()
                     }
                 }
+            };
+
+            public static IEnumerable<object[]> NewEventParseExceptionTestData => new List<object[]>
+            {
+                new object[] { "Test Event" }
+            };
+
+            public static IEnumerable<object[]> NewEventTimezoneExceptionTestData => new List<object[]>
+            {
+                new object[] { "someInvalidTimezone" },
+                new object[] { "gmt" }
             };
 
             [Theory]
@@ -74,6 +86,26 @@ namespace SchedulerBot.Client.UnitTests
                         });
                     }
                 }
+            }
+
+            [Theory]
+            [MemberData(nameof(NewEventParseExceptionTestData))]
+            public void ThrowsEventParseException(string args)
+            {
+                Assert.Throws<EventParseException>(() =>
+                {
+                    EventParser.ParseNewEvent(args.Split(' '), "Europe/London");
+                });
+            }
+
+            [Theory]
+            [MemberData(nameof(NewEventTimezoneExceptionTestData))]
+            public void ThrowsInvalidTimezoneException(string timezone)
+            {
+                Assert.Throws<InvalidTimeZoneException>(() =>
+                {
+                    EventParser.ParseNewEvent("Test Event 8pm".Split(' '), timezone);
+                });
             }
         }
 
