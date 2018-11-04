@@ -278,11 +278,17 @@ namespace SchedulerBot.Client.Parsers
                     }
                     LocalDateTime startDateTime = _dateTimePattern.Parse(value).Value;
                     ZonedDateTime zonedStartDateTime = tz.AtLeniently(startDateTime);
+                    DateTimeOffset startTimestamp = zonedStartDateTime.ToDateTimeOffset();
 
-                    if (IsFuture(zonedStartDateTime.ToDateTimeOffset()))
+                    if (timex.StartsWith("XXXX-") && !IsFuture(startTimestamp))
                     {
-                        evt.StartTimestamp = zonedStartDateTime.ToDateTimeOffset();
-                        evt.EndTimestamp = zonedStartDateTime.ToDateTimeOffset().AddHours(1);
+                        startTimestamp = startTimestamp.AddYears(1);
+                    }
+
+                    if (IsFuture(startTimestamp))
+                    {
+                        evt.StartTimestamp = startTimestamp;
+                        evt.EndTimestamp = startTimestamp.AddHours(1);
                     }
                     else
                     {
@@ -338,10 +344,25 @@ namespace SchedulerBot.Client.Parsers
 
                     ZonedDateTime zonedFrom = tz.AtLeniently(from);
                     ZonedDateTime zonedTo = tz.AtLeniently(to);
-                    if (IsFuture(zonedFrom.ToDateTimeOffset()) && IsFuture(zonedTo.ToDateTimeOffset()))
+
+                    DateTimeOffset startTimestamp = zonedFrom.ToDateTimeOffset();
+                    DateTimeOffset endTimestamp = zonedTo.ToDateTimeOffset();
+
+                    if (timexSplit[0].StartsWith("XXXX-") && !IsFuture(startTimestamp))
                     {
-                        evt.StartTimestamp = zonedFrom.ToDateTimeOffset();
-                        evt.EndTimestamp = zonedTo.ToDateTimeOffset();
+                        startTimestamp = startTimestamp.AddYears(1);
+                    }
+
+                    if (timexSplit.Length > 1 && timexSplit[1].StartsWith("XXXX-") && !IsFuture(endTimestamp))
+                    {
+                        endTimestamp = endTimestamp.AddYears(1);
+                    }
+
+
+                    if (IsFuture(startTimestamp) && IsFuture(endTimestamp))
+                    {
+                        evt.StartTimestamp = startTimestamp;
+                        evt.EndTimestamp = endTimestamp;
                         if (IsEventEndBeforeStart(evt))
                         {
                             throw new EventEndBeforeStartException();
