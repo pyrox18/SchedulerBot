@@ -161,8 +161,11 @@ namespace SchedulerBot.Client.Parsers
                                         }
                                     }
                                     mentionIdString = mentionIdString.TrimEnd('>');
-                                    mention.TargetId = ulong.Parse(mentionIdString);
-                                    evt.Mentions.Add(mention);
+                                    if (ulong.TryParse(mentionIdString, out ulong targetId))
+                                    {
+                                        mention.TargetId = targetId;
+                                        evt.Mentions.Add(mention);
+                                    }
                                 }
                             }
                             break;
