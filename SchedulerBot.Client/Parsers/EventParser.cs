@@ -447,6 +447,7 @@ namespace SchedulerBot.Client.Parsers
                     throw new EventParseException();
                 }
 
+                evt.ReminderTimestamp = null;
                 newBodyString = bodyString.RemoveCaseInsensitive(first.Text);
 
                 if (isUpdate)
