@@ -11,7 +11,6 @@ namespace SchedulerBot.Client.UnitTests
     {
         public class ParseNewEventMethod
         {
-
             public static IEnumerable<object[]> NewEventSuccessTestData => new List<object[]>
             {
                 // General mixed cases
@@ -624,6 +623,135 @@ namespace SchedulerBot.Client.UnitTests
                 {
                     EventParser.ParseNewEvent("Test Event 8pm".Split(' '), timezone);
                 });
+            }
+        }
+
+        public class ParseUpdateEventMethod
+        {
+            public static List<object[]> UpdateEventSuccessTestData => new List<object[]>
+            {
+                new object[]
+                {
+                    "Test Event 9pm",
+                    "Asia/Kuala_Lumpur",
+                    new Event
+                    {
+                        Name = "Test Event",
+                        StartTimestamp = GetDateTimeOffsetFuture(21, 0, 0, new TimeSpan(8, 0, 0)),
+                        EndTimestamp = GetDateTimeOffsetFuture(21, 0, 0, new TimeSpan(8, 0, 0)).AddHours(1),
+                        ReminderTimestamp = null,
+                        Description = "Base event description",
+                        Repeat = RepeatType.Daily,
+                        Mentions = new List<EventMention>
+                        {
+                            new EventMention
+                            {
+                                Type = MentionType.User,
+                                TargetId = 12345
+                            }
+                        },
+                        RSVPs = new List<EventRSVP>
+                        {
+                            new EventRSVP
+                            {
+                                UserId = 12345
+                            }
+                        }
+                    }
+                },
+                new object[]
+                {
+                    "Some Event 3pm to 5pm --repeat w --mention <@!23456> --remind 15 minutes",
+                    "Asia/Kuala_Lumpur",
+                    new Event
+                    {
+                        Name = "Some Event",
+                        StartTimestamp = GetDateTimeOffsetFuture(15, 0, 0, new TimeSpan(8, 0, 0)),
+                        EndTimestamp = GetDateTimeOffsetFuture(17, 0, 0, new TimeSpan(8, 0, 0)),
+                        ReminderTimestamp = GetDateTimeOffsetFuture(14, 45, 0, new TimeSpan(8, 0, 0)),
+                        Description = "Base event description",
+                        Repeat = RepeatType.Weekly,
+                        Mentions = new List<EventMention>
+                        {
+                            new EventMention
+                            {
+                                Type = MentionType.User,
+                                TargetId = 23456
+                            }
+                        },
+                        RSVPs = new List<EventRSVP>
+                        {
+                            new EventRSVP
+                            {
+                                UserId = 12345
+                            }
+                        }
+                    }
+                }
+            };
+
+            [Theory]
+            [MemberData(nameof(UpdateEventSuccessTestData))]
+            public void ReturnsUpdatedEvent(string args, string timezone, Event expected)
+            {
+                var baseEvent = new Event
+                {
+                    Name = "Base Event",
+                    StartTimestamp = new DateTimeOffset(2018, 7, 15, 12, 0, 0, new TimeSpan(8, 0, 0)),
+                    EndTimestamp = new DateTimeOffset(2018, 7, 15, 3, 0, 0, new TimeSpan(8, 0, 0)),
+                    ReminderTimestamp = new DateTimeOffset(2018, 7, 15, 11, 45, 0, new TimeSpan(8, 0, 0)),
+                    Description = "Base event description",
+                    Repeat = RepeatType.Daily,
+                    Mentions = new List<EventMention>
+                    {
+                        new EventMention
+                        {
+                            Type = MentionType.User,
+                            TargetId = 12345
+                        }
+                    },
+                    RSVPs = new List<EventRSVP>
+                    {
+                        new EventRSVP
+                        {
+                            UserId = 12345
+                        }
+                    }
+                };
+
+                var result = EventParser.ParseUpdateEvent(baseEvent, args, timezone);
+
+                Assert.Equal(expected.Name, result.Name);
+                Assert.Equal(expected.StartTimestamp, result.StartTimestamp);
+                Assert.Equal(expected.EndTimestamp, result.EndTimestamp);
+                Assert.Equal(expected.ReminderTimestamp, result.ReminderTimestamp);
+                Assert.Equal(expected.Description, result.Description);
+                Assert.Equal(expected.Repeat, result.Repeat);
+                Assert.Single(result.RSVPs);
+
+                if (expected.Mentions == null || expected.Mentions.Count == 0)
+                {
+                    try
+                    {
+                        Assert.Empty(result.Mentions);
+                    }
+                    catch (ArgumentNullException)
+                    {
+                        Assert.Null(result.Mentions);
+                    }
+                }
+                else
+                {
+                    Assert.Equal(expected.Mentions.Count, result.Mentions.Count);
+                    foreach (var expectedMention in expected.Mentions)
+                    {
+                        Assert.Contains(result.Mentions, m =>
+                        {
+                            return m.TargetId == expectedMention.TargetId
+                                && m.Type == expectedMention.Type;
+                        });
+                    }
+                }
             }
         }
 
