@@ -113,7 +113,10 @@ namespace SchedulerBot.Client.Parsers
                             }
                             break;
                         case "desc":
-                            evt.Description = string.Join(' ', values.ToArray());
+                            if (values.Count > 0)
+                            {
+                                evt.Description = string.Join(' ', values.ToArray());
+                            }
                             break;
                         case "mention":
                             evt.Mentions = new List<EventMention>();
@@ -158,8 +161,11 @@ namespace SchedulerBot.Client.Parsers
                                         }
                                     }
                                     mentionIdString = mentionIdString.TrimEnd('>');
-                                    mention.TargetId = ulong.Parse(mentionIdString);
-                                    evt.Mentions.Add(mention);
+                                    if (ulong.TryParse(mentionIdString, out ulong targetId))
+                                    {
+                                        mention.TargetId = targetId;
+                                        evt.Mentions.Add(mention);
+                                    }
                                 }
                             }
                             break;
@@ -255,11 +261,17 @@ namespace SchedulerBot.Client.Parsers
                     }
                     LocalDateTime startDateTime = _dateOnlyPattern.Parse(value).Value;
                     ZonedDateTime zonedStartDateTime = tz.AtLeniently(startDateTime);
+                    DateTimeOffset startTimestamp = zonedStartDateTime.ToDateTimeOffset();
 
-                    if (IsFuture(zonedStartDateTime.ToDateTimeOffset()))
+                    if (timex.StartsWith("XXXX-") && !IsFuture(startTimestamp))
                     {
-                        evt.StartTimestamp = zonedStartDateTime.ToDateTimeOffset();
-                        evt.EndTimestamp = zonedStartDateTime.ToDateTimeOffset().AddHours(1);
+                        startTimestamp = startTimestamp.AddYears(1);
+                    }
+
+                    if (IsFuture(startTimestamp))
+                    {
+                        evt.StartTimestamp = startTimestamp;
+                        evt.EndTimestamp = startTimestamp.AddHours(1);
                     }
                     else
                     {
@@ -278,11 +290,17 @@ namespace SchedulerBot.Client.Parsers
                     }
                     LocalDateTime startDateTime = _dateTimePattern.Parse(value).Value;
                     ZonedDateTime zonedStartDateTime = tz.AtLeniently(startDateTime);
+                    DateTimeOffset startTimestamp = zonedStartDateTime.ToDateTimeOffset();
 
-                    if (IsFuture(zonedStartDateTime.ToDateTimeOffset()))
+                    if (timex.StartsWith("XXXX-") && !IsFuture(startTimestamp))
                     {
-                        evt.StartTimestamp = zonedStartDateTime.ToDateTimeOffset();
-                        evt.EndTimestamp = zonedStartDateTime.ToDateTimeOffset().AddHours(1);
+                        startTimestamp = startTimestamp.AddYears(1);
+                    }
+
+                    if (IsFuture(startTimestamp))
+                    {
+                        evt.StartTimestamp = startTimestamp;
+                        evt.EndTimestamp = startTimestamp.AddHours(1);
                     }
                     else
                     {
@@ -338,10 +356,25 @@ namespace SchedulerBot.Client.Parsers
 
                     ZonedDateTime zonedFrom = tz.AtLeniently(from);
                     ZonedDateTime zonedTo = tz.AtLeniently(to);
-                    if (IsFuture(zonedFrom.ToDateTimeOffset()) && IsFuture(zonedTo.ToDateTimeOffset()))
+
+                    DateTimeOffset startTimestamp = zonedFrom.ToDateTimeOffset();
+                    DateTimeOffset endTimestamp = zonedTo.ToDateTimeOffset();
+
+                    if (timexSplit[0].StartsWith("XXXX-") && !IsFuture(startTimestamp))
                     {
-                        evt.StartTimestamp = zonedFrom.ToDateTimeOffset();
-                        evt.EndTimestamp = zonedTo.ToDateTimeOffset();
+                        startTimestamp = startTimestamp.AddYears(1);
+                    }
+
+                    if (timexSplit.Length > 1 && timexSplit[1].StartsWith("XXXX-") && !IsFuture(endTimestamp))
+                    {
+                        endTimestamp = endTimestamp.AddYears(1);
+                    }
+
+
+                    if (IsFuture(startTimestamp) && IsFuture(endTimestamp))
+                    {
+                        evt.StartTimestamp = startTimestamp;
+                        evt.EndTimestamp = endTimestamp;
                         if (IsEventEndBeforeStart(evt))
                         {
                             throw new EventEndBeforeStartException();
@@ -362,15 +395,12 @@ namespace SchedulerBot.Client.Parsers
                     LocalDateTime startDateTime = _dateTimePattern.Parse(dateTimeString).Value;
                     ZonedDateTime zonedStartDateTime = tz.AtLeniently(startDateTime);
 
-                    if (IsFuture(zonedStartDateTime.ToDateTimeOffset()))
+                    if (!IsFuture(zonedStartDateTime.ToDateTimeOffset()))
                     {
-                        evt.StartTimestamp = zonedStartDateTime.ToDateTimeOffset();
-                        evt.EndTimestamp = zonedStartDateTime.ToDateTimeOffset().AddHours(1);
+                        zonedStartDateTime = zonedStartDateTime.PlusHours(24);
                     }
-                    else
-                    {
-                        throw new DateTimeInPastException();
-                    }
+                    evt.StartTimestamp = zonedStartDateTime.ToDateTimeOffset();
+                    evt.EndTimestamp = zonedStartDateTime.ToDateTimeOffset().AddHours(1);
                 }
                 else if (subType.Contains("time") && subType.Contains("range"))
                 {
@@ -396,19 +426,20 @@ namespace SchedulerBot.Client.Parsers
                     ZonedDateTime zonedStartDateTime = tz.AtLeniently(startDateTime);
                     LocalDateTime endDateTime = _dateTimePattern.Parse(toDateTimeString).Value;
                     ZonedDateTime zonedEndDateTime = tz.AtLeniently(endDateTime);
+                    DateTimeOffset startTimestamp = zonedStartDateTime.ToDateTimeOffset();
+                    DateTimeOffset endTimestamp = zonedEndDateTime.ToDateTimeOffset();
 
-                    if (IsFuture(zonedStartDateTime.ToDateTimeOffset()) && IsFuture(zonedEndDateTime.ToDateTimeOffset()))
+                    if (!IsFuture(startTimestamp) && !IsFuture(endTimestamp))
                     {
-                        evt.StartTimestamp = zonedStartDateTime.ToDateTimeOffset();
-                        evt.EndTimestamp = zonedEndDateTime.ToDateTimeOffset();
-                        if (IsEventEndBeforeStart(evt))
-                        {
-                            throw new EventEndBeforeStartException();
-                        }
+                        startTimestamp = startTimestamp.AddDays(1);
+                        endTimestamp = endTimestamp.AddDays(1);
                     }
-                    else
+
+                    evt.StartTimestamp = startTimestamp;
+                    evt.EndTimestamp = endTimestamp;
+                    if (IsEventEndBeforeStart(evt))
                     {
-                        throw new DateTimeInPastException();
+                        throw new EventEndBeforeStartException();
                     }
                 }
                 else
@@ -416,6 +447,7 @@ namespace SchedulerBot.Client.Parsers
                     throw new EventParseException();
                 }
 
+                evt.ReminderTimestamp = null;
                 newBodyString = bodyString.RemoveCaseInsensitive(first.Text);
 
                 if (isUpdate)
