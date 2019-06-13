@@ -135,14 +135,9 @@ namespace SchedulerBot.Client
             }
 
             Console.WriteLine($"Environment: {environment}");
-            if (environment == "Development")
-            {
-                builder.SetBasePath(Path.Combine(Directory.GetCurrentDirectory(), string.Format("..{0}..{0}..{0}", Path.DirectorySeparatorChar)));
-            }
-            else
-            {
-                builder.SetBasePath(Directory.GetCurrentDirectory());
-            }
+
+            builder.SetBasePath(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location));
+
             builder.AddJsonFile("appsettings.json")
                 .AddJsonFile($"appsettings.{environment}.json", true);
 
