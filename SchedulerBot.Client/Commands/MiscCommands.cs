@@ -38,12 +38,6 @@ namespace SchedulerBot.Client.Commands
         {
             await ctx.TriggerTypingAsync();
 
-            if (!await this.CheckPermission(_permissionService, typeof(MiscCommands), nameof(MiscCommands.Ping), ctx.Member))
-            {
-                await ctx.RespondAsync("You are not permitted to use this command.");
-                return;
-            }
-
             TimeSpan diff = DateTimeOffset.Now - ctx.Message.Timestamp;
             await ctx.RespondAsync($"Pong! Time: {diff.Milliseconds}ms");
         }
@@ -53,12 +47,6 @@ namespace SchedulerBot.Client.Commands
         public async Task Prefix(CommandContext ctx)
         {
             await ctx.TriggerTypingAsync();
-
-            if (!await this.CheckPermission(_permissionService, typeof(MiscCommands), nameof(MiscCommands.Prefix), ctx.Member))
-            {
-                await ctx.RespondAsync("You are not permitted to use this command.");
-                return;
-            }
 
             var prefix = await _calendarService.GetCalendarPrefixAsync(ctx.Guild.Id);
             await ctx.RespondAsync($"`{prefix}`");
@@ -118,12 +106,6 @@ namespace SchedulerBot.Client.Commands
         public async Task Time(CommandContext ctx)
         {
             await ctx.TriggerTypingAsync();
-
-            if (!await this.CheckPermission(_permissionService, typeof(MiscCommands), nameof(MiscCommands.Time), ctx.Member))
-            {
-                await ctx.RespondAsync("You are not permitted to use this command.");
-                return;
-            }
 
             var timezone = await _calendarService.GetCalendarTimezoneAsync(ctx.Guild.Id);
             if (string.IsNullOrEmpty(timezone))

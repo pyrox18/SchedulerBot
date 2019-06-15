@@ -70,12 +70,6 @@ namespace SchedulerBot.Client.Commands
         {
             await ctx.TriggerTypingAsync();
 
-            if (!await this.CheckPermission(_permissionService, typeof(SettingsCommands), nameof(SettingsCommands.ShowPrefix), ctx.Member))
-            {
-                await ctx.RespondAsync("You are not permitted to use this command.");
-                return;
-            }
-
             var prefix = await _calendarService.GetCalendarPrefixAsync(ctx.Guild.Id);
             if (string.IsNullOrEmpty(prefix))
             {
@@ -104,12 +98,6 @@ namespace SchedulerBot.Client.Commands
         {
             await ctx.TriggerTypingAsync();
 
-            if (!await this.CheckPermission(_permissionService, typeof(SettingsCommands), nameof(SettingsCommands.ModifyPrefix), ctx.Member))
-            {
-                await ctx.RespondAsync("You are not permitted to use this command.");
-                return;
-            }
-
             string newPrefix = string.Empty;
             try
             {
@@ -132,12 +120,6 @@ namespace SchedulerBot.Client.Commands
         public async Task ShowDefaultChannel(CommandContext ctx)
         {
             await ctx.TriggerTypingAsync();
-
-            if (!await this.CheckPermission(_permissionService, typeof(SettingsCommands), nameof(SettingsCommands.ShowDefaultChannel), ctx.Member))
-            {
-                await ctx.RespondAsync("You are not permitted to use this command.");
-                return;
-            }
 
             var defaultChannel = await _calendarService.GetCalendarDefaultChannelAsync(ctx.Guild.Id);
             if (defaultChannel == 0)
@@ -168,12 +150,6 @@ namespace SchedulerBot.Client.Commands
         {
             await ctx.TriggerTypingAsync();
 
-            if (!await this.CheckPermission(_permissionService, typeof(SettingsCommands), nameof(SettingsCommands.ModifyDefaultChannel), ctx.Member))
-            {
-                await ctx.RespondAsync("You are not permitted to use this command.");
-                return;
-            }
-
             ulong defaultChannel = 0;
             try
             {
@@ -195,12 +171,6 @@ namespace SchedulerBot.Client.Commands
         public async Task ShowTimezone(CommandContext ctx)
         {
             await ctx.TriggerTypingAsync();
-
-            if (!await this.CheckPermission(_permissionService, typeof(SettingsCommands), nameof(SettingsCommands.ShowTimezone), ctx.Member))
-            {
-                await ctx.RespondAsync("You are not permitted to use this command.");
-                return;
-            }
 
             var timezone = await _calendarService.GetCalendarTimezoneAsync(ctx.Guild.Id);
             if (string.IsNullOrEmpty(timezone))
@@ -231,12 +201,6 @@ namespace SchedulerBot.Client.Commands
         public async Task ModifyTimezone(CommandContext ctx, string timezone)
         {
             await ctx.TriggerTypingAsync();
-
-            if (!await this.CheckPermission(_permissionService, typeof(SettingsCommands), nameof(SettingsCommands.ModifyTimezone), ctx.Member))
-            {
-                await ctx.RespondAsync("You are not permitted to use this command.");
-                return;
-            }
 
             string tz = string.Empty;
             try

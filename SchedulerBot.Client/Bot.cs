@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
@@ -17,6 +18,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using NLog.Extensions.Logging;
+using SchedulerBot.Client.Attributes;
 using SchedulerBot.Client.Commands;
 using SchedulerBot.Client.Configuration;
 using SchedulerBot.Client.Extensions;
@@ -244,6 +246,13 @@ namespace SchedulerBot.Client
         private async Task OnCommandError(CommandErrorEventArgs e)
         {
             var exceptionType = e.Exception.GetType();
+
+            if (exceptionType == typeof(ChecksFailedException)
+                && (e.Exception as ChecksFailedException).FailedChecks.Any(x => x.GetType() == typeof(PermissionNodeAttribute)))
+            {
+                return;
+            }
+
             if (exceptionType != typeof(CommandNotFoundException) && exceptionType != typeof(ArgumentException) && exceptionType != typeof(UnauthorizedException) && exceptionType != typeof(InvalidOperationException))
             {
                 var logger = _serviceProvider.GetService<ILogger<Program>>();

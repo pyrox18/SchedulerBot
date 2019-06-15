@@ -38,13 +38,17 @@ namespace SchedulerBot.Client.Commands
         [PermissionNode(PermissionNode.EventCreate)]
         public async Task Create(CommandContext ctx, params string[] args)
         {
-            await ctx.TriggerTypingAsync();
-
-            if (!await this.CheckPermission(_permissionService, typeof(EventCommands), nameof(EventCommands.Create), ctx.Member))
+            // Permission node check workaround for GroupCommand method
+            var attr = (PermissionNodeAttribute)(
+                GetType()
+                .GetMethod("Create")
+                .GetCustomAttributes(typeof(PermissionNodeAttribute), true)[0]);
+            if (!(await attr.ExecuteCheckAsync(ctx, false)))
             {
-                await ctx.RespondAsync("You are not permitted to use this command.");
                 return;
             }
+
+            await ctx.TriggerTypingAsync();
 
             var timezone = await _calendarService.GetCalendarTimezoneAsync(ctx.Guild.Id);
             if (string.IsNullOrEmpty(timezone))
@@ -98,12 +102,6 @@ namespace SchedulerBot.Client.Commands
         {
             await ctx.TriggerTypingAsync();
 
-            if (!await this.CheckPermission(_permissionService, typeof(EventCommands), nameof(EventCommands.List), ctx.Member))
-            {
-                await ctx.RespondAsync("You are not permitted to use this command.");
-                return;
-            }
-
             List<Event> events;
             try
             {
@@ -131,12 +129,6 @@ namespace SchedulerBot.Client.Commands
         public async Task ListOne(CommandContext ctx, int index)
         {
             await ctx.TriggerTypingAsync();
-
-            if (!await this.CheckPermission(_permissionService, typeof(EventCommands), nameof(EventCommands.ListOne), ctx.Member))
-            {
-                await ctx.RespondAsync("You are not permitted to use this command.");
-                return;
-            }
 
             if (index <= 0)
             {
@@ -175,12 +167,6 @@ namespace SchedulerBot.Client.Commands
         public async Task Update(CommandContext ctx, int index, [RemainingText] string args)
         {
             await ctx.TriggerTypingAsync();
-
-            if (!await this.CheckPermission(_permissionService, typeof(EventCommands), nameof(EventCommands.Update), ctx.Member))
-            {
-                await ctx.RespondAsync("You are not permitted to use this command.");
-                return;
-            }
 
             if (index <= 0)
             {
@@ -255,12 +241,6 @@ namespace SchedulerBot.Client.Commands
         {
             await ctx.TriggerTypingAsync();
 
-            if (!await this.CheckPermission(_permissionService, typeof(EventCommands), nameof(EventCommands.RSVP), ctx.Member))
-            {
-                await ctx.RespondAsync("You are not permitted to use this command.");
-                return;
-            }
-
             if (index <= 0)
             {
                 await ctx.RespondAsync("Event index must be greater than 0.");
@@ -325,13 +305,17 @@ namespace SchedulerBot.Client.Commands
             [PermissionNode(PermissionNode.EventDelete)]
             public async Task Delete(CommandContext ctx, int index)
             {
-                await ctx.TriggerTypingAsync();
-
-                if (!await this.CheckPermission(_permissionService, typeof(DeleteCommands), nameof(DeleteCommands.Delete), ctx.Member))
+                // Permission node check workaround for GroupCommand method
+                var attr = (PermissionNodeAttribute)(
+                    GetType()
+                    .GetMethod("Delete")
+                    .GetCustomAttributes(typeof(PermissionNodeAttribute), true)[0]);
+                if (!(await attr.ExecuteCheckAsync(ctx, false)))
                 {
-                    await ctx.RespondAsync("You are not permitted to use this command.");
                     return;
                 }
+
+                await ctx.TriggerTypingAsync();
 
                 if (index <= 0)
                 {
@@ -377,12 +361,6 @@ namespace SchedulerBot.Client.Commands
             public async Task DeleteAll(CommandContext ctx)
             {
                 await ctx.TriggerTypingAsync();
-
-                if (!await this.CheckPermission(_permissionService, typeof(DeleteCommands), nameof(DeleteCommands.DeleteAll), ctx.Member))
-                {
-                    await ctx.RespondAsync("You are not permitted to use this command.");
-                    return;
-                }
 
                 List<Event> deletedEvents;
                 try
