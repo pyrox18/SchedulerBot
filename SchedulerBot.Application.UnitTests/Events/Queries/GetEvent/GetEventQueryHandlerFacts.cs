@@ -3,17 +3,17 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Moq;
-using SchedulerBot.Application.Events.Commands.CreateEvent;
+using SchedulerBot.Application.Events.Queries.GetEvent;
 using SchedulerBot.Application.Exceptions;
 using SchedulerBot.Application.Interfaces;
 using SchedulerBot.Data.Models;
 using Xunit;
 
-namespace SchedulerBot.Application.UnitTests.Events.Commands.CreateEvent
+namespace SchedulerBot.Application.UnitTests.Events.Queries.GetEvent
 {
-    public class CreateEventCommandHandlerFacts
+    public class GetEventQueryHandlerFacts
     {
-        public class HandleCreateEventCommandMethod
+        public class HandleGetEventByIndexQuery
         {
             [Fact]
             public async Task ReturnsViewModel()
@@ -21,17 +21,12 @@ namespace SchedulerBot.Application.UnitTests.Events.Commands.CreateEvent
                 var calendar = new Calendar
                 {
                     Id = 1,
-                    DefaultChannel = 2,
-                    Prefix = "+",
-                    Timezone = "Asia/Kuala_Lumpur"
+                    Events = new List<Event>()
                 };
 
                 var @event = new Event
                 {
-                    Calendar = new Calendar
-                    {
-                        Id = 1
-                    },
+                    Calendar = calendar,
                     Name = "Test Event",
                     Description = "Some description",
                     StartTimestamp = new DateTimeOffset(2019, 1, 1, 12, 0, 0, TimeSpan.Zero),
@@ -57,26 +52,20 @@ namespace SchedulerBot.Application.UnitTests.Events.Commands.CreateEvent
                     }
                 };
 
+                calendar.Events.Add(@event);
+
                 var mockCalendarRepository = new Mock<ICalendarRepository>();
                 mockCalendarRepository.Setup(x => x.GetByIdAsync(It.IsAny<ulong>()))
                     .ReturnsAsync(calendar);
 
-                var mockEventParser = new Mock<IEventParser>();
-                mockEventParser.Setup(x => x.ParseNewEvent(It.IsAny<string[]>(), It.IsAny<string>()))
-                    .Returns(@event);
-
-                var mockEventRepository = new Mock<IEventRepository>();
-                mockEventRepository.Setup(x => x.AddAsync(It.IsAny<Event>()))
-                    .ReturnsAsync(@event);
-
-                var command = new CreateEventCommand
+                var query = new GetEventByIndexQuery
                 {
                     CalendarId = 1,
-                    EventArgs = new[] { "Test", "Event", "9am" }
+                    Index = 0
                 };
 
-                var handler = new CreateEventCommandHandler(mockCalendarRepository.Object, mockEventRepository.Object, mockEventParser.Object);
-                var result = await handler.Handle(command);
+                var handler = new GetEventQueryHandler(mockCalendarRepository.Object);
+                var result = await handler.Handle(query);
 
                 Assert.Equal(@event.Calendar.Id, result.CalendarId);
                 Assert.Equal(@event.Name, result.Name);
@@ -96,47 +85,71 @@ namespace SchedulerBot.Application.UnitTests.Events.Commands.CreateEvent
             {
                 var mockCalendarRepository = new Mock<ICalendarRepository>();
                 mockCalendarRepository.Setup(x => x.GetByIdAsync(It.IsAny<ulong>()))
-                    .ReturnsAsync(null as Calendar);
+                    .ReturnsAsync((Calendar)null);
 
-                var mockEventParser = new Mock<IEventParser>();
-                var mockEventRepository = new Mock<IEventRepository>();
-
-                var command = new CreateEventCommand
+                var query = new GetEventByIndexQuery
                 {
                     CalendarId = 1,
-                    EventArgs = new[] { "Test", "Event", "9am" }
+                    Index = 0
                 };
 
-                var handler = new CreateEventCommandHandler(mockCalendarRepository.Object, mockEventRepository.Object, mockEventParser.Object);
+                var handler = new GetEventQueryHandler(mockCalendarRepository.Object);
 
-                await Assert.ThrowsAsync<CalendarNotInitialisedException>(() => handler.Handle(command));
+                await Assert.ThrowsAsync<CalendarNotInitialisedException>(() => handler.Handle(query));
             }
 
             [Fact]
-            public async Task ThrowsWhenCalendarTimezoneIsEmpty()
+            public async Task ThrowsWhenEventIndexOutOfBounds()
             {
                 var calendar = new Calendar
                 {
                     Id = 1,
-                    Timezone = string.Empty
+                    Events = new List<Event>()
                 };
+
+                var @event = new Event
+                {
+                    Calendar = calendar,
+                    Name = "Test Event",
+                    Description = "Some description",
+                    StartTimestamp = new DateTimeOffset(2019, 1, 1, 12, 0, 0, TimeSpan.Zero),
+                    EndTimestamp = new DateTimeOffset(2019, 1, 1, 13, 0, 0, TimeSpan.Zero),
+                    ReminderTimestamp = new DateTimeOffset(2019, 1, 1, 11, 0, 0, TimeSpan.Zero),
+                    Repeat = RepeatType.None,
+                    Mentions = new List<EventMention>
+                    {
+                        new EventMention
+                        {
+                            Id = Guid.NewGuid(),
+                            TargetId = 2,
+                            Type = MentionType.User
+                        }
+                    },
+                    RSVPs = new List<EventRSVP>
+                    {
+                        new EventRSVP
+                        {
+                            Id = Guid.NewGuid(),
+                            UserId = 3
+                        }
+                    }
+                };
+
+                calendar.Events.Add(@event);
 
                 var mockCalendarRepository = new Mock<ICalendarRepository>();
                 mockCalendarRepository.Setup(x => x.GetByIdAsync(It.IsAny<ulong>()))
                     .ReturnsAsync(calendar);
 
-                var mockEventParser = new Mock<IEventParser>();
-                var mockEventRepository = new Mock<IEventRepository>();
-
-                var command = new CreateEventCommand
+                var query = new GetEventByIndexQuery
                 {
                     CalendarId = 1,
-                    EventArgs = new[] { "Test", "Event", "9am" }
+                    Index = 1
                 };
 
-                var handler = new CreateEventCommandHandler(mockCalendarRepository.Object, mockEventRepository.Object, mockEventParser.Object);
+                var handler = new GetEventQueryHandler(mockCalendarRepository.Object);
 
-                await Assert.ThrowsAsync<CalendarNotInitialisedException>(() => handler.Handle(command));
+                await Assert.ThrowsAsync<EventNotFoundException>(() => handler.Handle(query));
             }
         }
     }

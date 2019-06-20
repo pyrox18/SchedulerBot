@@ -5,7 +5,7 @@ using SchedulerBot.Application.Events.Models;
 using SchedulerBot.Application.Exceptions;
 using SchedulerBot.Application.Interfaces;
 
-namespace SchedulerBot.Application.Events.CreateEvent
+namespace SchedulerBot.Application.Events.Commands.CreateEvent
 {
     public class CreateEventCommandHandler : IRequestHandler<CreateEventCommand, EventViewModel>
     {
