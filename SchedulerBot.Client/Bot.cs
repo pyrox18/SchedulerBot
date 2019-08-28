@@ -93,10 +93,7 @@ namespace SchedulerBot.Client
             await eventService.ApplyDeleteAndRepeatPastEventsAsync();
 
             logger.LogInformation("Setting up client");
-            await _client.UseInteractivityAsync(new InteractivityConfiguration
-            {
-                PaginationBehavior = TimeoutBehaviour.DeleteReactions
-            });
+            await _client.UseInteractivityAsync(new InteractivityConfiguration());
             _client.DebugLogger.LogMessageReceived += OnLogMessageReceived;
 
             logger.LogInformation("Initialising command module");

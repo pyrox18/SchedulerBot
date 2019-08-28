@@ -26,10 +26,7 @@ namespace SchedulerBot.Client.Factories
                     {
                         sb.AppendLine("```");
                         sb.AppendLine("Run `event list <event number>` to view details for a certain event.");
-                        pages.Add(new Page
-                        {
-                            Content = sb.ToString()
-                        });
+                        pages.Add(new Page(sb.ToString()));
                         activeEventHeaderWritten = false;
                         upcomingEventHeaderWritten = false;
                     }
@@ -59,10 +56,7 @@ namespace SchedulerBot.Client.Factories
             // Push last page to list
             sb.AppendLine("```");
             sb.AppendLine("Run `event list <event number>` to view details for a certain event.");
-            pages.Add(new Page
-            {
-                Content = sb.ToString()
-            });
+            pages.Add(new Page(sb.ToString()));
 
             return pages;
         }

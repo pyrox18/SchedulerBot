@@ -190,7 +190,7 @@ namespace SchedulerBot.Client.Commands
                     }
                     else
                     {
-                        DiscordRole role = ctx.Guild.Roles.FirstOrDefault(r => r.Id == perm.TargetId);
+                        DiscordRole role = ctx.Guild.Roles.FirstOrDefault(r => r.Key == perm.TargetId).Value;
                         if (role != null)
                         {
                             roleNames.Add(role.Name);
@@ -199,7 +199,7 @@ namespace SchedulerBot.Client.Commands
                 }
                 else
                 {
-                    DiscordMember user = ctx.Guild.Members.FirstOrDefault(m => m.Id == perm.TargetId);
+                    DiscordMember user = ctx.Guild.Members.FirstOrDefault(m => m.Key == perm.TargetId).Value;
                     if (user != null)
                     {
                         userNames.Add(user.GetUsernameAndDiscriminator());

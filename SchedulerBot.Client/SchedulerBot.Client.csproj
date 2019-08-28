@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
@@ -7,9 +7,9 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="DSharpPlus" Version="4.0.0-nightly-00539" />
-    <PackageReference Include="DSharpPlus.CommandsNext" Version="4.0.0-nightly-00539" />
-    <PackageReference Include="DSharpPlus.Interactivity" Version="4.0.0-nightly-00539" />
+    <PackageReference Include="DSharpPlus" Version="4.0.0-nightly-00624" />
+    <PackageReference Include="DSharpPlus.CommandsNext" Version="4.0.0-nightly-00624" />
+    <PackageReference Include="DSharpPlus.Interactivity" Version="4.0.0-nightly-00624" />
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="2.1.4" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="2.1.4" />
     <PackageReference Include="Microsoft.Extensions.Configuration" Version="2.1.1" />
