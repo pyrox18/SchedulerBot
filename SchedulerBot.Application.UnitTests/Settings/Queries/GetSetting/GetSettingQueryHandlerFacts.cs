@@ -139,5 +139,70 @@ namespace SchedulerBot.Application.UnitTests.Settings.Queries.GetSetting
                 await Assert.ThrowsAsync<CalendarNotInitialisedException>(() => handler.Handle(query));
             }
         }
+
+        public class HandleGetTimezoneSettingQueryMethod
+        {
+            [Fact]
+            public async Task ReturnsViewModel()
+            {
+                var calendar = new Calendar
+                {
+                    Id = 1,
+                    Timezone = "a"
+                };
+
+                var mockRepository = new Mock<ICalendarRepository>();
+                mockRepository.Setup(x => x.GetByIdAsync(It.IsAny<ulong>()))
+                    .ReturnsAsync(calendar);
+
+                var query = new GetTimezoneSettingQuery
+                {
+                    CalendarId = 1
+                };
+
+                var handler = new GetSettingQueryHandler(mockRepository.Object);
+                var result = await handler.Handle(query);
+
+                Assert.Equal(calendar.Timezone, result.Timezone);
+            }
+
+            [Fact]
+            public async Task ThrowsWhenCalendarIsNull()
+            {
+                var mockRepository = new Mock<ICalendarRepository>();
+                mockRepository.Setup(x => x.GetByIdAsync(It.IsAny<ulong>()))
+                    .ReturnsAsync((Calendar)null);
+
+                var query = new GetTimezoneSettingQuery
+                {
+                    CalendarId = 1
+                };
+
+                var handler = new GetSettingQueryHandler(mockRepository.Object);
+                await Assert.ThrowsAsync<CalendarNotInitialisedException>(() => handler.Handle(query));
+            }
+
+            [Fact]
+            public async Task ThrowsWhenTimezoneIsEmpty()
+            {
+                var calendar = new Calendar
+                {
+                    Id = 1,
+                    Timezone = string.Empty
+                };
+
+                var mockRepository = new Mock<ICalendarRepository>();
+                mockRepository.Setup(x => x.GetByIdAsync(It.IsAny<ulong>()))
+                    .ReturnsAsync(calendar);
+
+                var query = new GetTimezoneSettingQuery
+                {
+                    CalendarId = 1
+                };
+
+                var handler = new GetSettingQueryHandler(mockRepository.Object);
+                await Assert.ThrowsAsync<CalendarNotInitialisedException>(() => handler.Handle(query));
+            }
+        }
     }
 }
