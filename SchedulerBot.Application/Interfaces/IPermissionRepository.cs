@@ -8,5 +8,6 @@ namespace SchedulerBot.Application.Interfaces
     {
         Task<List<Permission>> GetForUserAsync(ulong calendarId, ulong userId);
         Task<List<Permission>> GetForRoleAsync(ulong calendarId, ulong roleId);
+        Task<List<Permission>> GetForNodeAsync(ulong calendarId, PermissionNode node);
     }
 }

@@ -3,12 +3,14 @@ using System.Threading.Tasks;
 using MediatR;
 using SchedulerBot.Application.Interfaces;
 using SchedulerBot.Application.Permissions.Models;
+using SchedulerBot.Data.Models;
 
 namespace SchedulerBot.Application.Permissions.Queries.GetPermissions
 {
     public class GetPermissionsQueryHandler :
         IRequestHandler<GetUserPermissionsQuery, UserPermissionsViewModel>,
-        IRequestHandler<GetRolePermissionsQuery, RolePermissionsViewModel>
+        IRequestHandler<GetRolePermissionsQuery, RolePermissionsViewModel>,
+        IRequestHandler<GetNodePermissionsQuery, NodePermissionsViewModel>
     {
         private readonly IPermissionRepository _permissionRepository;
 
@@ -29,6 +31,14 @@ namespace SchedulerBot.Application.Permissions.Queries.GetPermissions
             var permissions = await _permissionRepository.GetForRoleAsync(request.CalendarId, request.RoleId);
 
             return RolePermissionsViewModel.FromPermissions(permissions);
+        }
+
+        public async Task<NodePermissionsViewModel> Handle(GetNodePermissionsQuery request, CancellationToken cancellationToken = default)
+        {
+            var node = (PermissionNode)request.Node;
+            var permissions = await _permissionRepository.GetForNodeAsync(request.CalendarId, node);
+
+            return NodePermissionsViewModel.FromPermissions(permissions);
         }
     }
 }

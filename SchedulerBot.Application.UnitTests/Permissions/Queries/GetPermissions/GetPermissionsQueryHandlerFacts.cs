@@ -89,5 +89,76 @@ namespace SchedulerBot.Application.UnitTests.Permissions.Queries.GetPermissions
                 Assert.Contains(Application.Permissions.Enumerations.PermissionNode.EventDelete, result.DeniedNodes);
             }
         }
+
+        public class HandleGetNodePermissionsQueryMethod
+        {
+            [Fact]
+            public async Task ReturnsViewModel()
+            {
+                var permissions = new List<Permission>
+                {
+                    new Permission
+                    {
+                        TargetId = 1,
+                        Type = PermissionType.User,
+                        Node = PermissionNode.EventCreate
+                    },
+                    new Permission
+                    {
+                        TargetId = 2,
+                        Type = PermissionType.Role,
+                        Node = PermissionNode.EventCreate
+                    }
+                };
+
+                var mockRepository = new Mock<IPermissionRepository>();
+                mockRepository.Setup(x => x.GetForNodeAsync(It.IsAny<ulong>(), It.IsAny<PermissionNode>()))
+                    .ReturnsAsync(permissions);
+
+                var query = new GetNodePermissionsQuery
+                {
+                    CalendarId = 1,
+                    Node = Application.Permissions.Enumerations.PermissionNode.EventCreate
+                };
+
+                var handler = new GetPermissionsQueryHandler(mockRepository.Object);
+                var result = await handler.Handle(query);
+
+                Assert.Single(result.DeniedUserIds);
+                Assert.Equal(permissions[0].TargetId, result.DeniedUserIds[0]);
+                Assert.Single(result.DeniedRoleIds);
+                Assert.Equal(permissions[1].TargetId, result.DeniedRoleIds[0]);
+                Assert.False(result.IsEveryoneDenied);
+            }
+
+            [Fact]
+            public async Task ReturnsViewModelWithEveryoneDenied()
+            { 
+                var permissions = new List<Permission>
+                {
+                    new Permission
+                    {
+                        TargetId = 1,
+                        Type = PermissionType.Everyone,
+                        Node = PermissionNode.EventCreate
+                    }
+                };
+
+                var mockRepository = new Mock<IPermissionRepository>();
+                mockRepository.Setup(x => x.GetForNodeAsync(It.IsAny<ulong>(), It.IsAny<PermissionNode>()))
+                    .ReturnsAsync(permissions);
+
+                var query = new GetNodePermissionsQuery
+                {
+                    CalendarId = 1,
+                    Node = Application.Permissions.Enumerations.PermissionNode.EventCreate
+                };
+
+                var handler = new GetPermissionsQueryHandler(mockRepository.Object);
+                var result = await handler.Handle(query);
+
+                Assert.True(result.IsEveryoneDenied);
+            }
+        }
     }
 }
