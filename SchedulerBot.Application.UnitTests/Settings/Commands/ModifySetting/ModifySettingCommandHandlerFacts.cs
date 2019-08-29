@@ -103,5 +103,52 @@ namespace SchedulerBot.Application.UnitTests.Settings.Commands.ModifySetting
                 await Assert.ThrowsAsync<CalendarNotInitialisedException>(() => handler.Handle(command));
             }
         }
+
+        public class HandleModifyTimezoneSettingCommandMethod
+        {
+            [Fact]
+            public async Task ReturnsViewModel()
+            {
+                var calendar = new Calendar
+                {
+                    Id = 1,
+                    Timezone = "a"
+                };
+
+                var mockRepository = new Mock<ICalendarRepository>();
+                mockRepository.Setup(x => x.GetByIdAsync(It.IsAny<ulong>()))
+                    .ReturnsAsync(calendar);
+                mockRepository.Setup(x => x.UpdateAsync(It.IsAny<Calendar>()))
+                    .Returns(Task.CompletedTask);
+
+                var command = new ModifyTimezoneSettingCommand
+                {
+                    CalendarId = 1,
+                    NewTimezone = "b"
+                };
+
+                var handler = new ModifySettingCommandHandler(mockRepository.Object);
+                var result = await handler.Handle(command);
+
+                Assert.Equal(command.NewTimezone, result.Timezone);
+            }
+
+            [Fact]
+            public async Task ThrowsWhenCalendarIsNull()
+            {
+                var mockRepository = new Mock<ICalendarRepository>();
+                mockRepository.Setup(x => x.GetByIdAsync(It.IsAny<ulong>()))
+                    .ReturnsAsync((Calendar)null);
+
+                var command = new ModifyTimezoneSettingCommand
+                {
+                    CalendarId = 1,
+                    NewTimezone = "b"
+                };
+
+                var handler = new ModifySettingCommandHandler(mockRepository.Object);
+                await Assert.ThrowsAsync<CalendarNotInitialisedException>(() => handler.Handle(command));
+            }
+        }
     }
 }

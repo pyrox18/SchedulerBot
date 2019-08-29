@@ -10,7 +10,8 @@ namespace SchedulerBot.Application.Settings.Commands.ModifySetting
 {
     public class ModifySettingCommandHandler :
         IRequestHandler<ModifyPrefixSettingCommand, PrefixSettingViewModel>,
-        IRequestHandler<ModifyDefaultChannelSettingCommand, DefaultChannelSettingViewModel>
+        IRequestHandler<ModifyDefaultChannelSettingCommand, DefaultChannelSettingViewModel>,
+        IRequestHandler<ModifyTimezoneSettingCommand, TimezoneSettingViewModel>
     {
         private readonly ICalendarRepository _calendarRepository;
 
@@ -44,6 +45,20 @@ namespace SchedulerBot.Application.Settings.Commands.ModifySetting
             return new DefaultChannelSettingViewModel
             {
                 DefaultChannel = calendar.DefaultChannel
+            };
+        }
+
+        public async Task<TimezoneSettingViewModel> Handle(ModifyTimezoneSettingCommand request, CancellationToken cancellationToken = default)
+        {
+            var calendar = await GetCalendar(request.CalendarId);
+
+            calendar.Timezone = request.NewTimezone;
+
+            await _calendarRepository.UpdateAsync(calendar);
+
+            return new TimezoneSettingViewModel
+            {
+                Timezone = calendar.Timezone
             };
         }
 
