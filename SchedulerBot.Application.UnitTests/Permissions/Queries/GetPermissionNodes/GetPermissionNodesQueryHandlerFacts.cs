@@ -3,7 +3,7 @@ using SchedulerBot.Application.Permissions.Queries.GetPermissionNodes;
 using System.Threading.Tasks;
 using Xunit;
 
-namespace SchedulerBot.Application.UnitTests.Permissions.GetPermissionNodes
+namespace SchedulerBot.Application.UnitTests.Permissions.Queries.GetPermissionNodes
 {
     public class GetPermissionNodesQueryHandlerFacts
     {
