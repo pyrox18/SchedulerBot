@@ -9,7 +9,8 @@ using SchedulerBot.Data.Models;
 namespace SchedulerBot.Application.Settings.Commands.ModifySetting
 {
     public class ModifySettingCommandHandler :
-        IRequestHandler<ModifyPrefixSettingCommand, PrefixSettingViewModel>
+        IRequestHandler<ModifyPrefixSettingCommand, PrefixSettingViewModel>,
+        IRequestHandler<ModifyDefaultChannelSettingCommand, DefaultChannelSettingViewModel>
     {
         private readonly ICalendarRepository _calendarRepository;
 
@@ -29,6 +30,20 @@ namespace SchedulerBot.Application.Settings.Commands.ModifySetting
             return new PrefixSettingViewModel
             {
                 Prefix = calendar.Prefix
+            };
+        }
+
+        public async Task<DefaultChannelSettingViewModel> Handle(ModifyDefaultChannelSettingCommand request, CancellationToken cancellationToken = default)
+        {
+            var calendar = await GetCalendar(request.CalendarId);
+
+            calendar.DefaultChannel = request.NewDefaultChannel;
+
+            await _calendarRepository.UpdateAsync(calendar);
+
+            return new DefaultChannelSettingViewModel
+            {
+                DefaultChannel = calendar.DefaultChannel
             };
         }
 
