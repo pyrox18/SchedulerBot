@@ -7,5 +7,6 @@ namespace SchedulerBot.Application.Interfaces
     public interface IPermissionRepository : IAsyncRepository<Permission>
     {
         Task<List<Permission>> GetForUserAsync(ulong calendarId, ulong userId);
+        Task<List<Permission>> GetForRoleAsync(ulong calendarId, ulong roleId);
     }
 }
