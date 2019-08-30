@@ -15,6 +15,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SchedulerBot.Application", 
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SchedulerBot.Application.UnitTests", "SchedulerBot.Application.UnitTests\SchedulerBot.Application.UnitTests.csproj", "{B81DF94D-6222-492C-8F6C-689954DDB8B3}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SchedulerBot.Persistence", "SchedulerBot.Persistence\SchedulerBot.Persistence.csproj", "{15684509-592C-4FC9-8C2C-D9C2A6D463B9}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -45,6 +47,10 @@ Global
 		{B81DF94D-6222-492C-8F6C-689954DDB8B3}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B81DF94D-6222-492C-8F6C-689954DDB8B3}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{B81DF94D-6222-492C-8F6C-689954DDB8B3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{15684509-592C-4FC9-8C2C-D9C2A6D463B9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{15684509-592C-4FC9-8C2C-D9C2A6D463B9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{15684509-592C-4FC9-8C2C-D9C2A6D463B9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{15684509-592C-4FC9-8C2C-D9C2A6D463B9}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
