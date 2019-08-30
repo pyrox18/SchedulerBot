@@ -11,5 +11,7 @@ namespace SchedulerBot.Application.Interfaces
         Task<List<Permission>> GetForNodeAsync(ulong calendarId, PermissionNode node);
         Task DenyUserPermissionAsync(ulong calendarId, ulong userId, PermissionNode node);
         Task AllowUserPermissionAsync(ulong calendarId, ulong userId, PermissionNode node);
+        Task DenyRolePermissionAsync(ulong calendarId, ulong roleId, PermissionNode node);
+        Task AllowRolePermissionAsync(ulong calendarId, ulong roleId, PermissionNode node);
     }
 }
