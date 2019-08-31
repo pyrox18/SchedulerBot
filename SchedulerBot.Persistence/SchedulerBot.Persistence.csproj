@@ -13,6 +13,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\SchedulerBot.Application\SchedulerBot.Application.csproj" />
     <ProjectReference Include="..\SchedulerBot.Data\SchedulerBot.Data.csproj" />
   </ItemGroup>
 
