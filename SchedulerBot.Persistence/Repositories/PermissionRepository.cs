@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using SchedulerBot.Application.Interfaces;
 using SchedulerBot.Data.Models;
+using SchedulerBot.Persistence.Specifications;
 
 namespace SchedulerBot.Persistence.Repositories
 {
@@ -53,9 +54,9 @@ namespace SchedulerBot.Persistence.Repositories
             await _context.SaveChangesAsync();
         }
 
-        public Task<int> CountAsync(ISpecification<Permission> spec)
+        public async Task<int> CountAsync(ISpecification<Permission> spec)
         {
-            throw new NotImplementedException();
+            return await ApplySpecification(spec).CountAsync();
         }
 
         public async Task DeleteAsync(Permission entity)
@@ -143,9 +144,9 @@ namespace SchedulerBot.Persistence.Repositories
             return await _context.Permissions.ToListAsync();
         }
 
-        public Task<IReadOnlyList<Permission>> ListAsync(ISpecification<Permission> spec)
+        public async Task<IReadOnlyList<Permission>> ListAsync(ISpecification<Permission> spec)
         {
-            throw new NotImplementedException();
+            return await ApplySpecification(spec).ToListAsync();
         }
 
         public async Task UpdateAsync(Permission entity)
@@ -157,6 +158,11 @@ namespace SchedulerBot.Persistence.Repositories
         private IQueryable<Permission> GetPermissionsForCalendar(ulong calendarId)
         {
             return _context.Permissions.Where(p => p.Calendar.Id == calendarId);
+        }
+
+        private IQueryable<Permission> ApplySpecification(ISpecification<Permission> specification)
+        {
+            return PermissionSpecificationEvaluator.GetQuery(_context.Permissions.AsQueryable(), specification);
         }
     }
 }

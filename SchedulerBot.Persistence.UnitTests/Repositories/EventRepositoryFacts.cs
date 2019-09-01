@@ -1,8 +1,11 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Moq;
+using SchedulerBot.Application.Interfaces;
 using SchedulerBot.Data.Models;
 using SchedulerBot.Persistence.Repositories;
 using System;
 using System.Collections.Generic;
+using System.Linq.Expressions;
 using System.Threading.Tasks;
 using Xunit;
 
@@ -36,6 +39,55 @@ namespace SchedulerBot.Persistence.UnitTests.Repositories
                 using (var context = new SchedulerBotDbContext(options))
                 {
                     Assert.Single(context.Events);
+                }
+            }
+        }
+
+        public class CountAsyncMethod
+        {
+            [Fact]
+            public async Task ReturnsCount()
+            {
+                var options = new DbContextOptionsBuilder<SchedulerBotDbContext>()
+                    .UseInMemoryDatabase(databaseName: $"{GetType().DeclaringType.Name}_{GetType().Name}_{nameof(ReturnsCount)}")
+                    .Options;
+
+                var events = new List<Event>
+                {
+                    new Event
+                    {
+                        Id = Guid.NewGuid(),
+                        Name = "a"
+                    },
+                    new Event
+                    {
+                        Id = Guid.NewGuid(),
+                        Name = "a"
+                    },
+                    new Event
+                    {
+                        Id = Guid.NewGuid(),
+                        Name = "b"
+                    }
+                };
+
+                using (var context = new SchedulerBotDbContext(options))
+                {
+                    await context.Events.AddRangeAsync(events);
+                    await context.SaveChangesAsync();
+                }
+
+                var mockSpecification = SetupBaseEventSpecification(new Mock<ISpecification<Event>>());
+                mockSpecification.Setup(x => x.Criteria)
+                    .Returns(c => c.Name == "a");
+
+                using (var context = new SchedulerBotDbContext(options))
+                {
+                    var repository = new EventRepository(context);
+
+                    var result = await repository.CountAsync(mockSpecification.Object);
+
+                    Assert.Equal(2, result);
                 }
             }
         }
@@ -141,6 +193,59 @@ namespace SchedulerBot.Persistence.UnitTests.Repositories
             }
         }
 
+        public class ListAsyncMethod
+        {
+            [Fact]
+            public async Task ReturnsEvents()
+            {
+                var options = new DbContextOptionsBuilder<SchedulerBotDbContext>()
+                    .UseInMemoryDatabase(databaseName: $"{GetType().DeclaringType.Name}_{GetType().Name}_{nameof(ReturnsEvents)}")
+                    .Options;
+
+                var events = new List<Event>
+                {
+                    new Event
+                    {
+                        Id = Guid.NewGuid(),
+                        Name = "a"
+                    },
+                    new Event
+                    {
+                        Id = Guid.NewGuid(),
+                        Name = "a"
+                    },
+                    new Event
+                    {
+                        Id = Guid.NewGuid(),
+                        Name = "b"
+                    }
+                };
+
+                using (var context = new SchedulerBotDbContext(options))
+                {
+                    await context.Events.AddRangeAsync(events);
+                    await context.SaveChangesAsync();
+                }
+
+                var mockSpecification = SetupBaseEventSpecification(new Mock<ISpecification<Event>>());
+                mockSpecification.Setup(x => x.Criteria)
+                    .Returns(c => c.Name == "a");
+
+                using (var context = new SchedulerBotDbContext(options))
+                {
+                    var repository = new EventRepository(context);
+
+                    var result = await repository.ListAsync(mockSpecification.Object);
+
+                    Assert.Equal(2, result.Count);
+                    for (int i = 0; i <= 1; i++)
+                    {
+                        Assert.Contains(result, x => x.Id == events[i].Id);
+                    }
+                }
+            }
+        }
+
         public class UpdateAsyncMethod
         {
             [Fact]
@@ -179,6 +284,29 @@ namespace SchedulerBot.Persistence.UnitTests.Repositories
                     Assert.Equal(newName, dbEvent.Name);
                 }
             }
+        }
+
+        public static Mock<ISpecification<Event>> SetupBaseEventSpecification(Mock<ISpecification<Event>> mock)
+        {
+            mock.Setup(x => x.Criteria)
+                .Returns(_ => true);
+
+            mock.Setup(x => x.Includes)
+                .Returns(new List<Expression<Func<Event, object>>>());
+
+            mock.Setup(x => x.IncludeStrings)
+                .Returns(new List<string>());
+
+            mock.Setup(x => x.OrderBy)
+                .Returns(null);
+
+            mock.Setup(x => x.OrderByDescending)
+                .Returns(null);
+
+            mock.Setup(x => x.IsPagingEnabled)
+                .Returns(false);
+
+            return mock;
         }
     }
 }

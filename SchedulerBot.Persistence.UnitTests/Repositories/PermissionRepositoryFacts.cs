@@ -1,8 +1,11 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Moq;
+using SchedulerBot.Application.Interfaces;
 using SchedulerBot.Data.Models;
 using SchedulerBot.Persistence.Repositories;
 using System;
 using System.Collections.Generic;
+using System.Linq.Expressions;
 using System.Threading.Tasks;
 using Xunit;
 
@@ -242,6 +245,55 @@ namespace SchedulerBot.Persistence.UnitTests.Repositories
                 using (var context = new SchedulerBotDbContext(options))
                 {
                     Assert.Empty(context.Permissions);
+                }
+            }
+        }
+
+        public class CountAsyncMethod
+        {
+            [Fact]
+            public async Task ReturnsCount()
+            {
+                var options = new DbContextOptionsBuilder<SchedulerBotDbContext>()
+                    .UseInMemoryDatabase(databaseName: $"{GetType().DeclaringType.Name}_{GetType().Name}_{nameof(ReturnsCount)}")
+                    .Options;
+
+                var permissions = new List<Permission>
+                {
+                    new Permission
+                    {
+                        Id = Guid.NewGuid(),
+                        Node = PermissionNode.EventCreate
+                    },
+                    new Permission
+                    {
+                        Id = Guid.NewGuid(),
+                        Node = PermissionNode.EventCreate
+                    },
+                    new Permission
+                    {
+                        Id = Guid.NewGuid(),
+                        Node = PermissionNode.EventDelete
+                    }
+                };
+
+                using (var context = new SchedulerBotDbContext(options))
+                {
+                    await context.Permissions.AddRangeAsync(permissions);
+                    await context.SaveChangesAsync();
+                }
+
+                var mockSpecification = SetupBasePermissionSpecification(new Mock<ISpecification<Permission>>());
+                mockSpecification.Setup(x => x.Criteria)
+                    .Returns(c => c.Node == PermissionNode.EventCreate);
+
+                using (var context = new SchedulerBotDbContext(options))
+                {
+                    var repository = new PermissionRepository(context);
+
+                    var result = await repository.CountAsync(mockSpecification.Object);
+
+                    Assert.Equal(2, result);
                 }
             }
         }
@@ -797,6 +849,59 @@ namespace SchedulerBot.Persistence.UnitTests.Repositories
             }
         }
 
+        public class ListAsyncMethod
+        {
+            [Fact]
+            public async Task ReturnsPermissions()
+            {
+                var options = new DbContextOptionsBuilder<SchedulerBotDbContext>()
+                    .UseInMemoryDatabase(databaseName: $"{GetType().DeclaringType.Name}_{GetType().Name}_{nameof(ReturnsPermissions)}")
+                    .Options;
+
+                var permissions = new List<Permission>
+                {
+                    new Permission
+                    {
+                        Id = Guid.NewGuid(),
+                        Node = PermissionNode.EventCreate
+                    },
+                    new Permission
+                    {
+                        Id = Guid.NewGuid(),
+                        Node = PermissionNode.EventCreate
+                    },
+                    new Permission
+                    {
+                        Id = Guid.NewGuid(),
+                        Node = PermissionNode.EventDelete
+                    }
+                };
+
+                using (var context = new SchedulerBotDbContext(options))
+                {
+                    await context.Permissions.AddRangeAsync(permissions);
+                    await context.SaveChangesAsync();
+                }
+
+                var mockSpecification = SetupBasePermissionSpecification(new Mock<ISpecification<Permission>>());
+                mockSpecification.Setup(x => x.Criteria)
+                    .Returns(c => c.Node == PermissionNode.EventCreate);
+
+                using (var context = new SchedulerBotDbContext(options))
+                {
+                    var repository = new PermissionRepository(context);
+
+                    var result = await repository.ListAsync(mockSpecification.Object);
+
+                    Assert.Equal(2, result.Count);
+                    for (int i = 0; i <= 1; i++)
+                    {
+                        Assert.Contains(result, x => x.Id == permissions[i].Id);
+                    }
+                }
+            }
+        }
+
         public class UpdateAsyncMethod
         {
             [Fact]
@@ -835,6 +940,29 @@ namespace SchedulerBot.Persistence.UnitTests.Repositories
                     Assert.Equal(newTargetId, dbPermission.TargetId);
                 }
             }
+        }
+
+        public static Mock<ISpecification<Permission>> SetupBasePermissionSpecification(Mock<ISpecification<Permission>> mock)
+        {
+            mock.Setup(x => x.Criteria)
+                .Returns(_ => true);
+
+            mock.Setup(x => x.Includes)
+                .Returns(new List<Expression<Func<Permission, object>>>());
+
+            mock.Setup(x => x.IncludeStrings)
+                .Returns(new List<string>());
+
+            mock.Setup(x => x.OrderBy)
+                .Returns(null);
+
+            mock.Setup(x => x.OrderByDescending)
+                .Returns(null);
+
+            mock.Setup(x => x.IsPagingEnabled)
+                .Returns(false);
+
+            return mock;
         }
     }
 }

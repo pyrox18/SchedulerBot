@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using SchedulerBot.Application.Interfaces;
 using SchedulerBot.Data.Models;
+using SchedulerBot.Persistence.Specifications;
 
 namespace SchedulerBot.Persistence.Repositories
 {
@@ -25,9 +26,9 @@ namespace SchedulerBot.Persistence.Repositories
             return entity;
         }
 
-        public Task<int> CountAsync(ISpecification<Calendar> spec)
+        public async Task<int> CountAsync(ISpecification<Calendar> spec)
         {
-            throw new NotImplementedException();
+            return await ApplySpecification(spec).CountAsync();
         }
 
         public async Task DeleteAllEventsAsync(ulong id)
@@ -72,15 +73,20 @@ namespace SchedulerBot.Persistence.Repositories
             return await _context.Calendars.ToListAsync();
         }
 
-        public Task<IReadOnlyList<Calendar>> ListAsync(ISpecification<Calendar> spec)
+        public async Task<IReadOnlyList<Calendar>> ListAsync(ISpecification<Calendar> spec)
         {
-            throw new NotImplementedException();
+            return await ApplySpecification(spec).ToListAsync();
         }
 
         public async Task UpdateAsync(Calendar entity)
         {
             _context.Entry(entity).State = EntityState.Modified;
             await _context.SaveChangesAsync();
+        }
+
+        private IQueryable<Calendar> ApplySpecification(ISpecification<Calendar> specification)
+        {
+            return CalendarSpecificationEvaluator.GetQuery(_context.Calendars.AsQueryable(), specification);
         }
     }
 }

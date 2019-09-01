@@ -1,7 +1,11 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Moq;
+using SchedulerBot.Application.Interfaces;
 using SchedulerBot.Data.Models;
 using SchedulerBot.Persistence.Repositories;
+using System;
 using System.Collections.Generic;
+using System.Linq.Expressions;
 using System.Threading.Tasks;
 using Xunit;
 
@@ -35,6 +39,55 @@ namespace SchedulerBot.Persistence.UnitTests.Repositories
                 using (var context = new SchedulerBotDbContext(options))
                 {
                     Assert.Single(context.Calendars);
+                }
+            }
+        }
+
+        public class CountAsyncMethod
+        {
+            [Fact]
+            public async Task ReturnsCount()
+            {
+                var options = new DbContextOptionsBuilder<SchedulerBotDbContext>()
+                    .UseInMemoryDatabase(databaseName: $"{GetType().DeclaringType.Name}_{GetType().Name}_{nameof(ReturnsCount)}")
+                    .Options;
+
+                var calendars = new List<Calendar>
+                {
+                    new Calendar
+                    {
+                        Id = 1,
+                        Prefix = "a"
+                    },
+                    new Calendar
+                    {
+                        Id = 2,
+                        Prefix = "a"
+                    },
+                    new Calendar
+                    {
+                        Id = 3,
+                        Prefix = "b"
+                    }
+                };
+
+                using (var context = new SchedulerBotDbContext(options))
+                {
+                    await context.Calendars.AddRangeAsync(calendars);
+                    await context.SaveChangesAsync();
+                }
+
+                var mockSpecification = SetupBaseCalendarSpecification(new Mock<ISpecification<Calendar>>());
+                mockSpecification.Setup(x => x.Criteria)
+                    .Returns(c => c.Prefix == "a");
+
+                using (var context = new SchedulerBotDbContext(options))
+                {
+                    var repository = new CalendarRepository(context);
+
+                    var result = await repository.CountAsync(mockSpecification.Object);
+
+                    Assert.Equal(2, result);
                 }
             }
         }
@@ -199,6 +252,59 @@ namespace SchedulerBot.Persistence.UnitTests.Repositories
             }
         }
 
+        public class ListAsyncMethod
+        {
+            [Fact]
+            public async Task ReturnsCalendars()
+            {
+                var options = new DbContextOptionsBuilder<SchedulerBotDbContext>()
+                    .UseInMemoryDatabase(databaseName: $"{GetType().DeclaringType.Name}_{GetType().Name}_{nameof(ReturnsCalendars)}")
+                    .Options;
+
+                var calendars = new List<Calendar>
+                {
+                    new Calendar
+                    {
+                        Id = 1,
+                        Prefix = "a"
+                    },
+                    new Calendar
+                    {
+                        Id = 2,
+                        Prefix = "a"
+                    },
+                    new Calendar
+                    {
+                        Id = 3,
+                        Prefix = "b"
+                    }
+                };
+
+                using (var context = new SchedulerBotDbContext(options))
+                {
+                    await context.Calendars.AddRangeAsync(calendars);
+                    await context.SaveChangesAsync();
+                }
+
+                var mockSpecification = SetupBaseCalendarSpecification(new Mock<ISpecification<Calendar>>());
+                mockSpecification.Setup(x => x.Criteria)
+                    .Returns(c => c.Prefix == "a");
+
+                using (var context = new SchedulerBotDbContext(options))
+                {
+                    var repository = new CalendarRepository(context);
+
+                    var result = await repository.ListAsync(mockSpecification.Object);
+
+                    Assert.Equal(2, result.Count);
+                    for (ulong i = 1; i <= 2; i++)
+                    {
+                        Assert.Contains(result, x => x.Id == i);
+                    }
+                }
+            }
+        }
+
         public class UpdateAsyncMethod
         {
             [Fact]
@@ -237,6 +343,29 @@ namespace SchedulerBot.Persistence.UnitTests.Repositories
                     Assert.Equal(newPrefix, dbCalendar.Prefix);
                 }
             }
+        }
+
+        public static Mock<ISpecification<Calendar>> SetupBaseCalendarSpecification(Mock<ISpecification<Calendar>> mock)
+        {
+            mock.Setup(x => x.Criteria)
+                .Returns(_ => true);
+
+            mock.Setup(x => x.Includes)
+                .Returns(new List<Expression<Func<Calendar, object>>>());
+
+            mock.Setup(x => x.IncludeStrings)
+                .Returns(new List<string>());
+
+            mock.Setup(x => x.OrderBy)
+                .Returns(null);
+
+            mock.Setup(x => x.OrderByDescending)
+                .Returns(null);
+
+            mock.Setup(x => x.IsPagingEnabled)
+                .Returns(false);
+
+            return mock;
         }
     }
 }
