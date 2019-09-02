@@ -67,7 +67,7 @@ namespace SchedulerBot.Data.Services
                     .FirstOrDefaultAsync(
                         p => p.Calendar.Id == calendarId
                         && (p.Type == PermissionType.Role || p.Type == PermissionType.Everyone)
-                        && p.Node == Enum.Parse<PermissionNode>(actualNode)
+                        && p.Node == (PermissionNode)Enum.Parse(typeof(PermissionNode), actualNode)
                         && p.TargetId == roleId
                     );
 
@@ -81,7 +81,7 @@ namespace SchedulerBot.Data.Services
                     Id = Guid.NewGuid(),
                     Calendar = await db.Calendars.FirstOrDefaultAsync(c => c.Id == calendarId),
                     Type = roleId == calendarId ? PermissionType.Everyone : PermissionType.Role,
-                    Node = Enum.Parse<PermissionNode>(actualNode),
+                    Node = (PermissionNode)Enum.Parse(typeof(PermissionNode), actualNode),
                     TargetId = roleId,
                     IsDenied = true
                 };
@@ -111,7 +111,7 @@ namespace SchedulerBot.Data.Services
                     Id = Guid.NewGuid(),
                     Calendar = await db.Calendars.FirstOrDefaultAsync(c => c.Id == calendarId),
                     Type = PermissionType.User,
-                    Node = Enum.Parse<PermissionNode>(actualNode),
+                    Node = (PermissionNode)Enum.Parse(typeof(PermissionNode), actualNode),
                     TargetId = userId,
                     IsDenied = true
                 };
@@ -140,7 +140,7 @@ namespace SchedulerBot.Data.Services
                     .FirstOrDefaultAsync(
                         p => p.Calendar.Id == calendarId
                         && (p.Type == PermissionType.Role || p.Type == PermissionType.Everyone)
-                        && p.Node == Enum.Parse<PermissionNode>(actualNode) 
+                        && p.Node == (PermissionNode)Enum.Parse(typeof(PermissionNode), actualNode) 
                         && p.TargetId == roleId
                     );
 
@@ -148,7 +148,7 @@ namespace SchedulerBot.Data.Services
                 {
                     existingPermission = new Permission
                     {
-                        Node = Enum.Parse<PermissionNode>(actualNode),
+                        Node = (PermissionNode)Enum.Parse(typeof(PermissionNode), actualNode),
                         IsDenied = false
                     };
                     return existingPermission;
@@ -179,13 +179,13 @@ namespace SchedulerBot.Data.Services
                     .FirstOrDefaultAsync(
                         p => p.Calendar.Id == calendarId 
                         && p.Type == PermissionType.User
-                        && p.Node == Enum.Parse<PermissionNode>(actualNode) 
+                        && p.Node == (PermissionNode)Enum.Parse(typeof(PermissionNode), actualNode) 
                         && p.TargetId == userId
                     );
 
                 if (existingPermission == null)
                 {
-                    existingPermission.Node = Enum.Parse<PermissionNode>(actualNode);
+                    existingPermission.Node = (PermissionNode)Enum.Parse(typeof(PermissionNode), actualNode);
                     existingPermission.IsDenied = false;
                     return existingPermission;
                 }
@@ -212,7 +212,7 @@ namespace SchedulerBot.Data.Services
             using (var db = _contextFactory.CreateDbContext())
             {
                 permissions = await db.Permissions
-                    .Where(p => p.Calendar.Id == calendarId && p.Node == Enum.Parse<PermissionNode>(actualNode))
+                    .Where(p => p.Calendar.Id == calendarId && p.Node == (PermissionNode)Enum.Parse(typeof(PermissionNode), actualNode))
                     .ToListAsync();
             }
 
