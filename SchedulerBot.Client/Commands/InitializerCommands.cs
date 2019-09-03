@@ -1,19 +1,21 @@
 ﻿using System.Threading.Tasks;
 using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Attributes;
+using MediatR;
 using Microsoft.Extensions.Configuration;
+using SchedulerBot.Application.Calendars.Commands.InitialiseCalendar;
+using SchedulerBot.Application.Exceptions;
 using SchedulerBot.Data.Services;
 
 namespace SchedulerBot.Client.Commands
 {
-    public class InitializerCommands : BaseCommandModule
+    public class InitializerCommands : BotCommandModule
     {
-        private readonly ICalendarService _calendarService;
         private readonly IConfigurationRoot _configuration;
 
-        public InitializerCommands(ICalendarService calendarService, IConfigurationRoot configuration)
+        public InitializerCommands(IMediator mediator, ICalendarService calendarService, IConfigurationRoot configuration) :
+            base(mediator)
         {
-            _calendarService = calendarService;
             _configuration = configuration;
         }
 
@@ -22,21 +24,31 @@ namespace SchedulerBot.Client.Commands
         {
             await ctx.TriggerTypingAsync();
 
-            bool? initSuccess;
-            initSuccess = await _calendarService.InitialiseCalendar(ctx.Guild.Id, timezone, ctx.Channel.Id);
-
-            if (initSuccess == null)
+            var command = new InitialiseCalendarCommand
             {
-                await ctx.RespondAsync("Timezone already initialised.");
-            }
-            else if (initSuccess == false)
+                CalendarId = ctx.Guild.Id,
+                Timezone = timezone,
+                ChannelId = ctx.Channel.Id,
+                Prefix = _configuration.GetSection("Bot").GetSection("Prefixes").Get<string[]>()[0]
+            };
+
+            var validator = new InitialiseCalendarCommandValidator();
+            var validationResult = validator.Validate(command);
+            if (!validationResult.IsValid)
             {
                 var timezoneLink = _configuration.GetSection("Bot").GetSection("Links").GetValue<string>("TimezoneList");
                 await ctx.RespondAsync($"Timezone not found. See {timezoneLink} under the TZ column for a list of valid timezones.");
+                return;
             }
-            else
+
+            try
             {
-                await ctx.RespondAsync($"Set calendar timezone to {timezone} and default channel to {ctx.Channel.Mention}.");
+                var result = await _mediator.Send(command);
+                await ctx.RespondAsync($"Set calendar timezone to {result.Timezone} and default channel to {ctx.Channel.Mention}.");
+            }
+            catch (CalendarAlreadyInitialisedException)
+            {
+                await ctx.RespondAsync("Timezone already initialised.");
             }
         }
     }

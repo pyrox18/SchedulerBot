@@ -10,6 +10,8 @@
     <PackageReference Include="DSharpPlus" Version="4.0.0-nightly-00624" />
     <PackageReference Include="DSharpPlus.CommandsNext" Version="4.0.0-nightly-00624" />
     <PackageReference Include="DSharpPlus.Interactivity" Version="4.0.0-nightly-00624" />
+    <PackageReference Include="MediatR" Version="7.0.0" />
+    <PackageReference Include="MediatR.Extensions.Microsoft.DependencyInjection" Version="7.0.0" />
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="2.2.6" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="2.2.6" />
     <PackageReference Include="Microsoft.Extensions.Configuration" Version="2.2.0" />
@@ -28,6 +30,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\SchedulerBot.Application\SchedulerBot.Application.csproj" />
     <ProjectReference Include="..\SchedulerBot.Data\SchedulerBot.Data.csproj" />
     <ProjectReference Include="..\SchedulerBot.Persistence\SchedulerBot.Persistence.csproj" />
   </ItemGroup>

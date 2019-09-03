@@ -13,11 +13,15 @@ using DSharpPlus.Entities;
 using DSharpPlus.EventArgs;
 using DSharpPlus.Exceptions;
 using DSharpPlus.Interactivity;
+using MediatR;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using NLog.Extensions.Logging;
+using SchedulerBot.Application.Calendars.Commands.InitialiseCalendar;
+using SchedulerBot.Application.Interfaces;
 using SchedulerBot.Client.Attributes;
 using SchedulerBot.Client.Commands;
 using SchedulerBot.Client.Configuration;
@@ -27,6 +31,8 @@ using SchedulerBot.Client.Services;
 using SchedulerBot.Data;
 using SchedulerBot.Data.Models;
 using SchedulerBot.Data.Services;
+using SchedulerBot.Persistence;
+using SchedulerBot.Persistence.Repositories;
 using SharpRaven;
 using SharpRaven.Data;
 
@@ -145,6 +151,7 @@ namespace SchedulerBot.Client
         private void ConfigureServices(IServiceCollection services)
         {
             var connectionString = _configuration.GetConnectionString("SchedulerBotContext");
+            var connectionString2 = _configuration.GetConnectionString("SchedulerBot");
 
             var loggerFactory = new LoggerFactory();
             services.AddSingleton<ILoggerFactory>(loggerFactory);
@@ -171,12 +178,24 @@ namespace SchedulerBot.Client
 
             // Configure database
             services.AddSingleton(new SchedulerBotContextFactory(connectionString));
+            services.AddDbContextPool<SchedulerBotDbContext>(options =>
+            {
+                options.UseNpgsql(connectionString2);
+            }, 5);
 
             services.AddSingleton<ICalendarService, CalendarService>()
                 .AddSingleton<IEventService, EventService>()
                 .AddSingleton<IPermissionService, PermissionService>()
                 .AddSingleton<IShardedClientInformationService, ShardedClientInformationService>(s => new ShardedClientInformationService(_client));
-                
+
+            // Repositories
+            services.AddScoped<ICalendarRepository, CalendarRepository>();
+            services.AddScoped<IEventRepository, EventRepository>();
+            services.AddScoped<IPermissionRepository, PermissionRepository>();
+
+            // MediatR
+            services.AddMediatR(typeof(InitialiseCalendarCommand).Assembly);
+
             // Scheduler service
             services.AddSingleton<IEventScheduler, EventScheduler>();
         }
