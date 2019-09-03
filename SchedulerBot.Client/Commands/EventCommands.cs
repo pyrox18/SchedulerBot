@@ -22,6 +22,7 @@ using SchedulerBot.Application.Events.Queries.GetEvents;
 using SchedulerBot.Application.Events.Models;
 using System.Text;
 using System.Globalization;
+using SchedulerBot.Application.Events.Queries.GetEvent;
 
 namespace SchedulerBot.Client.Commands
 {
@@ -108,25 +109,17 @@ namespace SchedulerBot.Client.Commands
                 CalendarId = ctx.Guild.Id
             };
 
-            try
-            {
-                var events = await _mediator.Send(query);
+            var events = await _mediator.Send(query);
 
-                if (events.Count < 1)
-                {
-                    await ctx.RespondAsync("No events found.");
-                    return;
-                }
-
-                var pages = GetEventListPages(events);
-                var interactivity = ctx.Client.GetInteractivity();
-                await interactivity.SendPaginatedMessageAsync(ctx.Channel, ctx.User, pages);
-            }
-            catch (CalendarNotInitialisedException)
+            if (events.Count < 1)
             {
-                await ctx.RespondAsync("Calendar not initialised. Run `init <timezone>` to initialise the calendar.");
+                await ctx.RespondAsync("No events found.");
                 return;
             }
+
+            var pages = GetEventListPages(events);
+            var interactivity = ctx.Client.GetInteractivity();
+            await interactivity.SendPaginatedMessageAsync(ctx.Channel, ctx.User, pages);
         }
 
         [Command("list"), Description("List the details of a single event.")]
@@ -135,36 +128,31 @@ namespace SchedulerBot.Client.Commands
         {
             await ctx.TriggerTypingAsync();
 
-            if (index <= 0)
+            var query = new GetEventByIndexQuery
+            {
+                CalendarId = ctx.Guild.Id,
+                Index = index - 1
+            };
+            var validator = new GetEventByIndexQueryValidator();
+            var validationResult = validator.Validate(query);
+            if (!validationResult.IsValid)
             {
                 await ctx.RespondAsync("Event index must be greater than 0.");
                 return;
             }
 
-            Event evt;
             try
             {
-                evt = await _eventService.GetEventByIndexAsync(ctx.Guild.Id, index - 1);
+                var result = await _mediator.Send(query);
+
+                var embed = EventEmbedFactory.GetViewEventEmbed(result);
+                await ctx.RespondAsync(embed: embed);
             }
-            catch (ArgumentOutOfRangeException)
+            catch (Application.Exceptions.EventNotFoundException)
             {
                 await ctx.RespondAsync("Event not found.");
                 return;
             }
-            catch (CalendarNotFoundException)
-            {
-                await ctx.RespondAsync("Calendar not initialised. Run `init <timezone>` to initialise the calendar.");
-                return;
-            }
-
-            if (evt == null)
-            {
-                await ctx.RespondAsync("Event not found.");
-                return;
-            }
-
-            var embed = EventEmbedFactory.GetViewEventEmbed(evt);
-            await ctx.RespondAsync(embed: embed);
         }
 
         [Command("update"), Description("Update an event.")]

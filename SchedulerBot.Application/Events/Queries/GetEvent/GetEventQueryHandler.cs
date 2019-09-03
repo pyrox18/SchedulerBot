@@ -4,33 +4,29 @@ using MediatR;
 using SchedulerBot.Application.Events.Models;
 using SchedulerBot.Application.Exceptions;
 using SchedulerBot.Application.Interfaces;
+using SchedulerBot.Application.Specifications;
 
 namespace SchedulerBot.Application.Events.Queries.GetEvent
 {
     public class GetEventQueryHandler : IRequestHandler<GetEventByIndexQuery, EventViewModel>
     {
-        private readonly ICalendarRepository _calendarRepository;
+        private readonly IEventRepository _eventRepository;
 
-        public GetEventQueryHandler(ICalendarRepository calendarRepository)
+        public GetEventQueryHandler(IEventRepository eventRepository)
         {
-            _calendarRepository = calendarRepository;
+            _eventRepository = eventRepository;
         }
 
         public async Task<EventViewModel> Handle(GetEventByIndexQuery request, CancellationToken cancellationToken = default)
         {
-            var calendar = await _calendarRepository.GetByIdAsync(request.CalendarId);
-            if (calendar is null)
-            {
-                throw new CalendarNotInitialisedException(request.CalendarId);
-            }
+            var events = await _eventRepository.ListAsync(new CalendarEventSpecification(request.CalendarId, true));
 
-            if (request.Index >= calendar.Events.Count)
+            if (request.Index >= events.Count)
             {
                 throw new EventNotFoundException(request.Index);
             }
 
-            var viewModel = EventViewModel.FromEvent(calendar.Events[request.Index]);
-            return viewModel;
+            return EventViewModel.FromEvent(events[request.Index]);
         }
     }
 }

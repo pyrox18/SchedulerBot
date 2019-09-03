@@ -39,9 +39,9 @@ namespace SchedulerBot.Application.UnitTests.Events.Queries.GetEvents
                     }
                 };
 
-                var mockRepository = new Mock<ICalendarRepository>();
-                mockRepository.Setup(x => x.GetByIdAsync(It.IsAny<ulong>()))
-                    .ReturnsAsync(calendar);
+                var mockRepository = new Mock<IEventRepository>();
+                mockRepository.Setup(x => x.ListAsync(It.IsAny<ISpecification<Event>>()))
+                    .ReturnsAsync(calendar.Events);
 
                 var query = new GetEventsForCalendarQuery
                 {
@@ -58,23 +58,6 @@ namespace SchedulerBot.Application.UnitTests.Events.Queries.GetEvents
                     Assert.Equal(calendar.Events[i].StartTimestamp, result[i].StartTimestamp);
                     Assert.Equal(calendar.Events[i].EndTimestamp, result[i].EndTimestamp);
                 }
-            }
-
-            [Fact]
-            public async Task ThrowsWhenCalendarIsNull()
-            {
-                var mockRepository = new Mock<ICalendarRepository>();
-                mockRepository.Setup(x => x.GetByIdAsync(It.IsAny<ulong>()))
-                    .ReturnsAsync((Calendar)null);
-
-                var query = new GetEventsForCalendarQuery
-                {
-                    CalendarId = 1
-                };
-
-                var handler = new GetEventsQueryHandler(mockRepository.Object);
-
-                await Assert.ThrowsAsync<CalendarNotInitialisedException>(() => handler.Handle(query));
             }
         }
     }

@@ -54,9 +54,9 @@ namespace SchedulerBot.Application.UnitTests.Events.Queries.GetEvent
 
                 calendar.Events.Add(@event);
 
-                var mockCalendarRepository = new Mock<ICalendarRepository>();
-                mockCalendarRepository.Setup(x => x.GetByIdAsync(It.IsAny<ulong>()))
-                    .ReturnsAsync(calendar);
+                var mockRepository = new Mock<IEventRepository>();
+                mockRepository.Setup(x => x.ListAsync(It.IsAny<ISpecification<Event>>()))
+                    .ReturnsAsync(calendar.Events);
 
                 var query = new GetEventByIndexQuery
                 {
@@ -64,7 +64,7 @@ namespace SchedulerBot.Application.UnitTests.Events.Queries.GetEvent
                     Index = 0
                 };
 
-                var handler = new GetEventQueryHandler(mockCalendarRepository.Object);
+                var handler = new GetEventQueryHandler(mockRepository.Object);
                 var result = await handler.Handle(query);
 
                 Assert.Equal(@event.Calendar.Id, result.CalendarId);
@@ -78,24 +78,6 @@ namespace SchedulerBot.Application.UnitTests.Events.Queries.GetEvent
                 Assert.Equal(@event.Mentions.First().TargetId, result.Mentions.First().TargetId);
                 Assert.Single(result.RSVPs);
                 Assert.Equal(@event.RSVPs.First().UserId, result.RSVPs.First().UserId);
-            }
-
-            [Fact]
-            public async Task ThrowsWhenCalendarIsNull()
-            {
-                var mockCalendarRepository = new Mock<ICalendarRepository>();
-                mockCalendarRepository.Setup(x => x.GetByIdAsync(It.IsAny<ulong>()))
-                    .ReturnsAsync((Calendar)null);
-
-                var query = new GetEventByIndexQuery
-                {
-                    CalendarId = 1,
-                    Index = 0
-                };
-
-                var handler = new GetEventQueryHandler(mockCalendarRepository.Object);
-
-                await Assert.ThrowsAsync<CalendarNotInitialisedException>(() => handler.Handle(query));
             }
 
             [Fact]
@@ -137,9 +119,9 @@ namespace SchedulerBot.Application.UnitTests.Events.Queries.GetEvent
 
                 calendar.Events.Add(@event);
 
-                var mockCalendarRepository = new Mock<ICalendarRepository>();
-                mockCalendarRepository.Setup(x => x.GetByIdAsync(It.IsAny<ulong>()))
-                    .ReturnsAsync(calendar);
+                var mockRepository = new Mock<IEventRepository>();
+                mockRepository.Setup(x => x.ListAsync(It.IsAny<ISpecification<Event>>()))
+                    .ReturnsAsync(calendar.Events);
 
                 var query = new GetEventByIndexQuery
                 {
@@ -147,7 +129,7 @@ namespace SchedulerBot.Application.UnitTests.Events.Queries.GetEvent
                     Index = 1
                 };
 
-                var handler = new GetEventQueryHandler(mockCalendarRepository.Object);
+                var handler = new GetEventQueryHandler(mockRepository.Object);
 
                 await Assert.ThrowsAsync<EventNotFoundException>(() => handler.Handle(query));
             }
