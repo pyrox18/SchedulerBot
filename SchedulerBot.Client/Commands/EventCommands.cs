@@ -18,6 +18,10 @@ using MediatR;
 using SchedulerBot.Application.Events.Commands.CreateEvent;
 using SchedulerBot.Application.Exceptions;
 using SchedulerBot.Application.Interfaces;
+using SchedulerBot.Application.Events.Queries.GetEvents;
+using SchedulerBot.Application.Events.Models;
+using System.Text;
+using System.Globalization;
 
 namespace SchedulerBot.Client.Commands
 {
@@ -99,26 +103,30 @@ namespace SchedulerBot.Client.Commands
         {
             await ctx.TriggerTypingAsync();
 
-            List<Event> events;
+            var query = new GetEventsForCalendarQuery
+            {
+                CalendarId = ctx.Guild.Id
+            };
+
             try
             {
-                events = await _eventService.GetEventsAsync(ctx.Guild.Id);
+                var events = await _mediator.Send(query);
+
+                if (events.Count < 1)
+                {
+                    await ctx.RespondAsync("No events found.");
+                    return;
+                }
+
+                var pages = GetEventListPages(events);
+                var interactivity = ctx.Client.GetInteractivity();
+                await interactivity.SendPaginatedMessageAsync(ctx.Channel, ctx.User, pages);
             }
-            catch (CalendarNotFoundException)
+            catch (CalendarNotInitialisedException)
             {
                 await ctx.RespondAsync("Calendar not initialised. Run `init <timezone>` to initialise the calendar.");
                 return;
             }
-
-            if (events.Count < 1)
-            {
-                await ctx.RespondAsync("No events found.");
-                return;
-            }
-
-            var pages = EventListPageFactory.GetEventListPages(events);
-            var interactivity = ctx.Client.GetInteractivity();
-            await interactivity.SendPaginatedMessageAsync(ctx.Channel, ctx.User, pages);
         }
 
         [Command("list"), Description("List the details of a single event.")]
@@ -377,6 +385,58 @@ namespace SchedulerBot.Client.Commands
 
                 await ctx.RespondAsync("Deleted all events.");
             }
+        }
+
+        private List<Page> GetEventListPages(List<SimplifiedEventViewModel> events)
+        {
+            StringBuilder sb = new StringBuilder();
+            List<Page> pages = new List<Page>();
+            ushort i = 0;
+            bool activeEventHeaderWritten = false;
+            bool upcomingEventHeaderWritten = false;
+            DateTimeOffset now = DateTimeOffset.Now;
+
+            foreach (var evt in events)
+            {
+                if (i % 10 == 0)
+                {
+                    if (i != 0)
+                    {
+                        sb.AppendLine("```");
+                        sb.AppendLine("Run `event list <event number>` to view details for a certain event.");
+                        pages.Add(new Page(sb.ToString()));
+                        activeEventHeaderWritten = false;
+                        upcomingEventHeaderWritten = false;
+                    }
+
+                    sb = new StringBuilder();
+                    sb.AppendLine("```css");
+                }
+
+                if (evt.StartTimestamp <= now && !activeEventHeaderWritten)
+                {
+                    sb.AppendLine("[Active Events]");
+                    sb.AppendLine();
+                    activeEventHeaderWritten = true;
+                }
+                else if (evt.StartTimestamp > now && !upcomingEventHeaderWritten)
+                {
+                    sb.AppendLine();
+                    sb.AppendLine("[Upcoming Events]");
+                    sb.AppendLine();
+                    upcomingEventHeaderWritten = true;
+                }
+                sb.AppendLine($"{i + 1}: {evt.Name} /* {evt.StartTimestamp.ToString("ddd d MMM yyyy h:mm:ss tt zzz", CultureInfo.InvariantCulture)} to {evt.EndTimestamp.ToString("ddd d MMM yyyy h:mm:ss tt zzz", CultureInfo.InvariantCulture)} */");
+
+                i++;
+            }
+
+            // Push last page to list
+            sb.AppendLine("```");
+            sb.AppendLine("Run `event list <event number>` to view details for a certain event.");
+            pages.Add(new Page(sb.ToString()));
+
+            return pages;
         }
     }
 }
