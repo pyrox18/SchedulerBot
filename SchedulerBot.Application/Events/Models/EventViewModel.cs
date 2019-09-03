@@ -7,6 +7,7 @@ namespace SchedulerBot.Application.Events.Models
     public class EventViewModel
     {
         public ulong CalendarId { get; set; }
+        public Guid Id { get; set; }
         public string Name { get; set; }
         public string Description { get; set; }
         public DateTimeOffset StartTimestamp { get; set; }
@@ -16,11 +17,46 @@ namespace SchedulerBot.Application.Events.Models
         public List<EventMention> Mentions { get; set; }
         public List<EventRSVP> RSVPs { get; set; }
 
+        public bool StartsInHours(double hours)
+        {
+            return StartTimestamp <= DateTimeOffset.Now.AddHours(hours);
+        }
+
+        public bool RemindInHours(double hours)
+        {
+            if (ReminderTimestamp == null)
+            {
+                return false;
+            }
+
+            return ReminderTimestamp <= DateTimeOffset.Now.AddHours(hours);
+        }
+
+        public bool HasStarted()
+        {
+            return StartTimestamp <= DateTimeOffset.Now;
+        }
+
+        public bool HasEnded()
+        {
+            return EndTimestamp <= DateTimeOffset.Now;
+        }
+
+        public bool HasReminderPassed()
+        {
+            if (ReminderTimestamp == null)
+            {
+                return true;
+            }
+            return ReminderTimestamp <= DateTimeOffset.Now;
+        }
+
         public static EventViewModel FromEvent(Event @event)
         {
             return new EventViewModel
             {
                 CalendarId = @event.Calendar.Id,
+                Id = @event.Id,
                 Name = @event.Name,
                 Description = @event.Description,
                 StartTimestamp = @event.StartTimestamp,

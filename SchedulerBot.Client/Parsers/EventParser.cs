@@ -7,18 +7,19 @@ using Microsoft.Recognizers.Text.DateTime;
 using NodaTime;
 using NodaTime.Extensions;
 using NodaTime.Text;
+using SchedulerBot.Application.Interfaces;
 using SchedulerBot.Client.Exceptions;
 using SchedulerBot.Client.Extensions;
 using SchedulerBot.Data.Models;
 
 namespace SchedulerBot.Client.Parsers
 {
-    public class EventParser
+    public class EventParser : IEventParser
     {
         private static readonly LocalDateTimePattern _dateTimePattern = LocalDateTimePattern.CreateWithInvariantCulture("yyyy-MM-dd HH:mm:ss");
         private static readonly LocalDateTimePattern _dateOnlyPattern = LocalDateTimePattern.CreateWithInvariantCulture("yyyy-MM-dd");
 
-        public static Event ParseNewEvent(string[] args, string timezone)
+        public Event ParseNewEvent(string[] args, string timezone)
         {
             var evt = new Event();
 
@@ -29,7 +30,7 @@ namespace SchedulerBot.Client.Parsers
             return evt;
         }
 
-        public static Event ParseUpdateEvent(Event evt, string[] args, string timezone)
+        public Event ParseUpdateEvent(Event evt, string[] args, string timezone)
         {
             var bodyString = ParseEventInputBody(args);
             if (!string.IsNullOrEmpty(bodyString))
@@ -41,12 +42,12 @@ namespace SchedulerBot.Client.Parsers
             return evt;
         }
 
-        public static Event ParseUpdateEvent(Event evt, string args, string timezone)
+        public Event ParseUpdateEvent(Event evt, string args, string timezone)
         {
             return ParseUpdateEvent(evt, args.Split(' '), timezone);
         }
 
-        private static string ParseEventInputBody(string[] args)
+        private string ParseEventInputBody(string[] args)
         {
             var body = new List<string>();
             uint i = 0;
@@ -61,7 +62,7 @@ namespace SchedulerBot.Client.Parsers
             return string.Join(' ', body.ToArray());
         }
 
-        private static void ParseEventInputFlags(string[] args, Event evt, string timezone)
+        private void ParseEventInputFlags(string[] args, Event evt, string timezone)
         {
             uint i = 0;
             int argsLength = args.Length;
@@ -211,7 +212,7 @@ namespace SchedulerBot.Client.Parsers
             }
         }
 
-        private static void ParseEventTimestamps(string bodyString, string timezone, Event evt, bool isUpdate = false)
+        private void ParseEventTimestamps(string bodyString, string timezone, Event evt, bool isUpdate = false)
         {
             string newBodyString = "";
             var tz = DateTimeZoneProviders.Tzdb.GetZoneOrNull(timezone);
@@ -487,12 +488,12 @@ namespace SchedulerBot.Client.Parsers
 
         }
 
-        private static bool IsFuture(DateTimeOffset date)
+        private bool IsFuture(DateTimeOffset date)
         {
             return date > DateTimeOffset.Now;
         }
 
-        private static bool IsEventEndBeforeStart(Event evt)
+        private bool IsEventEndBeforeStart(Event evt)
         {
             return evt.EndTimestamp <= evt.StartTimestamp;
         }

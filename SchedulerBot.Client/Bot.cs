@@ -26,6 +26,7 @@ using SchedulerBot.Client.Attributes;
 using SchedulerBot.Client.Commands;
 using SchedulerBot.Client.Configuration;
 using SchedulerBot.Client.Extensions;
+using SchedulerBot.Client.Parsers;
 using SchedulerBot.Client.Scheduler;
 using SchedulerBot.Client.Services;
 using SchedulerBot.Data;
@@ -192,6 +193,9 @@ namespace SchedulerBot.Client
             services.AddScoped<ICalendarRepository, CalendarRepository>();
             services.AddScoped<IEventRepository, EventRepository>();
             services.AddScoped<IPermissionRepository, PermissionRepository>();
+
+            // Other services
+            services.AddScoped<IEventParser, EventParser>();
 
             // MediatR
             services.AddMediatR(typeof(InitialiseCalendarCommand).Assembly);

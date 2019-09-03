@@ -14,24 +14,29 @@ using SchedulerBot.Client.Scheduler;
 using SchedulerBot.Data.Exceptions;
 using SchedulerBot.Data.Models;
 using SchedulerBot.Data.Services;
+using MediatR;
+using SchedulerBot.Application.Events.Commands.CreateEvent;
+using SchedulerBot.Application.Exceptions;
+using SchedulerBot.Application.Interfaces;
 
 namespace SchedulerBot.Client.Commands
 {
     [Group("event")]
     [Description("Commands for managing events.")]
-    public class EventCommands : BaseCommandModule
+    public class EventCommands : BotCommandModule
     {
         private readonly ICalendarService _calendarService;
         private readonly IEventService _eventService;
-        private readonly IPermissionService _permissionService;
         private readonly IEventScheduler _eventScheduler;
+        private readonly IEventParser _eventParser; // Temporary; remove when all methods are migrated to use mediator
 
-        public EventCommands(ICalendarService calendarService, IEventService eventService, IPermissionService permissionService, IEventScheduler eventScheduler)
+        public EventCommands(IMediator mediator, ICalendarService calendarService, IEventService eventService, IEventScheduler eventScheduler, IEventParser eventParser) :
+            base(mediator)
         {
             _calendarService = calendarService;
             _eventService = eventService;
-            _permissionService = permissionService;
             _eventScheduler = eventScheduler;
+            _eventParser = eventParser;
         }
 
         [GroupCommand, Description("Create an event.")]
@@ -50,17 +55,21 @@ namespace SchedulerBot.Client.Commands
 
             await ctx.TriggerTypingAsync();
 
-            var timezone = await _calendarService.GetCalendarTimezoneAsync(ctx.Guild.Id);
-            if (string.IsNullOrEmpty(timezone))
+            var command = new CreateEventCommand
             {
-                await ctx.RespondAsync("Calendar not initialised. Run `init <timezone>` to initialise the calendar.");
-                return;
-            }
+                CalendarId = ctx.Guild.Id,
+                EventArgs = args
+            };
 
-            Event evt;
             try
             {
-                evt = EventParser.ParseNewEvent(args, timezone);
+                var result = await _mediator.Send(command);
+
+                var defaultChannelId = await _calendarService.GetCalendarDefaultChannelAsync(ctx.Guild.Id);
+                await _eventScheduler.ScheduleEvent(result, ctx.Client, defaultChannelId, ctx.Guild.Id);
+
+                var embed = EventEmbedFactory.GetCreateEventEmbed(result);
+                await ctx.RespondAsync("New event created.", embed: embed);
             }
             catch (DateTimeInPastException)
             {
@@ -77,23 +86,11 @@ namespace SchedulerBot.Client.Commands
                 await ctx.RespondAsync("Failed to parse event data.");
                 return;
             }
-
-            Event savedEvent;
-            try
-            {
-                savedEvent = await _eventService.CreateEventAsync(ctx.Guild.Id, evt);
-            }
-            catch (CalendarNotFoundException)
+            catch (CalendarNotInitialisedException)
             {
                 await ctx.RespondAsync("Calendar not initialised. Run `init <timezone>` to initialise the calendar.");
                 return;
             }
-
-            var defaultChannelId = await _calendarService.GetCalendarDefaultChannelAsync(ctx.Guild.Id);
-            await _eventScheduler.ScheduleEvent(savedEvent, ctx.Client, defaultChannelId, ctx.Guild.Id);
-
-            var embed = EventEmbedFactory.GetCreateEventEmbed(savedEvent);
-            await ctx.RespondAsync("New event created.", embed: embed);
         }
 
         [Command("list"), Description("Lists all events.")]
@@ -207,7 +204,7 @@ namespace SchedulerBot.Client.Commands
             Event updatedEvent;
             try
             {
-                updatedEvent = EventParser.ParseUpdateEvent(evt, args, timezone);
+                updatedEvent = _eventParser.ParseUpdateEvent(evt, args, timezone);
             }
             catch (DateTimeInPastException)
             {
@@ -333,7 +330,7 @@ namespace SchedulerBot.Client.Commands
                     await ctx.RespondAsync("Event not found.");
                     return;
                 }
-                catch (EventNotFoundException)
+                catch (Data.Exceptions.EventNotFoundException)
                 {
                     await ctx.RespondAsync("Event not found.");
                     return;
