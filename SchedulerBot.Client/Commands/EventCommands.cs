@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Attributes;
@@ -9,15 +8,12 @@ using SchedulerBot.Client.Attributes;
 using SchedulerBot.Client.Factories;
 using SchedulerBot.Client.Exceptions;
 using SchedulerBot.Client.Extensions;
-using SchedulerBot.Client.Parsers;
 using SchedulerBot.Client.Scheduler;
-using SchedulerBot.Data.Exceptions;
 using SchedulerBot.Data.Models;
 using SchedulerBot.Data.Services;
 using MediatR;
 using SchedulerBot.Application.Events.Commands.CreateEvent;
 using SchedulerBot.Application.Exceptions;
-using SchedulerBot.Application.Interfaces;
 using SchedulerBot.Application.Events.Queries.GetEvents;
 using SchedulerBot.Application.Events.Models;
 using System.Text;
@@ -26,6 +22,7 @@ using SchedulerBot.Application.Events.Queries.GetEvent;
 using SchedulerBot.Application.Events.Commands.UpdateEvent;
 using SchedulerBot.Application.Events.Commands.ToggleEventRsvp;
 using SchedulerBot.Application.Events.Commands.DeleteEvent;
+using SchedulerBot.Application.Events.Commands.DeleteAllEvents;
 
 namespace SchedulerBot.Client.Commands
 {
@@ -34,17 +31,13 @@ namespace SchedulerBot.Client.Commands
     public class EventCommands : BotCommandModule
     {
         private readonly ICalendarService _calendarService;
-        private readonly IEventService _eventService;
         private readonly IEventScheduler _eventScheduler;
-        private readonly IEventParser _eventParser; // Temporary; remove when all methods are migrated to use mediator
 
-        public EventCommands(IMediator mediator, ICalendarService calendarService, IEventService eventService, IEventScheduler eventScheduler, IEventParser eventParser) :
+        public EventCommands(IMediator mediator, ICalendarService calendarService, IEventScheduler eventScheduler) :
             base(mediator)
         {
             _calendarService = calendarService;
-            _eventService = eventService;
             _eventScheduler = eventScheduler;
-            _eventParser = eventParser;
         }
 
         [GroupCommand, Description("Create an event.")]
@@ -345,20 +338,14 @@ namespace SchedulerBot.Client.Commands
             {
                 await ctx.TriggerTypingAsync();
 
-                List<Event> deletedEvents;
-                try
+                var result = await _mediator.Send(new DeleteAllEventsCommand
                 {
-                    deletedEvents = await _eventService.DeleteAllEventsAsync(ctx.Guild.Id);
-                }
-                catch (CalendarNotFoundException)
+                    CalendarId = ctx.Guild.Id
+                });
+
+                foreach (var eventId in result.EventIds)
                 {
-                    await ctx.RespondAsync("Calendar not initialised. Run `init <timezone>` to initialise the calendar.");
-                    return;
-                }
-                
-                foreach (var evt in deletedEvents)
-                {
-                    await _eventScheduler.UnscheduleEvent(evt);
+                    await _eventScheduler.UnscheduleEvent(eventId);
                 }
 
                 await ctx.RespondAsync("Deleted all events.");
