@@ -3,7 +3,7 @@ using SchedulerBot.Application.Events.Models;
 
 namespace SchedulerBot.Application.Events.Commands.ToggleEventRsvp
 {
-    public class ToggleEventRsvpCommand : IRequest<EventWithDefaultChannelViewModel>
+    public class ToggleEventRsvpCommand : IRequest<EventRsvpViewModel>
     {
         public ulong CalendarId { get; set; }
         public int Index { get; set; }

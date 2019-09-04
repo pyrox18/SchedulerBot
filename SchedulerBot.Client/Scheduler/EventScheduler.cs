@@ -311,6 +311,11 @@ namespace SchedulerBot.Client.Scheduler
             await UnscheduleEvent(evt.Id);
         }
 
+        public async Task UnscheduleEvent(EventViewModel evt)
+        {
+            await UnscheduleEvent(evt.Id);
+        }
+
         public async Task UnscheduleEvent(Guid eventId)
         {
             await Scheduler.UnscheduleJob(new TriggerKey(eventId.ToString(), "eventNotifications"));

@@ -14,6 +14,7 @@ namespace SchedulerBot.Client.Scheduler
         Task ScheduleEvent(Event evt, DiscordClient client, ulong channelId, ulong? guildId = null);
         Task ScheduleEvent(EventViewModel evt, DiscordClient client, ulong channelId, ulong? guildId = null);
         Task UnscheduleEvent(Event evt);
+        Task UnscheduleEvent(EventViewModel evt);
         Task UnscheduleEvent(Guid eventId);
         Task RescheduleEvent(Event evt, DiscordClient client, ulong channelId);
         Task RescheduleEvent(EventViewModel evt, DiscordClient client, ulong channelId);

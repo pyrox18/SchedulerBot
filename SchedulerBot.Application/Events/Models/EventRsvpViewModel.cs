@@ -2,13 +2,13 @@
 
 namespace SchedulerBot.Application.Events.Models
 {
-    public class EventWithDefaultChannelViewModel : EventViewModel
+    public class EventRsvpViewModel : EventViewModel
     {
-        public EventWithDefaultChannelViewModel()
+        public EventRsvpViewModel()
         {
         }
 
-        public EventWithDefaultChannelViewModel(EventViewModel viewModel)
+        public EventRsvpViewModel(EventViewModel viewModel)
         {
             CalendarId = viewModel.CalendarId;
             Name = viewModel.Name;
@@ -22,10 +22,11 @@ namespace SchedulerBot.Application.Events.Models
         }
 
         public ulong DefaultChannel { get; set; }
+        public bool RsvpAdded { get; set; }
 
-        public new static EventWithDefaultChannelViewModel FromEvent(Event @event)
+        public new static EventRsvpViewModel FromEvent(Event @event)
         {
-            return new EventWithDefaultChannelViewModel(EventViewModel.FromEvent(@event));
+            return new EventRsvpViewModel(EventViewModel.FromEvent(@event));
         }
     }
 }

@@ -39,7 +39,10 @@ namespace SchedulerBot.Persistence.Repositories
 
         public async Task<Event> GetByIdAsync(Guid id)
         {
-            return await _context.Events.FindAsync(id);
+            return await _context.Events
+                .Include(e => e.RSVPs)
+                .Include(e => e.Mentions)
+                .FirstOrDefaultAsync(e => e.Id == id);
         }
 
         public async Task<IReadOnlyList<Event>> ListAllAsync()

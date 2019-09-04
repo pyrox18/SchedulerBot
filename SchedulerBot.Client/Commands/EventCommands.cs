@@ -24,6 +24,8 @@ using System.Text;
 using System.Globalization;
 using SchedulerBot.Application.Events.Queries.GetEvent;
 using SchedulerBot.Application.Events.Commands.UpdateEvent;
+using SchedulerBot.Application.Events.Commands.ToggleEventRsvp;
+using SchedulerBot.Application.Events.Commands.DeleteEvent;
 
 namespace SchedulerBot.Client.Commands
 {
@@ -231,63 +233,63 @@ namespace SchedulerBot.Client.Commands
         {
             await ctx.TriggerTypingAsync();
 
-            if (index <= 0)
+            var command = new ToggleEventRsvpCommand
+            {
+                CalendarId = ctx.Guild.Id,
+                UserId = ctx.Member.Id,
+                Index = index - 1
+            };
+
+            var validator = new ToggleEventRsvpCommandValidator();
+            var validationResult = validator.Validate(command);
+            if (!validationResult.IsValid)
             {
                 await ctx.RespondAsync("Event index must be greater than 0.");
                 return;
             }
 
-            Event evt;
             try
             {
-                evt = await _eventService.ToggleRSVPByIndexAsync(ctx.Guild.Id, ctx.Member.Id, index - 1);
+                var result = await _mediator.Send(command);
+
+                await _eventScheduler.RescheduleEvent(result, ctx.Client, result.DefaultChannel);
+
+                if (result.RsvpAdded)
+                {
+                    await ctx.RespondAsync($"Added RSVP for user {ctx.Member.GetUsernameAndDiscriminator()} for event {result.Name}.");
+                }
+                else
+                {
+                    await ctx.RespondAsync($"Removed RSVP for user {ctx.Member.GetUsernameAndDiscriminator()} for event {result.Name}.");
+                }
             }
-            catch (ArgumentOutOfRangeException)
-            {
-                await ctx.RespondAsync("Event not found.");
-                return;
-            }
-            catch (CalendarNotFoundException)
+            catch (CalendarNotInitialisedException)
             {
                 await ctx.RespondAsync("Calendar not initialised. Run `init <timezone>` to initialise the calendar.");
                 return;
             }
-            catch (ActiveEventException)
-            {
-                await ctx.RespondAsync("Cannot add or remove RSVP on an event already in progress.");
-                return;
-            }
-
-            if (evt == null)
+            catch (Application.Exceptions.EventNotFoundException)
             {
                 await ctx.RespondAsync("Event not found.");
                 return;
             }
-
-            var defaultChannelId = await _calendarService.GetCalendarDefaultChannelAsync(ctx.Guild.Id);
-            await _eventScheduler.RescheduleEvent(evt, ctx.Client, defaultChannelId);
-
-            if (evt.RSVPs.Any(r => r.UserId == ctx.Member.Id))
+            catch (EventAlreadyStartedException)
             {
-                await ctx.RespondAsync($"Added RSVP for user {ctx.Member.GetUsernameAndDiscriminator()} for event {evt.Name}.");
-            }
-            else
-            {
-                await ctx.RespondAsync($"Removed RSVP for user {ctx.Member.GetUsernameAndDiscriminator()} for event {evt.Name}.");
+                await ctx.RespondAsync("Cannot add or remove RSVP on an event already in progress.");
+                return;
             }
         }
 
         [Group("delete")]
-        public class DeleteCommands : BaseCommandModule
+        public class DeleteCommands : BotCommandModule
         {
             private readonly IEventService _eventService;
-            private readonly IPermissionService _permissionService;
             private readonly IEventScheduler _eventScheduler;
 
-            public DeleteCommands(IEventService eventService, IPermissionService permissionService, IEventScheduler eventScheduler)
+            public DeleteCommands(IMediator mediator, IEventService eventService, IEventScheduler eventScheduler) :
+                base(mediator)
             {
                 _eventService = eventService;
-                _permissionService = permissionService;
                 _eventScheduler = eventScheduler;
             }
 
@@ -307,43 +309,34 @@ namespace SchedulerBot.Client.Commands
 
                 await ctx.TriggerTypingAsync();
 
-                if (index <= 0)
+                var command = new DeleteEventByIndexCommand
+                {
+                    CalendarId = ctx.Guild.Id,
+                    Index = index - 1
+                };
+
+                var validator = new DeleteEventByIndexCommandValidator();
+                var validationResult = validator.Validate(command);
+                if (!validationResult.IsValid)
                 {
                     await ctx.RespondAsync("Event index must be greater than 0.");
                     return;
                 }
 
-                Event deletedEvent;
                 try
                 {
-                    deletedEvent = await _eventService.DeleteEventAsync(ctx.Guild.Id, index - 1);
+                    var result = await _mediator.Send(command);
+
+                    await _eventScheduler.UnscheduleEvent(result);
+
+                    var embed = EventEmbedFactory.GetDeleteEventEmbed(result);
+                    await ctx.RespondAsync("Deleted event.", embed: embed);
                 }
-                catch (ArgumentOutOfRangeException)
+                catch (Application.Exceptions.EventNotFoundException)
                 {
                     await ctx.RespondAsync("Event not found.");
                     return;
                 }
-                catch (Data.Exceptions.EventNotFoundException)
-                {
-                    await ctx.RespondAsync("Event not found.");
-                    return;
-                }
-                catch (CalendarNotFoundException)
-                {
-                    await ctx.RespondAsync("Calendar not initialised. Run `init <timezone>` to initialise the calendar.");
-                    return;
-                }
-
-                if (deletedEvent == null)
-                {
-                    await ctx.RespondAsync("Event not found.");
-                    return;
-                }
-
-                await _eventScheduler.UnscheduleEvent(deletedEvent);
-
-                var embed = EventEmbedFactory.GetDeleteEventEmbed(deletedEvent);
-                await ctx.RespondAsync("Deleted event.", embed: embed);
             }
 
             [Command("all"), Description("Delete all events.")]

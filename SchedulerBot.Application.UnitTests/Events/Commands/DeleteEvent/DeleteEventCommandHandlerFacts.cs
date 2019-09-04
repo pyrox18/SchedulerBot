@@ -55,11 +55,9 @@ namespace SchedulerBot.Application.UnitTests.Events.Commands.DeleteEvent
 
                 calendar.Events.Add(@event);
 
-                var mockCalendarRepository = new Mock<ICalendarRepository>();
-                mockCalendarRepository.Setup(x => x.GetByIdAsync(It.IsAny<ulong>()))
-                    .ReturnsAsync(calendar);
-
                 var mockEventRepository = new Mock<IEventRepository>();
+                mockEventRepository.Setup(x => x.ListAsync(It.IsAny<ISpecification<Event>>()))
+                    .ReturnsAsync(calendar.Events);
                 mockEventRepository.Setup(x => x.DeleteAsync(It.IsAny<Event>()))
                     .Returns(Task.CompletedTask);
 
@@ -69,7 +67,7 @@ namespace SchedulerBot.Application.UnitTests.Events.Commands.DeleteEvent
                     Index = 0
                 };
 
-                var handler = new DeleteEventCommandHandler(mockCalendarRepository.Object, mockEventRepository.Object);
+                var handler = new DeleteEventCommandHandler(mockEventRepository.Object);
                 var result = await handler.Handle(command);
 
                 Assert.Equal(@event.Calendar.Id, result.CalendarId);
@@ -83,26 +81,6 @@ namespace SchedulerBot.Application.UnitTests.Events.Commands.DeleteEvent
                 Assert.Equal(@event.Mentions.First().TargetId, result.Mentions.First().TargetId);
                 Assert.Single(result.RSVPs);
                 Assert.Equal(@event.RSVPs.First().UserId, result.RSVPs.First().UserId);
-            }
-
-            [Fact]
-            public async Task ThrowsWhenCalendarIsNull()
-            {
-                var mockCalendarRepository = new Mock<ICalendarRepository>();
-                mockCalendarRepository.Setup(x => x.GetByIdAsync(It.IsAny<ulong>()))
-                    .ReturnsAsync((Calendar)null);
-
-                var mockEventRepository = new Mock<IEventRepository>();
-
-                var command = new DeleteEventByIndexCommand
-                {
-                    CalendarId = 1,
-                    Index = 0
-                };
-
-                var handler = new DeleteEventCommandHandler(mockCalendarRepository.Object, mockEventRepository.Object);
-
-                await Assert.ThrowsAsync<CalendarNotInitialisedException>(() => handler.Handle(command));
             }
 
             [Fact]
@@ -144,11 +122,9 @@ namespace SchedulerBot.Application.UnitTests.Events.Commands.DeleteEvent
 
                 calendar.Events.Add(@event);
 
-                var mockCalendarRepository = new Mock<ICalendarRepository>();
-                mockCalendarRepository.Setup(x => x.GetByIdAsync(It.IsAny<ulong>()))
-                    .ReturnsAsync(calendar);
-
                 var mockEventRepository = new Mock<IEventRepository>();
+                mockEventRepository.Setup(x => x.ListAsync(It.IsAny<ISpecification<Event>>()))
+                    .ReturnsAsync(calendar.Events);
 
                 var command = new DeleteEventByIndexCommand
                 {
@@ -156,7 +132,7 @@ namespace SchedulerBot.Application.UnitTests.Events.Commands.DeleteEvent
                     Index = 1
                 };
 
-                var handler = new DeleteEventCommandHandler(mockCalendarRepository.Object, mockEventRepository.Object);
+                var handler = new DeleteEventCommandHandler(mockEventRepository.Object);
 
                 await Assert.ThrowsAsync<EventNotFoundException>(() => handler.Handle(command));
             }

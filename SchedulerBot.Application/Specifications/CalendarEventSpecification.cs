@@ -12,6 +12,9 @@ namespace SchedulerBot.Application.Specifications
             {
                 AddInclude(e => e.Calendar);
             }
+
+            AddInclude(e => e.Mentions);
+            AddInclude(e => e.RSVPs);
         }
     }
 }
