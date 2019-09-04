@@ -201,6 +201,14 @@ namespace SchedulerBot.Client.Factories
             return embed.Build();
         }
 
+        public static DiscordEmbed GetUpdateEventEmbed(EventViewModel evt)
+        {
+            var embed = GetBaseEmbed(evt);
+            embed.Title = "Update Event";
+            embed.Color = _updateEventColour;
+            return embed.Build();
+        }
+
         public static DiscordEmbed GetNotifyEventEmbed(Event evt)
         {
             var embed = _getBaseEmbed(evt);

@@ -32,6 +32,7 @@
   <ItemGroup>
     <ProjectReference Include="..\SchedulerBot.Application\SchedulerBot.Application.csproj" />
     <ProjectReference Include="..\SchedulerBot.Data\SchedulerBot.Data.csproj" />
+    <ProjectReference Include="..\SchedulerBot.Infrastructure\SchedulerBot.Infrastructure.csproj" />
     <ProjectReference Include="..\SchedulerBot.Persistence\SchedulerBot.Persistence.csproj" />
   </ItemGroup>
 

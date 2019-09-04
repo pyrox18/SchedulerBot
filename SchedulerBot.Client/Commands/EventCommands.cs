@@ -23,6 +23,7 @@ using SchedulerBot.Application.Events.Models;
 using System.Text;
 using System.Globalization;
 using SchedulerBot.Application.Events.Queries.GetEvent;
+using SchedulerBot.Application.Events.Commands.UpdateEvent;
 
 namespace SchedulerBot.Client.Commands
 {
@@ -161,46 +162,46 @@ namespace SchedulerBot.Client.Commands
         {
             await ctx.TriggerTypingAsync();
 
-            if (index <= 0)
-            {
-                await ctx.RespondAsync("Event index must be greater than 0.");
-                return;
-            }
-
             if (string.IsNullOrEmpty(args))
             {
                 await ctx.RespondAsync("No arguments given for updating the event.");
                 return;
             }
 
-            var timezone = await _calendarService.GetCalendarTimezoneAsync(ctx.Guild.Id);
-            if (string.IsNullOrEmpty(timezone))
+            var command = new UpdateEventCommand
             {
-                await ctx.RespondAsync("Calendar not initialised. Run `init <timezone>` to initialise the calendar.");
+                CalendarId = ctx.Guild.Id,
+                EventArgs = args.Split(' '),
+                EventIndex = index - 1
+            };
+
+            var validator = new UpdateEventCommandValidator();
+            var validationResult = validator.Validate(command);
+            if (!validationResult.IsValid)
+            {
+                await ctx.RespondAsync("Event index must be greater than 0.");
                 return;
             }
 
-            Event evt;
             try
             {
-                evt = await _eventService.GetEventByIndexAsync(ctx.Guild.Id, index - 1);
+                var result = await _mediator.Send(command);
+
+                var defaultChannelId = await _calendarService.GetCalendarDefaultChannelAsync(ctx.Guild.Id);
+                await _eventScheduler.RescheduleEvent(result, ctx.Client, defaultChannelId);
+
+                var embed = EventEmbedFactory.GetUpdateEventEmbed(result);
+                await ctx.RespondAsync("Updated event.", embed: embed);
             }
-            catch (ArgumentOutOfRangeException)
+            catch (Application.Exceptions.EventNotFoundException)
             {
                 await ctx.RespondAsync("Event not found.");
                 return;
             }
-            
-            if (evt.HasStarted())
+            catch (CalendarNotInitialisedException)
             {
-                await ctx.RespondAsync("Cannot update an event that is in progress.");
+                await ctx.RespondAsync("Calendar not initialised. Run `init <timezone>` to initialise the calendar.");
                 return;
-            }
-
-            Event updatedEvent;
-            try
-            {
-                updatedEvent = _eventParser.ParseUpdateEvent(evt, args, timezone);
             }
             catch (DateTimeInPastException)
             {
@@ -217,15 +218,11 @@ namespace SchedulerBot.Client.Commands
                 await ctx.RespondAsync("Failed to parse event data.");
                 return;
             }
-
-            Event savedEvent;
-            savedEvent = await _eventService.UpdateEventAsync(evt);
-
-            var defaultChannelId = await _calendarService.GetCalendarDefaultChannelAsync(ctx.Guild.Id);
-            await _eventScheduler.RescheduleEvent(evt, ctx.Client, defaultChannelId);
-
-            var embed = EventEmbedFactory.GetUpdateEventEmbed(savedEvent);
-            await ctx.RespondAsync("Updated event.", embed: embed);
+            catch (EventAlreadyStartedException)
+            {
+                await ctx.RespondAsync("Cannot update an event that is in progress.");
+                return;
+            }
         }
 
         [Command("rsvp"), Description("Add or remove an RSVP to an event.")]

@@ -324,5 +324,11 @@ namespace SchedulerBot.Client.Scheduler
             await UnscheduleEvent(evt.Id);
             await ScheduleEvent(evt, client, channelId);
         }
+
+        public async Task RescheduleEvent(EventViewModel evt, DiscordClient client, ulong channelId)
+        {
+            await UnscheduleEvent(evt.Id);
+            await ScheduleEvent(evt, client, channelId);
+        }
     }
 }

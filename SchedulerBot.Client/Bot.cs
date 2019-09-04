@@ -32,6 +32,7 @@ using SchedulerBot.Client.Services;
 using SchedulerBot.Data;
 using SchedulerBot.Data.Models;
 using SchedulerBot.Data.Services;
+using SchedulerBot.Infrastructure;
 using SchedulerBot.Persistence;
 using SchedulerBot.Persistence.Repositories;
 using SharpRaven;
@@ -196,6 +197,7 @@ namespace SchedulerBot.Client
 
             // Other services
             services.AddScoped<IEventParser, EventParser>();
+            services.AddScoped<IDateTimeOffset, MachineDateTimeOffset>();
 
             // MediatR
             services.AddMediatR(typeof(InitialiseCalendarCommand).Assembly);

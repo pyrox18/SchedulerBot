@@ -4,6 +4,7 @@ using MediatR;
 using SchedulerBot.Application.Events.Models;
 using SchedulerBot.Application.Exceptions;
 using SchedulerBot.Application.Interfaces;
+using SchedulerBot.Application.Specifications;
 
 namespace SchedulerBot.Application.Events.Commands.UpdateEvent
 {
@@ -12,12 +13,14 @@ namespace SchedulerBot.Application.Events.Commands.UpdateEvent
         private readonly ICalendarRepository _calendarRepository;
         private readonly IEventRepository _eventRepository;
         private readonly IEventParser _eventParser;
+        private readonly IDateTimeOffset _dateTimeOffset;
 
-        public UpdateEventCommandHandler(ICalendarRepository calendarRepository, IEventParser eventParser, IEventRepository eventRepository)
+        public UpdateEventCommandHandler(ICalendarRepository calendarRepository, IEventParser eventParser, IEventRepository eventRepository, IDateTimeOffset dateTimeOffset)
         {
             _calendarRepository = calendarRepository;
             _eventParser = eventParser;
             _eventRepository = eventRepository;
+            _dateTimeOffset = dateTimeOffset;
         }
 
         public async Task<EventViewModel> Handle(UpdateEventCommand request, CancellationToken cancellationToken = default)
@@ -28,17 +31,23 @@ namespace SchedulerBot.Application.Events.Commands.UpdateEvent
                 throw new CalendarNotInitialisedException(request.CalendarId);
             }
 
-            if (request.EventIndex >= calendar.Events.Count)
+            var events = await _eventRepository.ListAsync(new CalendarEventSpecification(request.CalendarId));
+
+            if (request.EventIndex >= events.Count)
             {
                 throw new EventNotFoundException(request.EventIndex);
             }
 
-            var @event = calendar.Events[request.EventIndex];
+            var @event = events[request.EventIndex];
+            if (@event.StartTimestamp <= _dateTimeOffset.Now)
+            {
+                throw new EventAlreadyStartedException(@event.Id);
+            }
+
             var updatedEvent = _eventParser.ParseUpdateEvent(@event, request.EventArgs, calendar.Timezone);
             await _eventRepository.UpdateAsync(updatedEvent);
 
-            var viewModel = EventViewModel.FromEvent(updatedEvent);
-            return viewModel;
+            return EventViewModel.FromEvent(updatedEvent);
         }
     }
 }
