@@ -204,28 +204,34 @@ namespace SchedulerBot.Client.Commands
         {
             await ctx.TriggerTypingAsync();
 
-            var timezone = await _calendarService.GetCalendarTimezoneAsync(ctx.Guild.Id);
-            if (string.IsNullOrEmpty(timezone))
+            try
+            {
+                var result = await _mediator.Send(new GetTimezoneSettingQuery
+                {
+                    CalendarId = ctx.Guild.Id
+                });
+
+                var timezoneLink = _configuration.GetSection("Bot").GetSection("Links").GetValue<string>("TimezoneList");
+                var embed = new DiscordEmbedBuilder
+                {
+                    Author = new DiscordEmbedBuilder.EmbedAuthor
+                    {
+                        Name = "SchedulerBot",
+                        IconUrl = "https://cdn.discordapp.com/avatars/339019867325726722/e5fca7dbae7156e05c013766fa498fe1.png"
+                    },
+                    Color = new DiscordColor(211, 255, 219),
+                    Description = $"Run `settings timezone <new timezone>` to change the timezone. e.g. `settings timezone America/Los_Angeles`\nSee {timezoneLink} under the TZ column for a list of valid timezones.",
+                    Title = "Settings: Timezone"
+                };
+                embed.AddField("Current Value", $"{result.Timezone}", true);
+
+                await ctx.RespondAsync(embed: embed);
+            }
+            catch (CalendarNotInitialisedException)
             {
                 await ctx.RespondAsync("Calendar not initialised. Run `init <timezone>` to initialise the calendar.");
                 return;
             }
-
-            var timezoneLink = _configuration.GetSection("Bot").GetSection("Links").GetValue<string>("TimezoneList");
-            var embed = new DiscordEmbedBuilder
-            {
-                Author = new DiscordEmbedBuilder.EmbedAuthor
-                {
-                    Name = "SchedulerBot",
-                    IconUrl = "https://cdn.discordapp.com/avatars/339019867325726722/e5fca7dbae7156e05c013766fa498fe1.png"
-                },
-                Color = new DiscordColor(211, 255, 219),
-                Description = $"Run `settings timezone <new timezone>` to change the timezone. e.g. `settings timezone America/Los_Angeles`\nSee {timezoneLink} under the TZ column for a list of valid timezones.",
-                Title = "Settings: Timezone"
-            };
-            embed.AddField("Current Value", $"{timezone}", true);
-
-            await ctx.RespondAsync(embed: embed);
         }
 
         [Command("timezone"), Description("Change the timezone for the bot.")]
