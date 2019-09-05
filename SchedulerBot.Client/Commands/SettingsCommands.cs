@@ -179,20 +179,23 @@ namespace SchedulerBot.Client.Commands
         {
             await ctx.TriggerTypingAsync();
 
-            ulong defaultChannel = 0;
             try
             {
-                defaultChannel = await _calendarService.UpdateCalendarDefaultChannelAsync(ctx.Guild.Id, channel.Id);
+                var result = await _mediator.Send(new ModifyDefaultChannelSettingCommand
+                {
+                    CalendarId = ctx.Guild.Id,
+                    NewDefaultChannel = channel.Id
+                });
+
+                await RescheduleAllEvents(ctx, result.DefaultChannel);
+
+                await ctx.RespondAsync($"Updated default channel to {result.DefaultChannel.AsChannelMention()}.");
             }
-            catch (CalendarNotFoundException)
+            catch (CalendarNotInitialisedException)
             {
                 await ctx.RespondAsync("Calendar not initialised. Run `init <timezone>` to initialise the calendar.");
                 return;
             }
-
-            await RescheduleAllEvents(ctx, defaultChannel);
-
-            await ctx.RespondAsync($"Updated default channel to {defaultChannel.AsChannelMention()}.");
         }
 
         [Command("timezone"), Description("View the timezone for the bot.")]
