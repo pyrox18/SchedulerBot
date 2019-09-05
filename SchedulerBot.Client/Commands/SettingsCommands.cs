@@ -7,6 +7,7 @@ using MediatR;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Configuration;
 using SchedulerBot.Application.Exceptions;
+using SchedulerBot.Application.Settings.Commands.ModifySetting;
 using SchedulerBot.Application.Settings.Queries.GetAllSettings;
 using SchedulerBot.Application.Settings.Queries.GetSetting;
 using SchedulerBot.Client.Attributes;
@@ -117,21 +118,24 @@ namespace SchedulerBot.Client.Commands
         {
             await ctx.TriggerTypingAsync();
 
-            string newPrefix = string.Empty;
             try
             {
-                newPrefix = await _calendarService.UpdateCalendarPrefixAsync(ctx.Guild.Id, prefix);
+                var result = await _mediator.Send(new ModifyPrefixSettingCommand
+                {
+                    CalendarId = ctx.Guild.Id,
+                    NewPrefix = prefix
+                });
+
+                // Update prefix cache
+                _cache.Set($"prefix:{ctx.Guild.Id}", result.Prefix, new MemoryCacheEntryOptions().SetSlidingExpiration(TimeSpan.FromMinutes(3)));
+
+                await ctx.RespondAsync($"Prefix set to `{result.Prefix}`.");
             }
-            catch (CalendarNotFoundException)
+            catch (CalendarNotInitialisedException)
             {
                 await ctx.RespondAsync("Calendar not initialised. Run `init <timezone>` to initialise the calendar.");
                 return;
             }
-
-            // Update prefix cache
-            _cache.Set($"prefix:{ctx.Guild.Id}", newPrefix, new MemoryCacheEntryOptions().SetSlidingExpiration(TimeSpan.FromMinutes(3)));
-
-            await ctx.RespondAsync($"Prefix set to `{newPrefix}`.");
         }
 
         [Command("defaultchannel"), Description("View the default channel that the bot sends messages to.")]
