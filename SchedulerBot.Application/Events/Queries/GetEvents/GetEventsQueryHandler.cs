@@ -4,13 +4,12 @@ using System.Threading;
 using System.Threading.Tasks;
 using MediatR;
 using SchedulerBot.Application.Events.Models;
-using SchedulerBot.Application.Exceptions;
 using SchedulerBot.Application.Interfaces;
 using SchedulerBot.Application.Specifications;
 
 namespace SchedulerBot.Application.Events.Queries.GetEvents
 {
-    public class GetEventsQueryHandler : IRequestHandler<GetEventsForCalendarQuery, List<SimplifiedEventViewModel>>
+    public class GetEventsQueryHandler : IRequestHandler<GetEventsForCalendarQuery, List<EventViewModel>>
     {
         private readonly IEventRepository _eventRepository;
 
@@ -19,11 +18,11 @@ namespace SchedulerBot.Application.Events.Queries.GetEvents
             _eventRepository = eventRepository;
         }
 
-        public async Task<List<SimplifiedEventViewModel>> Handle(GetEventsForCalendarQuery request, CancellationToken cancellationToken = default)
+        public async Task<List<EventViewModel>> Handle(GetEventsForCalendarQuery request, CancellationToken cancellationToken = default)
         {
-            var events = await _eventRepository.ListAsync(new CalendarEventSpecification(request.CalendarId));
+            var events = await _eventRepository.ListAsync(new CalendarEventSpecification(request.CalendarId, true));
 
-            return events.Select(SimplifiedEventViewModel.FromEvent).ToList();
+            return events.Select(EventViewModel.FromEvent).ToList();
         }
     }
 }

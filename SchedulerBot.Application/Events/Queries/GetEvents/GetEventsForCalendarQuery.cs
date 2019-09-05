@@ -4,7 +4,7 @@ using SchedulerBot.Application.Events.Models;
 
 namespace SchedulerBot.Application.Events.Queries.GetEvents
 {
-    public class GetEventsForCalendarQuery : IRequest<List<SimplifiedEventViewModel>>
+    public class GetEventsForCalendarQuery : IRequest<List<EventViewModel>>
     {
         public ulong CalendarId { get; set; }
     }

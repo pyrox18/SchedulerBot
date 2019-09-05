@@ -6,6 +6,7 @@ using DSharpPlus.Entities;
 using MediatR;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Configuration;
+using SchedulerBot.Application.Events.Queries.GetEvents;
 using SchedulerBot.Application.Exceptions;
 using SchedulerBot.Application.Settings.Commands.ModifySetting;
 using SchedulerBot.Application.Settings.Queries.GetAllSettings;
@@ -13,9 +14,7 @@ using SchedulerBot.Application.Settings.Queries.GetSetting;
 using SchedulerBot.Client.Attributes;
 using SchedulerBot.Client.Extensions;
 using SchedulerBot.Client.Scheduler;
-using SchedulerBot.Data.Exceptions;
 using SchedulerBot.Data.Models;
-using SchedulerBot.Data.Services;
 
 namespace SchedulerBot.Client.Commands
 {
@@ -23,19 +22,13 @@ namespace SchedulerBot.Client.Commands
     [Description("Change settings for the bot.")]
     public class SettingsCommands : BotCommandModule
     {
-        private readonly ICalendarService _calendarService;
-        private readonly IEventService _eventService;
-        private readonly IPermissionService _permissionService;
         private readonly IEventScheduler _eventScheduler;
         private readonly IConfigurationRoot _configuration;
         private readonly IMemoryCache _cache;
 
-        public SettingsCommands(IMediator mediator, ICalendarService calendarService, IEventService eventService, IPermissionService permissionService, IEventScheduler eventScheduler, IConfigurationRoot configuration, IMemoryCache cache) :
+        public SettingsCommands(IMediator mediator, IEventScheduler eventScheduler, IConfigurationRoot configuration, IMemoryCache cache) :
             base(mediator)
         {
-            _calendarService = calendarService;
-            _eventService = eventService;
-            _permissionService = permissionService;
             _eventScheduler = eventScheduler;
             _configuration = configuration;
             _cache = cache;
@@ -240,37 +233,48 @@ namespace SchedulerBot.Client.Commands
         {
             await ctx.TriggerTypingAsync();
 
-            string tz = string.Empty;
-            try
+            var command = new ModifyTimezoneSettingCommand
             {
-                tz = await _calendarService.UpdateCalendarTimezoneAsync(ctx.Guild.Id, timezone);
-            }
-            catch (InvalidTimeZoneException)
+                CalendarId = ctx.Guild.Id,
+                NewTimezone = timezone
+            };
+
+            var validator = new ModifyTimezoneSettingCommandValidator();
+            var validationResult = validator.Validate(command);
+            if (!validationResult.IsValid)
             {
                 var timezoneLink = _configuration.GetSection("Bot").GetSection("Links").GetValue<string>("TimezoneList");
                 await ctx.RespondAsync($"Timezone not found. See {timezoneLink} under the TZ column for a list of valid timezones.");
                 return;
             }
-            catch (ExistingEventInNewTimezonePastException)
+
+            try
             {
-                await ctx.RespondAsync($"Cannot update timezone, due to events starting or ending in the past if the timezone is changed to {timezone}.");
-                return;
+                var result = await _mediator.Send(command);
+
+                await RescheduleAllEvents(ctx, result.DefaultChannel);
+
+                await ctx.RespondAsync($"Updated timezone to {result.Timezone}.");
             }
-            catch (CalendarNotFoundException)
+            catch (CalendarNotInitialisedException)
             {
                 await ctx.RespondAsync("Calendar not initialised. Run `init <timezone>` to initialise the calendar.");
                 return;
             }
-
-            var defaultChannel = await _calendarService.GetCalendarDefaultChannelAsync(ctx.Guild.Id);
-            await RescheduleAllEvents(ctx, defaultChannel);
-
-            await ctx.RespondAsync($"Updated timezone to {tz}.");
+            catch (EventStartInNewTimezonePastException)
+            {
+                await ctx.RespondAsync($"Cannot update timezone, due to events starting or ending in the past if the timezone is changed to {timezone}.");
+                return;
+            }
         }
 
         private async Task RescheduleAllEvents(CommandContext ctx, ulong channelId)
         {
-            var events = await _eventService.GetEventsAsync(ctx.Guild.Id);
+            var events = await _mediator.Send(new GetEventsForCalendarQuery
+            {
+                CalendarId = ctx.Guild.Id
+            });
+
             foreach (var evt in events)
             {
                 await _eventScheduler.RescheduleEvent(evt, ctx.Client, channelId);

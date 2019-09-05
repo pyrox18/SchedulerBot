@@ -352,7 +352,7 @@ namespace SchedulerBot.Client.Commands
             }
         }
 
-        private List<Page> GetEventListPages(List<SimplifiedEventViewModel> events)
+        private List<Page> GetEventListPages(List<EventViewModel> events)
         {
             StringBuilder sb = new StringBuilder();
             List<Page> pages = new List<Page>();
