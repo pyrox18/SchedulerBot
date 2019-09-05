@@ -8,6 +8,7 @@ using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Configuration;
 using SchedulerBot.Application.Exceptions;
 using SchedulerBot.Application.Settings.Queries.GetAllSettings;
+using SchedulerBot.Application.Settings.Queries.GetSetting;
 using SchedulerBot.Client.Attributes;
 using SchedulerBot.Client.Extensions;
 using SchedulerBot.Client.Scheduler;
@@ -81,26 +82,33 @@ namespace SchedulerBot.Client.Commands
         {
             await ctx.TriggerTypingAsync();
 
-            var prefix = await _calendarService.GetCalendarPrefixAsync(ctx.Guild.Id);
-            if (string.IsNullOrEmpty(prefix))
+            try
+            {
+                var result = await _mediator.Send(new GetPrefixSettingQuery
+                {
+                    CalendarId = ctx.Guild.Id
+                });
+
+                var embed = new DiscordEmbedBuilder
+                {
+                    Author = new DiscordEmbedBuilder.EmbedAuthor
+                    {
+                        Name = "SchedulerBot",
+                        IconUrl = "https://cdn.discordapp.com/avatars/339019867325726722/e5fca7dbae7156e05c013766fa498fe1.png"
+                    },
+                    Color = new DiscordColor(211, 255, 219),
+                    Description = "Run `settings prefix <new prefix>` to change the prefix. e.g. `settings prefix ++`",
+                    Title = "Settings: Prefix"
+                };
+                embed.AddField("Current Value", $"`{result.Prefix}`", true);
+
+                await ctx.RespondAsync(embed: embed);
+            }
+            catch (CalendarNotInitialisedException)
             {
                 await ctx.RespondAsync("Calendar not initialised. Run `init <timezone>` to initialise the calendar.");
                 return;
             }
-            var embed = new DiscordEmbedBuilder
-            {
-                Author = new DiscordEmbedBuilder.EmbedAuthor
-                {
-                    Name = "SchedulerBot",
-                    IconUrl = "https://cdn.discordapp.com/avatars/339019867325726722/e5fca7dbae7156e05c013766fa498fe1.png"
-                },
-                Color = new DiscordColor(211, 255, 219),
-                Description = "Run `settings prefix <new prefix>` to change the prefix. e.g. `settings prefix ++`",
-                Title = "Settings: Prefix"
-            };
-            embed.AddField("Current Value", $"`{prefix}`", true);
-
-            await ctx.RespondAsync(embed: embed);
         }
 
         [Command("prefix"), Description("Change the bot's prefix.")]
