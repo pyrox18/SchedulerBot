@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Moq;
 using SchedulerBot.Application.Interfaces;
+using SchedulerBot.Data.Enumerations;
 using SchedulerBot.Data.Models;
 using SchedulerBot.Persistence.Repositories;
 using System;
@@ -294,6 +295,230 @@ namespace SchedulerBot.Persistence.UnitTests.Repositories
                     var result = await repository.CountAsync(mockSpecification.Object);
 
                     Assert.Equal(2, result);
+                }
+            }
+        }
+
+        public class CheckPermissionAsyncMethod
+        {
+            [Fact]
+            public async Task ReturnsTrueForUserMatch()
+            {
+                var options = new DbContextOptionsBuilder<SchedulerBotDbContext>()
+                    .UseInMemoryDatabase(databaseName: $"{GetType().DeclaringType.Name}_{GetType().Name}_{nameof(ReturnsTrueForUserMatch)}")
+                    .Options;
+
+                var calendar = new Calendar
+                {
+                    Id = 1,
+                };
+
+                var node = PermissionNode.EventCreate;
+
+                List<Permission> permissions = new List<Permission>
+                {
+                    new Permission
+                    {
+                        Id = Guid.NewGuid(),
+                        Calendar = calendar,
+                        Node = node,
+                        TargetId = 2,
+                        Type = PermissionType.User,
+                        IsDenied = true
+                    },
+                    new Permission
+                    {
+                        Id = Guid.NewGuid(),
+                        Calendar = calendar,
+                        Node = node,
+                        TargetId = 3,
+                        Type = PermissionType.Role,
+                        IsDenied = true
+                    }
+                };
+
+                using (var context = new SchedulerBotDbContext(options))
+                {
+                    await context.Calendars.AddAsync(calendar);
+                    await context.Permissions.AddRangeAsync(permissions);
+                    await context.SaveChangesAsync();
+                }
+
+                using (var context = new SchedulerBotDbContext(options))
+                {
+                    var repository = new PermissionRepository(context);
+
+                    var result = await repository.CheckPermissionAsync(calendar.Id, node, 2, new List<ulong> { 1 });
+
+                    Assert.True(result);
+                }
+            }
+
+            [Fact]
+            public async Task ReturnsTrueForRoleMatch()
+            {
+                var options = new DbContextOptionsBuilder<SchedulerBotDbContext>()
+                    .UseInMemoryDatabase(databaseName: $"{GetType().DeclaringType.Name}_{GetType().Name}_{nameof(ReturnsTrueForRoleMatch)}")
+                    .Options;
+
+                var calendar = new Calendar
+                {
+                    Id = 1,
+                };
+
+                var node = PermissionNode.EventCreate;
+
+                List<Permission> permissions = new List<Permission>
+                {
+                    new Permission
+                    {
+                        Id = Guid.NewGuid(),
+                        Calendar = calendar,
+                        Node = node,
+                        TargetId = 2,
+                        Type = PermissionType.User,
+                        IsDenied = true
+                    },
+                    new Permission
+                    {
+                        Id = Guid.NewGuid(),
+                        Calendar = calendar,
+                        Node = node,
+                        TargetId = 3,
+                        Type = PermissionType.Role,
+                        IsDenied = true
+                    }
+                };
+
+                using (var context = new SchedulerBotDbContext(options))
+                {
+                    await context.Calendars.AddAsync(calendar);
+                    await context.Permissions.AddRangeAsync(permissions);
+                    await context.SaveChangesAsync();
+                }
+
+                using (var context = new SchedulerBotDbContext(options))
+                {
+                    var repository = new PermissionRepository(context);
+
+                    var result = await repository.CheckPermissionAsync(calendar.Id, node, 4, new List<ulong> { 1, 3 });
+
+                    Assert.True(result);
+                }
+            }
+
+            [Fact]
+            public async Task ReturnsTrueForEveryoneRoleMatch()
+            {
+                var options = new DbContextOptionsBuilder<SchedulerBotDbContext>()
+                    .UseInMemoryDatabase(databaseName: $"{GetType().DeclaringType.Name}_{GetType().Name}_{nameof(ReturnsTrueForEveryoneRoleMatch)}")
+                    .Options;
+
+                var calendar = new Calendar
+                {
+                    Id = 1,
+                };
+
+                var node = PermissionNode.EventCreate;
+
+                List<Permission> permissions = new List<Permission>
+                {
+                    new Permission
+                    {
+                        Id = Guid.NewGuid(),
+                        Calendar = calendar,
+                        Node = node,
+                        TargetId = 2,
+                        Type = PermissionType.User,
+                        IsDenied = true
+                    },
+                    new Permission
+                    {
+                        Id = Guid.NewGuid(),
+                        Calendar = calendar,
+                        Node = node,
+                        TargetId = 3,
+                        Type = PermissionType.Role,
+                        IsDenied = true
+                    },
+                    new Permission
+                    {
+                        Id = Guid.NewGuid(),
+                        Calendar = calendar,
+                        Node = node,
+                        TargetId = 1,
+                        Type = PermissionType.Everyone,
+                        IsDenied = true
+                    },
+                };
+
+                using (var context = new SchedulerBotDbContext(options))
+                {
+                    await context.Calendars.AddAsync(calendar);
+                    await context.Permissions.AddRangeAsync(permissions);
+                    await context.SaveChangesAsync();
+                }
+
+                using (var context = new SchedulerBotDbContext(options))
+                {
+                    var repository = new PermissionRepository(context);
+
+                    var result = await repository.CheckPermissionAsync(calendar.Id, node, 4, new List<ulong>());
+
+                    Assert.True(result);
+                }
+            }
+
+            [Fact]
+            public async Task ReturnsFalse()
+            {
+                var options = new DbContextOptionsBuilder<SchedulerBotDbContext>()
+                    .UseInMemoryDatabase(databaseName: $"{GetType().DeclaringType.Name}_{GetType().Name}_{nameof(ReturnsFalse)}")
+                    .Options;
+
+                var calendar = new Calendar
+                {
+                    Id = 1,
+                };
+
+                var node = PermissionNode.EventCreate;
+
+                List<Permission> permissions = new List<Permission>
+                {
+                    new Permission
+                    {
+                        Id = Guid.NewGuid(),
+                        Calendar = calendar,
+                        Node = node,
+                        TargetId = 2,
+                        Type = PermissionType.User,
+                        IsDenied = true
+                    },
+                    new Permission
+                    {
+                        Id = Guid.NewGuid(),
+                        Calendar = calendar,
+                        Node = node,
+                        TargetId = 3,
+                        Type = PermissionType.Role,
+                        IsDenied = true
+                    }
+                };
+
+                using (var context = new SchedulerBotDbContext(options))
+                {
+                    await context.Calendars.AddAsync(calendar);
+                    await context.Permissions.AddRangeAsync(permissions);
+                    await context.SaveChangesAsync();
+                }
+
+                using (var context = new SchedulerBotDbContext(options))
+                {
+                    var repository = new PermissionRepository(context);
+
+                    var result = await repository.CheckPermissionAsync(calendar.Id, node, 4, new List<ulong> { 1 });
+
+                    Assert.False(result);
                 }
             }
         }

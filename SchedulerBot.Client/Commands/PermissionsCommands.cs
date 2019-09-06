@@ -9,11 +9,11 @@ using MediatR;
 using SchedulerBot.Application.Exceptions;
 using SchedulerBot.Application.Permissions.Commands.ModifyRolePermission;
 using SchedulerBot.Application.Permissions.Commands.ModifyUserPermission;
+using SchedulerBot.Application.Permissions.Enumerations;
 using SchedulerBot.Application.Permissions.Queries.GetPermissionNodes;
 using SchedulerBot.Application.Permissions.Queries.GetPermissions;
 using SchedulerBot.Client.Attributes;
 using SchedulerBot.Client.Extensions;
-using SchedulerBot.Data.Models;
 
 namespace SchedulerBot.Client.Commands
 {

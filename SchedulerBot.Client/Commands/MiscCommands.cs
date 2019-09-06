@@ -11,6 +11,7 @@ using MediatR;
 using Microsoft.Extensions.Configuration;
 using NodaTime;
 using SchedulerBot.Application.Exceptions;
+using SchedulerBot.Application.Permissions.Enumerations;
 using SchedulerBot.Application.Settings.Queries.GetSetting;
 using SchedulerBot.Client.Attributes;
 using SchedulerBot.Client.Services;

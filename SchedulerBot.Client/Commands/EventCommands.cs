@@ -23,6 +23,7 @@ using SchedulerBot.Application.Events.Commands.ToggleEventRsvp;
 using SchedulerBot.Application.Events.Commands.DeleteEvent;
 using SchedulerBot.Application.Events.Commands.DeleteAllEvents;
 using SchedulerBot.Application.Settings.Queries.GetSetting;
+using SchedulerBot.Application.Permissions.Enumerations;
 
 namespace SchedulerBot.Client.Commands
 {

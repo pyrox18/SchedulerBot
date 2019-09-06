@@ -8,13 +8,13 @@ using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Configuration;
 using SchedulerBot.Application.Events.Queries.GetEvents;
 using SchedulerBot.Application.Exceptions;
+using SchedulerBot.Application.Permissions.Enumerations;
 using SchedulerBot.Application.Settings.Commands.ModifySetting;
 using SchedulerBot.Application.Settings.Queries.GetAllSettings;
 using SchedulerBot.Application.Settings.Queries.GetSetting;
 using SchedulerBot.Client.Attributes;
 using SchedulerBot.Client.Extensions;
 using SchedulerBot.Client.Scheduler;
-using SchedulerBot.Data.Models;
 
 namespace SchedulerBot.Client.Commands
 {

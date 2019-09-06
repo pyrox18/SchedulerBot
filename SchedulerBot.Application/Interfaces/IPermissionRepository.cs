@@ -1,4 +1,5 @@
-﻿using SchedulerBot.Data.Models;
+﻿using SchedulerBot.Data.Enumerations;
+using SchedulerBot.Data.Models;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
@@ -13,5 +14,6 @@ namespace SchedulerBot.Application.Interfaces
         Task AllowUserPermissionAsync(ulong calendarId, ulong userId, PermissionNode node);
         Task DenyRolePermissionAsync(ulong calendarId, ulong roleId, PermissionNode node);
         Task AllowRolePermissionAsync(ulong calendarId, ulong roleId, PermissionNode node);
+        Task<bool> CheckPermissionAsync(ulong calendarId, PermissionNode node, ulong userId, List<ulong> roleIds);
     }
 }

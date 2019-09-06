@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using SchedulerBot.Application.Exceptions;
 using SchedulerBot.Application.Interfaces;
+using SchedulerBot.Data.Enumerations;
 using SchedulerBot.Data.Models;
 using SchedulerBot.Persistence.Specifications;
 
@@ -180,6 +181,15 @@ namespace SchedulerBot.Persistence.Repositories
             }
 
             return calendar;
+        }
+
+        public async Task<bool> CheckPermissionAsync(ulong calendarId, PermissionNode node, ulong userId, List<ulong> roleIds)
+        {
+            return await _context.Permissions.AnyAsync(
+                p => p.Calendar.Id == calendarId
+                && (p.Node == node || p.Node == PermissionNode.All)
+                && ((p.Type == PermissionType.Everyone) || (p.Type == PermissionType.User && p.TargetId == userId) || (p.Type == PermissionType.Role && roleIds.Contains(p.TargetId)))
+            );
         }
     }
 }

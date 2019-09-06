@@ -3,9 +3,10 @@ using System.Linq;
 using System.Threading.Tasks;
 using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Attributes;
+using MediatR;
 using Microsoft.Extensions.DependencyInjection;
-using SchedulerBot.Data.Models;
-using SchedulerBot.Data.Services;
+using SchedulerBot.Application.Permissions.Enumerations;
+using SchedulerBot.Application.Permissions.Queries.CheckPermission;
 
 namespace SchedulerBot.Client.Attributes
 {
@@ -22,23 +23,28 @@ namespace SchedulerBot.Client.Attributes
         public override async Task<bool> ExecuteCheckAsync(CommandContext ctx, bool help)
         {
             Console.WriteLine($"PermissionNodeAttribute with node {_node.ToString()} executing check");
-            var permissionService = ctx.Services.GetRequiredService<IPermissionService>();
 
             if (ctx.Member.IsOwner)
             {
                 return true;
             }
 
-            var permitted = await permissionService.CheckPermissionsAsync(
-                _node, ctx.Guild.Id, ctx.Member.Id,
-                ctx.Member.Roles.Select(r => r.Id));
+            var mediator = ctx.Services.GetRequiredService<IMediator>();
 
-            if (!permitted)
+            var result = await mediator.Send(new CheckPermissionQuery
+            {
+                CalendarId = ctx.Guild.Id,
+                Node = _node,
+                UserId = ctx.Member.Id,
+                RoleIds = ctx.Member.Roles.Select(r => r.Id).ToList()
+            });
+
+            if (!result.IsPermitted)
             {
                 await ctx.RespondAsync("You are not permitted to use this command.");
             }
 
-            return permitted;
+            return result.IsPermitted;
         }
     }
 }

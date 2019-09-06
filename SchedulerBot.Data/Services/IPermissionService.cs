@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Threading.Tasks;
+using SchedulerBot.Data.Enumerations;
 using SchedulerBot.Data.Models;
 
 namespace SchedulerBot.Data.Services

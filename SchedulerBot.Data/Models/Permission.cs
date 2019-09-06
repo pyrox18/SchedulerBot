@@ -1,4 +1,5 @@
-﻿using System;
+﻿using SchedulerBot.Data.Enumerations;
+using System;
 
 namespace SchedulerBot.Data.Models
 {
@@ -10,27 +11,6 @@ namespace SchedulerBot.Data.Models
         public PermissionNode Node { get; set; }
         public ulong TargetId { get; set; }
         public bool IsDenied { get; set; }
-    }
-
-    public enum PermissionNode
-    {
-        EventCreate,
-        EventUpdate,
-        EventDelete,
-        EventList,
-        PrefixShow,
-        PrefixModify,
-        DefaultChannelShow,
-        DefaultChannelModify,
-        TimezoneShow,
-        TimezoneModify,
-        PermsShow,
-        PermsModify,
-        PermsNodes,
-        Ping,
-        EventRSVP,
-        Time,
-        All
     }
 
     public enum PermissionType

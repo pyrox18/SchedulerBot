@@ -563,7 +563,7 @@ namespace SchedulerBot.Client.UnitTests
             [MemberData(nameof(NewEventSuccessTestData))]
             public void ReturnsNewEvent(string args, string timezone, Event expected)
             {
-                var result = EventParser.ParseNewEvent(args.Split(' '), timezone);
+                var result = new EventParser().ParseNewEvent(args.Split(' '), timezone);
 
                 Assert.Equal(expected.Name, result.Name);
                 Assert.Equal(expected.StartTimestamp, result.StartTimestamp);
@@ -611,7 +611,7 @@ namespace SchedulerBot.Client.UnitTests
             {
                 Assert.Throws<EventParseException>(() =>
                 {
-                    EventParser.ParseNewEvent(args.Split(' '), "Europe/London");
+                    new EventParser().ParseNewEvent(args.Split(' '), "Europe/London");
                 });
             }
 
@@ -621,7 +621,7 @@ namespace SchedulerBot.Client.UnitTests
             {
                 Assert.Throws<InvalidTimeZoneException>(() =>
                 {
-                    EventParser.ParseNewEvent("Test Event 8pm".Split(' '), timezone);
+                    new EventParser().ParseNewEvent("Test Event 8pm".Split(' '), timezone);
                 });
             }
         }
@@ -719,7 +719,7 @@ namespace SchedulerBot.Client.UnitTests
                     }
                 };
 
-                var result = EventParser.ParseUpdateEvent(baseEvent, args, timezone);
+                var result = new EventParser().ParseUpdateEvent(baseEvent, args, timezone);
 
                 Assert.Equal(expected.Name, result.Name);
                 Assert.Equal(expected.StartTimestamp, result.StartTimestamp);
