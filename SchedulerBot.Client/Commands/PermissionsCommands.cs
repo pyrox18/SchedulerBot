@@ -68,18 +68,42 @@ namespace SchedulerBot.Client.Commands
         {
             await ctx.TriggerTypingAsync();
 
-            Permission permission;
             try
             {
-                permission = await _permissionService.AllowNodeForUserAsync(ctx.Guild.Id, user.Id, node);
+                var permissionNode = GetPermissionNode(node);
+
+                await _mediator.Send(new AllowUserPermissionCommand
+                {
+                    CalendarId = ctx.Guild.Id,
+                    Node = permissionNode,
+                    UserId = user.Id
+                });
+
+                await ctx.RespondAsync($"Allowed permission {node} for user {user.GetUsernameAndDiscriminator()}.");
             }
-            catch (PermissionNodeNotFoundException)
+            catch (CalendarNotInitialisedException)
+            {
+                await ctx.RespondAsync("Calendar not initialised. Run `init <timezone>` to initialise the calendar.");
+                return;
+            }
+            catch (Exceptions.PermissionNodeNotFoundException)
             {
                 await ctx.RespondAsync("Permission node not found.");
                 return;
             }
 
-            await ctx.RespondAsync($"Allowed permission {permission.Node} for user {user.GetUsernameAndDiscriminator()}.");
+            //Permission permission;
+            //try
+            //{
+            //    permission = await _permissionService.AllowNodeForUserAsync(ctx.Guild.Id, user.Id, node);
+            //}
+            //catch (PermissionNodeNotFoundException)
+            //{
+            //    await ctx.RespondAsync("Permission node not found.");
+            //    return;
+            //}
+
+            //await ctx.RespondAsync($"Allowed permission {permission.Node} for user {user.GetUsernameAndDiscriminator()}.");
         }
 
         [Command("deny"), Description("Denies a certain role from using a certain command.")]
