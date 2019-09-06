@@ -14,7 +14,6 @@ using SchedulerBot.Application.Permissions.Queries.GetPermissions;
 using SchedulerBot.Client.Attributes;
 using SchedulerBot.Client.Extensions;
 using SchedulerBot.Data.Models;
-using SchedulerBot.Data.Services;
 
 namespace SchedulerBot.Client.Commands
 {

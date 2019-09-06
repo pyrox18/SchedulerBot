@@ -5,7 +5,6 @@ using MediatR;
 using Microsoft.Extensions.Configuration;
 using SchedulerBot.Application.Calendars.Commands.InitialiseCalendar;
 using SchedulerBot.Application.Exceptions;
-using SchedulerBot.Data.Services;
 
 namespace SchedulerBot.Client.Commands
 {
@@ -13,7 +12,7 @@ namespace SchedulerBot.Client.Commands
     {
         private readonly IConfigurationRoot _configuration;
 
-        public InitializerCommands(IMediator mediator, ICalendarService calendarService, IConfigurationRoot configuration) :
+        public InitializerCommands(IMediator mediator, IConfigurationRoot configuration) :
             base(mediator)
         {
             _configuration = configuration;

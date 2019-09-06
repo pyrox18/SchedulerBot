@@ -15,21 +15,18 @@ using SchedulerBot.Application.Settings.Queries.GetSetting;
 using SchedulerBot.Client.Attributes;
 using SchedulerBot.Client.Services;
 using SchedulerBot.Data.Models;
-using SchedulerBot.Data.Services;
 
 namespace SchedulerBot.Client.Commands
 {
     public class MiscCommands : BotCommandModule
     {
         private readonly IShardedClientInformationService _shardedClientInformationService;
-        internal readonly IPermissionService _permissionService;
         private readonly IConfigurationRoot _configuration;
 
-        public MiscCommands(IMediator mediator, IShardedClientInformationService shardedClientInformationService, IPermissionService permissionService, IConfigurationRoot configuration) :
+        public MiscCommands(IMediator mediator, IShardedClientInformationService shardedClientInformationService, IConfigurationRoot configuration) :
             base(mediator)
         {
             _shardedClientInformationService = shardedClientInformationService;
-            _permissionService = permissionService;
             _configuration = configuration;
         }
 
