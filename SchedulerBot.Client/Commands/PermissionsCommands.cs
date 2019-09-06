@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -14,7 +13,6 @@ using SchedulerBot.Application.Permissions.Queries.GetPermissionNodes;
 using SchedulerBot.Application.Permissions.Queries.GetPermissions;
 using SchedulerBot.Client.Attributes;
 using SchedulerBot.Client.Extensions;
-using SchedulerBot.Data.Exceptions;
 using SchedulerBot.Data.Models;
 using SchedulerBot.Data.Services;
 
@@ -24,12 +22,9 @@ namespace SchedulerBot.Client.Commands
     [Description("View and modify permissions for other commands.")]
     public class PermissionsCommands : BotCommandModule
     {
-        private readonly IPermissionService _permissionService;
-
-        public PermissionsCommands(IMediator mediator, IPermissionService permissionService) :
+        public PermissionsCommands(IMediator mediator) :
             base(mediator)
         {
-            _permissionService = permissionService;
         }
 
         [Command("allow"), Description("Allows a certain role to use a certain command.")]
@@ -194,21 +189,25 @@ namespace SchedulerBot.Client.Commands
         {
             await ctx.TriggerTypingAsync();
 
-            var permissions = await _permissionService.GetPermissionsForUserAsync(ctx.Guild.Id, user.Id);
+            var result = await _mediator.Send(new GetUserPermissionsQuery
+            {
+                CalendarId = ctx.Guild.Id,
+                UserId = user.Id
+            });
 
             var sb = new StringBuilder();
             sb.AppendLine("```css");
             sb.AppendLine($"User: {user.GetUsernameAndDiscriminator()}");
             sb.AppendLine("Denied Nodes:");
-            if (permissions.Count < 1)
+            if (result.DeniedNodes.Count < 1)
             {
                 sb.AppendLine("  None");
             }
             else
             {
-                foreach (var perm in permissions)
+                foreach (var node in result.DeniedNodes)
                 {
-                    sb.AppendLine($"  {perm.Node}");
+                    sb.AppendLine($"  {node}");
                 }
             }
             sb.AppendLine("```");
