@@ -10,7 +10,6 @@ using SchedulerBot.Client.Exceptions;
 using SchedulerBot.Client.Extensions;
 using SchedulerBot.Client.Scheduler;
 using SchedulerBot.Data.Models;
-using SchedulerBot.Data.Services;
 using MediatR;
 using SchedulerBot.Application.Events.Commands.CreateEvent;
 using SchedulerBot.Application.Exceptions;
@@ -23,6 +22,7 @@ using SchedulerBot.Application.Events.Commands.UpdateEvent;
 using SchedulerBot.Application.Events.Commands.ToggleEventRsvp;
 using SchedulerBot.Application.Events.Commands.DeleteEvent;
 using SchedulerBot.Application.Events.Commands.DeleteAllEvents;
+using SchedulerBot.Application.Settings.Queries.GetSetting;
 
 namespace SchedulerBot.Client.Commands
 {
@@ -30,13 +30,11 @@ namespace SchedulerBot.Client.Commands
     [Description("Commands for managing events.")]
     public class EventCommands : BotCommandModule
     {
-        private readonly ICalendarService _calendarService;
         private readonly IEventScheduler _eventScheduler;
 
-        public EventCommands(IMediator mediator, ICalendarService calendarService, IEventScheduler eventScheduler) :
+        public EventCommands(IMediator mediator, IEventScheduler eventScheduler) :
             base(mediator)
         {
-            _calendarService = calendarService;
             _eventScheduler = eventScheduler;
         }
 
@@ -64,12 +62,20 @@ namespace SchedulerBot.Client.Commands
 
             try
             {
-                var result = await _mediator.Send(command);
+                var createEventResultTask = _mediator.Send(command);
+                var defaultChannelResultTask = _mediator.Send(new GetDefaultChannelSettingQuery
+                {
+                    CalendarId = ctx.Guild.Id
+                });
 
-                var defaultChannelId = await _calendarService.GetCalendarDefaultChannelAsync(ctx.Guild.Id);
-                await _eventScheduler.ScheduleEvent(result, ctx.Client, defaultChannelId, ctx.Guild.Id);
+                await Task.WhenAll(createEventResultTask, defaultChannelResultTask);
 
-                var embed = EventEmbedFactory.GetCreateEventEmbed(result);
+                var createEventResult = await createEventResultTask;
+                var defaultChannelResult = await defaultChannelResultTask;
+
+                await _eventScheduler.ScheduleEvent(createEventResult, ctx.Client, defaultChannelResult.DefaultChannel, ctx.Guild.Id);
+
+                var embed = EventEmbedFactory.GetCreateEventEmbed(createEventResult);
                 await ctx.RespondAsync("New event created.", embed: embed);
             }
             catch (DateTimeInPastException)
@@ -144,7 +150,7 @@ namespace SchedulerBot.Client.Commands
                 var embed = EventEmbedFactory.GetViewEventEmbed(result);
                 await ctx.RespondAsync(embed: embed);
             }
-            catch (Application.Exceptions.EventNotFoundException)
+            catch (EventNotFoundException)
             {
                 await ctx.RespondAsync("Event not found.");
                 return;
@@ -180,15 +186,23 @@ namespace SchedulerBot.Client.Commands
 
             try
             {
-                var result = await _mediator.Send(command);
+                var updateEventResultTask = _mediator.Send(command);
+                var defaultChannelResultTask = _mediator.Send(new GetDefaultChannelSettingQuery
+                {
+                    CalendarId = ctx.Guild.Id
+                });
 
-                var defaultChannelId = await _calendarService.GetCalendarDefaultChannelAsync(ctx.Guild.Id);
-                await _eventScheduler.RescheduleEvent(result, ctx.Client, defaultChannelId);
+                await Task.WhenAll(updateEventResultTask, defaultChannelResultTask);
 
-                var embed = EventEmbedFactory.GetUpdateEventEmbed(result);
+                var updateEventResult = await updateEventResultTask;
+                var defaultChannelResult = await defaultChannelResultTask;
+
+                await _eventScheduler.RescheduleEvent(updateEventResult, ctx.Client, defaultChannelResult.DefaultChannel);
+
+                var embed = EventEmbedFactory.GetUpdateEventEmbed(updateEventResult);
                 await ctx.RespondAsync("Updated event.", embed: embed);
             }
-            catch (Application.Exceptions.EventNotFoundException)
+            catch (EventNotFoundException)
             {
                 await ctx.RespondAsync("Event not found.");
                 return;
@@ -276,13 +290,11 @@ namespace SchedulerBot.Client.Commands
         [Group("delete")]
         public class DeleteCommands : BotCommandModule
         {
-            private readonly IEventService _eventService;
             private readonly IEventScheduler _eventScheduler;
 
-            public DeleteCommands(IMediator mediator, IEventService eventService, IEventScheduler eventScheduler) :
+            public DeleteCommands(IMediator mediator, IEventScheduler eventScheduler) :
                 base(mediator)
             {
-                _eventService = eventService;
                 _eventScheduler = eventScheduler;
             }
 
