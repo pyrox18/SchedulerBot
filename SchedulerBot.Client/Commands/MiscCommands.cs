@@ -7,8 +7,11 @@ using System.Threading.Tasks;
 using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Attributes;
 using DSharpPlus.Entities;
+using MediatR;
 using Microsoft.Extensions.Configuration;
 using NodaTime;
+using SchedulerBot.Application.Exceptions;
+using SchedulerBot.Application.Settings.Queries.GetSetting;
 using SchedulerBot.Client.Attributes;
 using SchedulerBot.Client.Extensions;
 using SchedulerBot.Client.Services;
@@ -17,14 +20,15 @@ using SchedulerBot.Data.Services;
 
 namespace SchedulerBot.Client.Commands
 {
-    public class MiscCommands : BaseCommandModule
+    public class MiscCommands : BotCommandModule
     {
         private readonly ICalendarService _calendarService;
         private readonly IShardedClientInformationService _shardedClientInformationService;
         internal readonly IPermissionService _permissionService;
         private readonly IConfigurationRoot _configuration;
 
-        public MiscCommands(ICalendarService calendarService, IShardedClientInformationService shardedClientInformationService, IPermissionService permissionService, IConfigurationRoot configuration)
+        public MiscCommands(IMediator mediator, ICalendarService calendarService, IShardedClientInformationService shardedClientInformationService, IPermissionService permissionService, IConfigurationRoot configuration) :
+            base(mediator)
         {
             _calendarService = calendarService;
             _shardedClientInformationService = shardedClientInformationService;
@@ -48,8 +52,20 @@ namespace SchedulerBot.Client.Commands
         {
             await ctx.TriggerTypingAsync();
 
-            var prefix = await _calendarService.GetCalendarPrefixAsync(ctx.Guild.Id);
-            await ctx.RespondAsync($"`{prefix}`");
+            try
+            {
+                var result = await _mediator.Send(new GetPrefixSettingQuery
+                {
+                    CalendarId = ctx.Guild.Id
+                });
+
+                await ctx.RespondAsync($"`{result.Prefix}`");
+            }
+            catch (CalendarNotInitialisedException)
+            {
+                await ctx.RespondAsync("Calendar not initialised. Run `init <timezone>` to initialise the calendar.");
+                return;
+            }
         }
 
         [Command("info"), Description("Get some information about the bot.")]
