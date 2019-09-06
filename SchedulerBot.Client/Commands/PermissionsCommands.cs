@@ -9,6 +9,7 @@ using DSharpPlus.Entities;
 using MediatR;
 using SchedulerBot.Application.Exceptions;
 using SchedulerBot.Application.Permissions.Commands.ModifyRolePermission;
+using SchedulerBot.Application.Permissions.Commands.ModifyUserPermission;
 using SchedulerBot.Application.Permissions.Queries.GetPermissionNodes;
 using SchedulerBot.Client.Attributes;
 using SchedulerBot.Client.Extensions;
@@ -107,18 +108,42 @@ namespace SchedulerBot.Client.Commands
         {
             await ctx.TriggerTypingAsync();
 
-            Permission permission;
             try
             {
-                permission = await _permissionService.DenyNodeForUserAsync(ctx.Guild.Id, user.Id, node);
+                var permissionNode = GetPermissionNode(node);
+
+                await _mediator.Send(new DenyUserPermissionCommand
+                {
+                    CalendarId = ctx.Guild.Id,
+                    Node = permissionNode,
+                    UserId = user.Id
+                });
+
+                await ctx.RespondAsync($"Denied permission {node} for role {user.GetUsernameAndDiscriminator()}.");
             }
-            catch (PermissionNodeNotFoundException)
+            catch (CalendarNotInitialisedException)
+            {
+                await ctx.RespondAsync("Calendar not initialised. Run `init <timezone>` to initialise the calendar.");
+                return;
+            }
+            catch (Exceptions.PermissionNodeNotFoundException)
             {
                 await ctx.RespondAsync("Permission node not found.");
                 return;
             }
 
-            await ctx.RespondAsync($"Denied permission {permission.Node} for user {user.GetUsernameAndDiscriminator()}.");
+            //Permission permission;
+            //try
+            //{
+            //    permission = await _permissionService.DenyNodeForUserAsync(ctx.Guild.Id, user.Id, node);
+            //}
+            //catch (PermissionNodeNotFoundException)
+            //{
+            //    await ctx.RespondAsync("Permission node not found.");
+            //    return;
+            //}
+
+            //await ctx.RespondAsync($"Denied permission {permission.Node} for user {user.GetUsernameAndDiscriminator()}.");
         }
 
         [Command("show"), Description("Shows current permission settings for a role.")]

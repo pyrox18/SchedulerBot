@@ -102,10 +102,12 @@ namespace SchedulerBot.Persistence.Repositories
 
             if (permissionExists) return;
 
+            var calendar = await GetCalendar(calendarId);
+
             var permission = new Permission
             {
                 Id = Guid.NewGuid(),
-                Calendar = await _context.Calendars.FirstOrDefaultAsync(c => c.Id == calendarId),
+                Calendar = calendar,
                 Type = PermissionType.User,
                 Node = node,
                 TargetId = userId,
