@@ -162,21 +162,25 @@ namespace SchedulerBot.Client.Commands
         {
             await ctx.TriggerTypingAsync();
 
-            var permissions = await _permissionService.GetPermissionsForRoleAsync(ctx.Guild.Id, role.Id);
+            var result = await _mediator.Send(new GetRolePermissionsQuery
+            {
+                CalendarId = ctx.Guild.Id,
+                RoleId = role.Id
+            });
 
             var sb = new StringBuilder();
             sb.AppendLine("```css");
             sb.AppendLine($"Role: {role.Name}");
             sb.AppendLine("Denied Nodes:");
-            if (permissions.Count < 1)
+            if (result.DeniedNodes.Count < 1)
             {
                 sb.AppendLine("  None");
             }
             else
             {
-                foreach (var perm in permissions)
+                foreach (var node in result.DeniedNodes)
                 {
-                    sb.AppendLine($"  {perm.Node}");
+                    sb.AppendLine($"  {node}");
                 }
             }
             sb.AppendLine("```");
