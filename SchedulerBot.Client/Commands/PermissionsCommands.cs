@@ -37,18 +37,29 @@ namespace SchedulerBot.Client.Commands
         {
             await ctx.TriggerTypingAsync();
 
-            Permission permission;
             try
             {
-                permission = await _permissionService.AllowNodeForRoleAsync(ctx.Guild.Id, role.Id, node);
+                var permissionNode = GetPermissionNode(node);
+
+                await _mediator.Send(new AllowRolePermissionCommand
+                {
+                    CalendarId = ctx.Guild.Id,
+                    Node = permissionNode,
+                    RoleId = role.Id
+                });
+
+                await ctx.RespondAsync($"Allowed permission {node} for role {role.Name}.");
             }
-            catch (PermissionNodeNotFoundException)
+            catch (CalendarNotInitialisedException)
+            {
+                await ctx.RespondAsync("Calendar not initialised. Run `init <timezone>` to initialise the calendar.");
+                return;
+            }
+            catch (Exceptions.PermissionNodeNotFoundException)
             {
                 await ctx.RespondAsync("Permission node not found.");
                 return;
             }
-
-            await ctx.RespondAsync($"Allowed permission {permission.Node} for role {role.Name}.");
         }
 
         [Command("allow"), Description("Allows a certain user to use a certain command.")]
@@ -131,19 +142,6 @@ namespace SchedulerBot.Client.Commands
                 await ctx.RespondAsync("Permission node not found.");
                 return;
             }
-
-            //Permission permission;
-            //try
-            //{
-            //    permission = await _permissionService.DenyNodeForUserAsync(ctx.Guild.Id, user.Id, node);
-            //}
-            //catch (PermissionNodeNotFoundException)
-            //{
-            //    await ctx.RespondAsync("Permission node not found.");
-            //    return;
-            //}
-
-            //await ctx.RespondAsync($"Denied permission {permission.Node} for user {user.GetUsernameAndDiscriminator()}.");
         }
 
         [Command("show"), Description("Shows current permission settings for a role.")]
