@@ -11,6 +11,7 @@ using SchedulerBot.Application.Exceptions;
 using SchedulerBot.Application.Permissions.Commands.ModifyRolePermission;
 using SchedulerBot.Application.Permissions.Commands.ModifyUserPermission;
 using SchedulerBot.Application.Permissions.Queries.GetPermissionNodes;
+using SchedulerBot.Application.Permissions.Queries.GetPermissions;
 using SchedulerBot.Client.Attributes;
 using SchedulerBot.Client.Extensions;
 using SchedulerBot.Data.Exceptions;
@@ -91,19 +92,6 @@ namespace SchedulerBot.Client.Commands
                 await ctx.RespondAsync("Permission node not found.");
                 return;
             }
-
-            //Permission permission;
-            //try
-            //{
-            //    permission = await _permissionService.AllowNodeForUserAsync(ctx.Guild.Id, user.Id, node);
-            //}
-            //catch (PermissionNodeNotFoundException)
-            //{
-            //    await ctx.RespondAsync("Permission node not found.");
-            //    return;
-            //}
-
-            //await ctx.RespondAsync($"Allowed permission {permission.Node} for user {user.GetUsernameAndDiscriminator()}.");
         }
 
         [Command("deny"), Description("Denies a certain role from using a certain command.")]
@@ -230,77 +218,67 @@ namespace SchedulerBot.Client.Commands
         {
             await ctx.TriggerTypingAsync();
 
-            List<Permission> permissions;
             try
             {
-                permissions = await _permissionService.GetPermissionsForNodeAsync(ctx.Guild.Id, node);
+                var permissionNode = GetPermissionNode(node);
+
+                var result = await _mediator.Send(new GetNodePermissionsQuery
+                {
+                    CalendarId = ctx.Guild.Id,
+                    Node = permissionNode
+                });
+
+                var roleNames = ctx.Guild.Roles
+                    .Where(r => r.Key != ctx.Guild.Id && result.DeniedRoleIds.Contains(r.Key))
+                    .Select(r => r.Value.Name)
+                    .ToList();
+
+                if (result.IsEveryoneDenied)
+                {
+                    roleNames.Insert(0, "@everyone");
+                }
+
+                var userNames = ctx.Guild.Members
+                    .Where(m => result.DeniedUserIds.Contains(m.Key))
+                    .Select(m => m.Value.GetUsernameAndDiscriminator())
+                    .ToList();
+
+                var sb = new StringBuilder();
+                sb.AppendLine("```css");
+                sb.AppendLine($"Node: {node}");
+                sb.AppendLine("Denied Roles:");
+                if (roleNames.Count < 1)
+                {
+                    sb.AppendLine("  None");
+                }
+                else
+                {
+                    foreach (var name in roleNames)
+                    {
+                        sb.AppendLine($"  {name}");
+                    }
+                }
+                sb.AppendLine("Denied Users:");
+                if (userNames.Count < 1)
+                {
+                    sb.AppendLine("  None");
+                }
+                else
+                {
+                    foreach (var name in userNames)
+                    {
+                        sb.AppendLine($"  {name}");
+                    }
+                }
+                sb.AppendLine("```");
+
+                await ctx.RespondAsync(sb.ToString());
             }
-            catch (PermissionNodeNotFoundException)
+            catch (Exceptions.PermissionNodeNotFoundException)
             {
                 await ctx.RespondAsync("Permission node not found.");
                 return;
             }
-
-            var roleNames = new List<string>();
-            var userNames = new List<string>();
-
-            foreach (var perm in permissions)
-            {
-                if (perm.Type == PermissionType.Role || perm.Type == PermissionType.Everyone)
-                {
-                    if (perm.Type == PermissionType.Everyone)
-                    {
-                        roleNames.Add("@everyone");
-                    }
-                    else
-                    {
-                        DiscordRole role = ctx.Guild.Roles.FirstOrDefault(r => r.Key == perm.TargetId).Value;
-                        if (role != null)
-                        {
-                            roleNames.Add(role.Name);
-                        }
-                    }
-                }
-                else
-                {
-                    DiscordMember user = ctx.Guild.Members.FirstOrDefault(m => m.Key == perm.TargetId).Value;
-                    if (user != null)
-                    {
-                        userNames.Add(user.GetUsernameAndDiscriminator());
-                    }
-                }
-            }
-
-            var sb = new StringBuilder();
-            sb.AppendLine("```css");
-            sb.AppendLine($"Node: {node}");
-            sb.AppendLine("Denied Roles:");
-            if (roleNames.Count < 1)
-            {
-                sb.AppendLine("  None");
-            }
-            else
-            {
-                foreach (var name in roleNames)
-                {
-                    sb.AppendLine($"  {name}");
-                }
-            }
-            sb.AppendLine("Denied Users:");
-            if (userNames.Count < 1)
-            {
-                sb.AppendLine("  None");
-            }
-            else
-            {
-                foreach (var name in userNames)
-                {
-                    sb.AppendLine($"  {name}");
-                }
-            }
-            sb.AppendLine("```");
-
-            await ctx.RespondAsync(sb.ToString());
         }
 
         [Command("nodes"), Description("Lists all available permission nodes.")]
