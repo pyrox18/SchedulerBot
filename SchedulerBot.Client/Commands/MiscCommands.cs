@@ -13,7 +13,6 @@ using NodaTime;
 using SchedulerBot.Application.Exceptions;
 using SchedulerBot.Application.Settings.Queries.GetSetting;
 using SchedulerBot.Client.Attributes;
-using SchedulerBot.Client.Extensions;
 using SchedulerBot.Client.Services;
 using SchedulerBot.Data.Models;
 using SchedulerBot.Data.Services;
@@ -22,15 +21,13 @@ namespace SchedulerBot.Client.Commands
 {
     public class MiscCommands : BotCommandModule
     {
-        private readonly ICalendarService _calendarService;
         private readonly IShardedClientInformationService _shardedClientInformationService;
         internal readonly IPermissionService _permissionService;
         private readonly IConfigurationRoot _configuration;
 
-        public MiscCommands(IMediator mediator, ICalendarService calendarService, IShardedClientInformationService shardedClientInformationService, IPermissionService permissionService, IConfigurationRoot configuration) :
+        public MiscCommands(IMediator mediator, IShardedClientInformationService shardedClientInformationService, IPermissionService permissionService, IConfigurationRoot configuration) :
             base(mediator)
         {
-            _calendarService = calendarService;
             _shardedClientInformationService = shardedClientInformationService;
             _permissionService = permissionService;
             _configuration = configuration;
@@ -123,21 +120,27 @@ namespace SchedulerBot.Client.Commands
         {
             await ctx.TriggerTypingAsync();
 
-            var timezone = await _calendarService.GetCalendarTimezoneAsync(ctx.Guild.Id);
-            if (string.IsNullOrEmpty(timezone))
+            try
+            {
+                var result = await _mediator.Send(new GetTimezoneSettingQuery
+                {
+                    CalendarId = ctx.Guild.Id
+                });
+
+                var tz = DateTimeZoneProviders.Tzdb[result.Timezone];
+                Instant now = SystemClock.Instance.GetCurrentInstant();
+                var dateTimeNow = now.InZone(tz).ToDateTimeOffset();
+
+                var sb = new StringBuilder();
+                sb.AppendLine($"Timezone: {result.Timezone}");
+                sb.AppendLine(dateTimeNow.ToString("ddd d MMM yyyy h:mm:ss tt zzz", CultureInfo.InvariantCulture));
+                await ctx.RespondAsync(sb.ToString());
+            }
+            catch (CalendarNotInitialisedException)
             {
                 await ctx.RespondAsync("Calendar not initialised. Run `init <timezone>` to initialise the calendar.");
                 return;
             }
-
-            var tz = DateTimeZoneProviders.Tzdb[timezone];
-            Instant now = SystemClock.Instance.GetCurrentInstant();
-            var dateTimeNow = now.InZone(tz).ToDateTimeOffset();
-
-            var sb = new StringBuilder();
-            sb.AppendLine($"Timezone: {timezone}");
-            sb.AppendLine(dateTimeNow.ToString("ddd d MMM yyyy h:mm:ss tt zzz", CultureInfo.InvariantCulture));
-            await ctx.RespondAsync(sb.ToString());
         }
     }
 }
