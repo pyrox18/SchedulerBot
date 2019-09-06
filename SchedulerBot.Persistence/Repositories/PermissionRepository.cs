@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
+using SchedulerBot.Application.Exceptions;
 using SchedulerBot.Application.Interfaces;
 using SchedulerBot.Data.Models;
 using SchedulerBot.Persistence.Specifications;
@@ -75,10 +76,12 @@ namespace SchedulerBot.Persistence.Repositories
 
             if (permissionExists) return;
 
+            var calendar = await GetCalendar(calendarId);
+
             var permission = new Permission
             {
                 Id = Guid.NewGuid(),
-                Calendar = await _context.Calendars.FirstOrDefaultAsync(c => c.Id == calendarId),
+                Calendar = calendar,
                 Type = roleId == calendarId ? PermissionType.Everyone : PermissionType.Role,
                 Node = node,
                 TargetId = roleId,
@@ -163,6 +166,18 @@ namespace SchedulerBot.Persistence.Repositories
         private IQueryable<Permission> ApplySpecification(ISpecification<Permission> specification)
         {
             return PermissionSpecificationEvaluator.GetQuery(_context.Permissions.AsQueryable(), specification);
+        }
+
+        private async Task<Calendar> GetCalendar(ulong calendarId)
+        {
+            var calendar = await _context.Calendars.FirstOrDefaultAsync(c => c.Id == calendarId);
+
+            if (calendar is null)
+            {
+                throw new CalendarNotInitialisedException(calendarId);
+            }
+
+            return calendar;
         }
     }
 }

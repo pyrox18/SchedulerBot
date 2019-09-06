@@ -1,10 +1,15 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Attributes;
 using DSharpPlus.Entities;
+using MediatR;
+using SchedulerBot.Application.Exceptions;
+using SchedulerBot.Application.Permissions.Commands.ModifyRolePermission;
+using SchedulerBot.Application.Permissions.Queries.GetPermissionNodes;
 using SchedulerBot.Client.Attributes;
 using SchedulerBot.Client.Extensions;
 using SchedulerBot.Data.Exceptions;
@@ -15,11 +20,12 @@ namespace SchedulerBot.Client.Commands
 {
     [Group("perms")] 
     [Description("View and modify permissions for other commands.")]
-    public class PermissionsCommands : BaseCommandModule
+    public class PermissionsCommands : BotCommandModule
     {
         private readonly IPermissionService _permissionService;
 
-        public PermissionsCommands(IPermissionService permissionService)
+        public PermissionsCommands(IMediator mediator, IPermissionService permissionService) :
+            base(mediator)
         {
             _permissionService = permissionService;
         }
@@ -70,18 +76,29 @@ namespace SchedulerBot.Client.Commands
         {
             await ctx.TriggerTypingAsync();
 
-            Permission permission;
             try
             {
-                permission = await _permissionService.DenyNodeForRoleAsync(ctx.Guild.Id, role.Id, node);
+                var permissionNode = GetPermissionNode(node);
+
+                await _mediator.Send(new DenyRolePermissionCommand
+                {
+                    CalendarId = ctx.Guild.Id,
+                    Node = permissionNode,
+                    RoleId = role.Id
+                });
+
+                await ctx.RespondAsync($"Denied permission {node} for role {role.Name}.");
             }
-            catch (PermissionNodeNotFoundException)
+            catch (CalendarNotInitialisedException)
+            {
+                await ctx.RespondAsync("Calendar not initialised. Run `init <timezone>` to initialise the calendar.");
+                return;
+            }
+            catch (Exceptions.PermissionNodeNotFoundException)
             {
                 await ctx.RespondAsync("Permission node not found.");
                 return;
             }
-
-            await ctx.RespondAsync($"Denied permission {permission.Node} for role {role.Name}.");
         }
 
         [Command("deny"), Description("Denies a certain user from using a certain command.")]
@@ -245,16 +262,29 @@ namespace SchedulerBot.Client.Commands
         {
             await ctx.TriggerTypingAsync();
 
-            var nodes = _permissionService.GetPermissionNodes();
+            var result = await _mediator.Send(new GetPermissionNodesQuery());
+
             var sb = new StringBuilder();
             sb.AppendLine("```css");
-            foreach (var node in nodes)
+            foreach (var node in result.PermissionNodes)
             {
                 sb.AppendLine(node);
             }
             sb.AppendLine("```");
 
             await ctx.RespondAsync(sb.ToString());
+        }
+
+        private Application.Permissions.Enumerations.PermissionNode GetPermissionNode(string node)
+        {
+            var nodes = Enum.GetNames(typeof(Application.Permissions.Enumerations.PermissionNode));
+            var actualNode = nodes.FirstOrDefault(n => n.ToLower() == node.ToLower());
+            if (string.IsNullOrEmpty(actualNode))
+            {
+                throw new Exceptions.PermissionNodeNotFoundException(node);
+            }
+
+            return (Application.Permissions.Enumerations.PermissionNode)Enum.Parse(typeof(Application.Permissions.Enumerations.PermissionNode), actualNode);
         }
     }
 }
