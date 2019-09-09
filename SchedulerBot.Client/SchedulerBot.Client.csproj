@@ -7,6 +7,14 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="Scheduler\EventScheduler.cs" />
+    <Compile Remove="Scheduler\OldEventDeleteJob.cs" />
+    <Compile Remove="Scheduler\OldEventNotifyJob.cs" />
+    <Compile Remove="Scheduler\OldEventReminderJob.cs" />
+    <Compile Remove="Scheduler\OldEventRepeatJob.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="DSharpPlus" Version="4.0.0-nightly-00624" />
     <PackageReference Include="DSharpPlus.CommandsNext" Version="4.0.0-nightly-00624" />
     <PackageReference Include="DSharpPlus.Interactivity" Version="4.0.0-nightly-00624" />
@@ -19,6 +27,7 @@
     <PackageReference Include="Microsoft.Extensions.Configuration.FileExtensions" Version="2.2.0" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="2.2.0" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="2.2.0" />
+    <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="2.2.0" />
     <PackageReference Include="Microsoft.Extensions.Logging" Version="2.2.0" />
     <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="2.2.0" />
     <PackageReference Include="Microsoft.Recognizers.Text.DateTime" Version="1.1.1" />

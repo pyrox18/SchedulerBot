@@ -134,5 +134,65 @@ namespace SchedulerBot.Application.UnitTests.Events.Queries.GetEvent
                 await Assert.ThrowsAsync<EventNotFoundException>(() => handler.Handle(query));
             }
         }
+
+        public class HandleGetEventByIdQuery
+        {
+            [Fact]
+            public async Task ReturnsViewModel()
+            {
+                var @event = new Event
+                {
+                    Id = Guid.NewGuid(),
+                    Calendar = new Calendar { Id = 1 },
+                    Name = "Test Event",
+                    Description = "Some description",
+                    StartTimestamp = new DateTimeOffset(2019, 1, 1, 12, 0, 0, TimeSpan.Zero),
+                    EndTimestamp = new DateTimeOffset(2019, 1, 1, 13, 0, 0, TimeSpan.Zero),
+                    ReminderTimestamp = new DateTimeOffset(2019, 1, 1, 11, 0, 0, TimeSpan.Zero),
+                    Repeat = RepeatType.None,
+                    Mentions = new List<EventMention>
+                    {
+                        new EventMention
+                        {
+                            Id = Guid.NewGuid(),
+                            TargetId = 2,
+                            Type = MentionType.User
+                        }
+                    },
+                    RSVPs = new List<EventRSVP>
+                    {
+                        new EventRSVP
+                        {
+                            Id = Guid.NewGuid(),
+                            UserId = 3
+                        }
+                    }
+                };
+
+                var mockRepository = new Mock<IEventRepository>();
+                mockRepository.Setup(x => x.GetByIdAsync(It.IsAny<Guid>()))
+                    .ReturnsAsync(@event);
+
+                var query = new GetEventByIdQuery
+                {
+                    EventId = @event.Id
+                };
+
+                var handler = new GetEventQueryHandler(mockRepository.Object);
+                var result = await handler.Handle(query);
+
+                Assert.Equal(@event.Id, result.Id);
+                Assert.Equal(@event.Name, result.Name);
+                Assert.Equal(@event.Description, result.Description);
+                Assert.Equal(@event.StartTimestamp, result.StartTimestamp);
+                Assert.Equal(@event.EndTimestamp, result.EndTimestamp);
+                Assert.Equal(@event.ReminderTimestamp, result.ReminderTimestamp);
+                Assert.Equal(@event.Repeat, result.Repeat);
+                Assert.Single(result.Mentions);
+                Assert.Equal(@event.Mentions.First().TargetId, result.Mentions.First().TargetId);
+                Assert.Single(result.RSVPs);
+                Assert.Equal(@event.RSVPs.First().UserId, result.RSVPs.First().UserId);
+            }
+        }
     }
 }

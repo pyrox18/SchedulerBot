@@ -137,5 +137,35 @@ namespace SchedulerBot.Application.UnitTests.Events.Commands.DeleteEvent
                 await Assert.ThrowsAsync<EventNotFoundException>(() => handler.Handle(command));
             }
         }
+
+        public class HandleDeleteEventByIdCommandMethod
+        {
+            [Fact]
+            public async Task ReturnsUnit()
+            {
+                var @event = new Event
+                {
+                    Id = Guid.NewGuid()
+                };
+
+                var mockEventRepository = new Mock<IEventRepository>();
+                mockEventRepository.Setup(x => x.GetByIdAsync(It.IsAny<Guid>()))
+                    .ReturnsAsync(@event)
+                    .Verifiable();
+                mockEventRepository.Setup(x => x.DeleteAsync(It.IsAny<Event>()))
+                    .Returns(Task.CompletedTask)
+                    .Verifiable();
+
+                var command = new DeleteEventByIdCommand
+                {
+                    EventId = @event.Id
+                };
+
+                var handler = new DeleteEventCommandHandler(mockEventRepository.Object);
+                await handler.Handle(command);
+
+                mockEventRepository.Verify();
+            }
+        }
     }
 }

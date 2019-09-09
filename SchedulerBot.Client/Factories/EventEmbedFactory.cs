@@ -225,6 +225,14 @@ namespace SchedulerBot.Client.Factories
             return embed.Build();
         }
 
+        public static DiscordEmbed GetNotifyEventEmbed(EventViewModel evt)
+        {
+            var embed = GetBaseEmbed(evt);
+            embed.Title = "Event starting now!";
+            embed.Color = _notifyEventColour;
+            return embed.Build();
+        }
+
         public static DiscordEmbed GetViewEventEmbed(Event evt)
         {
             var embed = _getBaseEmbed(evt);
@@ -244,6 +252,14 @@ namespace SchedulerBot.Client.Factories
         public static DiscordEmbed GetRemindEventEmbed(Event evt)
         {
             var embed = _getBaseEmbed(evt);
+            embed.Title = "Event Reminder";
+            embed.Color = _remindEventColour;
+            return embed.Build();
+        }
+
+        public static DiscordEmbed GetRemindEventEmbed(EventViewModel evt)
+        {
+            var embed = GetBaseEmbed(evt);
             embed.Title = "Event Reminder";
             embed.Color = _remindEventColour;
             return embed.Build();

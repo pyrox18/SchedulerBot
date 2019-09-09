@@ -8,7 +8,9 @@ using SchedulerBot.Application.Specifications;
 
 namespace SchedulerBot.Application.Events.Queries.GetEvent
 {
-    public class GetEventQueryHandler : IRequestHandler<GetEventByIndexQuery, EventViewModel>
+    public class GetEventQueryHandler :
+        IRequestHandler<GetEventByIndexQuery, EventViewModel>,
+        IRequestHandler<GetEventByIdQuery, EventViewModel>
     {
         private readonly IEventRepository _eventRepository;
 
@@ -27,6 +29,13 @@ namespace SchedulerBot.Application.Events.Queries.GetEvent
             }
 
             return EventViewModel.FromEvent(events[request.Index]);
+        }
+
+        public async Task<EventViewModel> Handle(GetEventByIdQuery request, CancellationToken cancellationToken = default)
+        {
+            var @event = await _eventRepository.GetByIdAsync(request.EventId);
+
+            return EventViewModel.FromEvent(@event);
         }
     }
 }

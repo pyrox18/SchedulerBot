@@ -17,6 +17,24 @@ namespace SchedulerBot.Application.Events.Models
         public List<EventMention> Mentions { get; set; }
         public List<EventRSVP> RSVPs { get; set; }
 
+        public EventViewModel()
+        {
+        }
+
+        public EventViewModel(Event @event)
+        {
+            CalendarId = @event.Calendar.Id;
+            Id = @event.Id;
+            Name = @event.Name;
+            Description = @event.Description;
+            StartTimestamp = @event.StartTimestamp;
+            EndTimestamp = @event.EndTimestamp;
+            ReminderTimestamp = @event.ReminderTimestamp;
+            Repeat = @event.Repeat;
+            Mentions = @event.Mentions;
+            RSVPs = @event.RSVPs;
+        }
+
         public bool StartsInHours(double hours)
         {
             return StartTimestamp <= DateTimeOffset.Now.AddHours(hours);
@@ -53,19 +71,7 @@ namespace SchedulerBot.Application.Events.Models
 
         public static EventViewModel FromEvent(Event @event)
         {
-            return new EventViewModel
-            {
-                CalendarId = @event.Calendar.Id,
-                Id = @event.Id,
-                Name = @event.Name,
-                Description = @event.Description,
-                StartTimestamp = @event.StartTimestamp,
-                EndTimestamp = @event.EndTimestamp,
-                ReminderTimestamp = @event.ReminderTimestamp,
-                Repeat = @event.Repeat,
-                Mentions = @event.Mentions,
-                RSVPs = @event.RSVPs
-            };
+            return new EventViewModel(@event);
         }
     }
 }

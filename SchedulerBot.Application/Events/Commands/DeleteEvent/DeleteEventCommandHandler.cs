@@ -8,7 +8,9 @@ using SchedulerBot.Application.Specifications;
 
 namespace SchedulerBot.Application.Events.Commands.DeleteEvent
 {
-    public class DeleteEventCommandHandler : IRequestHandler<DeleteEventByIndexCommand, EventViewModel>
+    public class DeleteEventCommandHandler :
+        IRequestHandler<DeleteEventByIndexCommand, EventViewModel>,
+        IRequestHandler<DeleteEventByIdCommand>
     {
         private readonly IEventRepository _eventRepository;
 
@@ -30,6 +32,15 @@ namespace SchedulerBot.Application.Events.Commands.DeleteEvent
             await _eventRepository.DeleteAsync(@event);
 
             return EventViewModel.FromEvent(@event);
+        }
+
+        public async Task<Unit> Handle(DeleteEventByIdCommand request, CancellationToken cancellationToken = default)
+        {
+            var @event = await _eventRepository.GetByIdAsync(request.EventId);
+
+            await _eventRepository.DeleteAsync(@event);
+
+            return Unit.Value;
         }
     }
 }

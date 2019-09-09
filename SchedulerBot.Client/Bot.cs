@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.Specialized;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -18,8 +19,12 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using NLog.Extensions.Logging;
+using Quartz;
+using Quartz.Impl;
+using Quartz.Spi;
 using SchedulerBot.Application.Calendars.Commands.InitialiseCalendar;
 using SchedulerBot.Application.Interfaces;
 using SchedulerBot.Client.Attributes;
@@ -135,10 +140,11 @@ namespace SchedulerBot.Client
             _client.GuildRoleDeleted += OnGuildRoleDelete;
             _client.Ready += OnClientReady;
 
+            // TODO: Delete
             // Start event scheduler
-            var scheduler = _serviceProvider.GetService<IEventScheduler>();
-            logger.LogInformation("Starting event scheduler");
-            await scheduler.Start();
+            //var scheduler = _serviceProvider.GetService<IEventScheduler>();
+            //logger.LogInformation("Starting event scheduler");
+            //await scheduler.Start();
 
             logger.LogInformation("Connecting all shards...");
             await _client.StartAsync();
@@ -146,7 +152,8 @@ namespace SchedulerBot.Client
 
             await Task.Delay(-1);
 
-            await scheduler.Shutdown();
+            
+            //await scheduler.Shutdown(); // TODO: Delete
             NLog.LogManager.Shutdown();
         }
 
@@ -203,7 +210,20 @@ namespace SchedulerBot.Client
             services.AddMediatR(typeof(InitialiseCalendarCommand).Assembly);
 
             // Scheduler service
-            services.AddSingleton<IEventScheduler, EventScheduler>();
+            services.AddSingleton<IJobFactory, JobFactory>();
+            services.AddSingleton<ISchedulerFactory>(new StdSchedulerFactory(new NameValueCollection
+            {
+                // TODO: Move this to configuration
+                { "quartz.scheduler.instanceName", "SchedulerBotScheduler" },
+                { "quartz.jobStore.type", "Quartz.Simpl.RAMJobStore, Quartz" },
+                { "quartz.threadPool.threadCount", "3" }
+            }));
+            services.AddSingleton<IEventScheduler, QuartzEventScheduler>();
+            services.AddHostedService<QuartzHostedService>();
+
+            // TODO: Remove
+            // Scheduler service (OLD)
+            //services.AddSingleton<IEventScheduler, EventScheduler>();
         }
 
         private void Configure(ILoggerFactory loggerFactory)
@@ -256,13 +276,14 @@ namespace SchedulerBot.Client
             var version = Assembly.GetEntryAssembly().GetCustomAttribute<AssemblyInformationalVersionAttribute>().InformationalVersion;
             await e.Client.UpdateStatusAsync(new DiscordActivity(string.Format(_configuration.GetSection("Bot").GetValue<string>("Status"), version)));
 
+            // TODO: Remove
             // Start event polling
-            logger.LogInformation($"Starting initial event poll for shard {e.Client.ShardId}");
-            await PollAndScheduleEvents(e.Client);
-            logger.LogInformation($"Initial event poll completed for shard {e.Client.ShardId}");
-            logger.LogInformation($"Starting poll timer for shard {e.Client.ShardId}");
-            StartEventPollTimer(e.Client);
-            logger.LogInformation($"Poll timer started for shard {e.Client.ShardId}");
+            //logger.LogInformation($"Starting initial event poll for shard {e.Client.ShardId}");
+            //await PollAndScheduleEvents(e.Client);
+            //logger.LogInformation($"Initial event poll completed for shard {e.Client.ShardId}");
+            //logger.LogInformation($"Starting poll timer for shard {e.Client.ShardId}");
+            //StartEventPollTimer(e.Client);
+            //logger.LogInformation($"Poll timer started for shard {e.Client.ShardId}");
         }
 
         private async Task OnCommandError(CommandErrorEventArgs e)
@@ -337,23 +358,25 @@ namespace SchedulerBot.Client
             return prefix.Length;
         }
 
-        private void StartEventPollTimer(DiscordClient client)
-        {
-            Timer t = new Timer(60 * 60 * 1000)
-            {
-                AutoReset = true
-            };
-            t.Elapsed += new ElapsedEventHandler(async (sender, e) => await PollAndScheduleEvents(client));
-            t.Start();
-        }
+        // TODO: Delete
+        //private void StartEventPollTimer(DiscordClient client)
+        //{
+        //    Timer t = new Timer(60 * 60 * 1000)
+        //    {
+        //        AutoReset = true
+        //    };
+        //    t.Elapsed += new ElapsedEventHandler(async (sender, e) => await PollAndScheduleEvents(client));
+        //    t.Start();
+        //}
 
-        private async Task PollAndScheduleEvents(DiscordClient client)
-        {
-            var logger = _serviceProvider.GetService<ILogger<Program>>();
-            var eventScheduler = _serviceProvider.GetService<IEventScheduler>();
-            logger.LogInformation($"Polling for events for shard {client.ShardId}");
-            await eventScheduler.PollAndScheduleEvents(client);
-        }
+        // TODO: Delete
+        //private async Task PollAndScheduleEvents(DiscordClient client)
+        //{
+        //    var logger = _serviceProvider.GetService<ILogger<Program>>();
+        //    var eventScheduler = _serviceProvider.GetService<IEventScheduler>();
+        //    logger.LogInformation($"Polling for events for shard {client.ShardId}");
+        //    await eventScheduler.PollAndScheduleEvents(client);
+        //}
 
         private void OnLogMessageReceived(object sender, DebugLogMessageEventArgs e)
         {

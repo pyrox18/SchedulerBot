@@ -74,7 +74,7 @@ namespace SchedulerBot.Client.Commands
                 var createEventResult = await createEventResultTask;
                 var defaultChannelResult = await defaultChannelResultTask;
 
-                await _eventScheduler.ScheduleEvent(createEventResult, ctx.Client, defaultChannelResult.DefaultChannel, ctx.Guild.Id);
+                await _eventScheduler.ScheduleEvent(createEventResult, ctx.Client.ShardId, defaultChannelResult.DefaultChannel);
 
                 var embed = EventEmbedFactory.GetCreateEventEmbed(createEventResult);
                 await ctx.RespondAsync("New event created.", embed: embed);
@@ -198,7 +198,7 @@ namespace SchedulerBot.Client.Commands
                 var updateEventResult = await updateEventResultTask;
                 var defaultChannelResult = await defaultChannelResultTask;
 
-                await _eventScheduler.RescheduleEvent(updateEventResult, ctx.Client, defaultChannelResult.DefaultChannel);
+                await _eventScheduler.RescheduleEvent(updateEventResult, ctx.Client.ShardId, defaultChannelResult.DefaultChannel);
 
                 var embed = EventEmbedFactory.GetUpdateEventEmbed(updateEventResult);
                 await ctx.RespondAsync("Updated event.", embed: embed);
@@ -260,7 +260,7 @@ namespace SchedulerBot.Client.Commands
             {
                 var result = await _mediator.Send(command);
 
-                await _eventScheduler.RescheduleEvent(result, ctx.Client, result.DefaultChannel);
+                await _eventScheduler.RescheduleEvent(result, ctx.Client.ShardId, result.DefaultChannel);
 
                 if (result.RsvpAdded)
                 {

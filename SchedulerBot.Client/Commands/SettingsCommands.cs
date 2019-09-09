@@ -277,7 +277,7 @@ namespace SchedulerBot.Client.Commands
 
             foreach (var evt in events)
             {
-                await _eventScheduler.RescheduleEvent(evt, ctx.Client, channelId);
+                await _eventScheduler.RescheduleEvent(evt, ctx.Client.ShardId, channelId);
             }
         }
     }
