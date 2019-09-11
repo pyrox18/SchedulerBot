@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using Quartz;
 using Quartz.Spi;
 using SchedulerBot.Application.Events.Models;
+using SchedulerBot.Application.Interfaces;
 using SchedulerBot.Client.Scheduler.Data;
 using SchedulerBot.Client.Scheduler.Jobs;
 using SchedulerBot.Data.Models;
@@ -14,13 +15,18 @@ namespace SchedulerBot.Client.Scheduler
     {
         private readonly ISchedulerFactory _schedulerFactory;
         private readonly IJobFactory _jobFactory;
+        private readonly IDateTimeOffset _dateTimeOffset;
 
         public IScheduler Scheduler { get; set; }
 
-        public QuartzEventScheduler(ISchedulerFactory schedulerFactory, IJobFactory jobFactory)
+        public QuartzEventScheduler(
+            ISchedulerFactory schedulerFactory,
+            IJobFactory jobFactory,
+            IDateTimeOffset dateTimeOffset)
         {
             _schedulerFactory = schedulerFactory;
             _jobFactory = jobFactory;
+            _dateTimeOffset = dateTimeOffset;
         }
 
         public async Task StartAsync(CancellationToken cancellationToken)
@@ -71,8 +77,7 @@ namespace SchedulerBot.Client.Scheduler
 
                 if (!(evt.ReminderTimestamp is null) && !evt.HasReminderPassed())
                 {
-                    // TODO: Replace DateTimeOffset.Now with abstracted interface
-                    var reminderTimestamp = evt.ReminderTimestamp ?? DateTimeOffset.Now;
+                    var reminderTimestamp = evt.ReminderTimestamp ?? _dateTimeOffset.Now;
                     var reminderSchedule = new FixedJobSchedule(typeof(EventReminderJob), data.JobDataMap, reminderTimestamp);
 
                     var reminderJob = CreateJob(evt.Id, reminderSchedule);
