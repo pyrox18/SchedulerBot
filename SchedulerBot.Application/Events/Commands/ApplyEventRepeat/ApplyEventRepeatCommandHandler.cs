@@ -83,6 +83,7 @@ namespace SchedulerBot.Application.Events.Commands.ApplyEventRepeat
             }
         }
 
+        // TODO: Move this to Event entity
         private DateTimeOffset RepeatMonthlyWeekday(DateTimeOffset dt)
         {
             int currentMonth = dt.Month;

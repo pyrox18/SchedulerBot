@@ -18,6 +18,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using SchedulerBot.Application.Calendars.Commands.CreateCalendar;
 using SchedulerBot.Application.Calendars.Commands.DeleteCalendar;
+using SchedulerBot.Application.Events.Commands.CleanPastEvents;
 using SchedulerBot.Application.Exceptions;
 using SchedulerBot.Application.Permissions.Commands.DeleteRolePermissions;
 using SchedulerBot.Application.Permissions.Commands.DeleteUserPermissions;
@@ -37,7 +38,6 @@ namespace SchedulerBot.Client
         private readonly DiscordShardedClient _shardedClient;
         private readonly IServiceProvider _serviceProvider;
         private readonly IMediator _mediator;
-        private readonly IEventService _eventService;
         private readonly IMemoryCache _cache;
         private readonly IConfiguration _configuration;
         private readonly string _version;
@@ -46,7 +46,6 @@ namespace SchedulerBot.Client
             ILogger<Bot> logger,
             DiscordShardedClient shardedClient,
             IServiceProvider serviceProvider,
-            IEventService eventService,
             IMemoryCache cache,
             IMediator mediator,
             IConfiguration configuration)
@@ -54,7 +53,6 @@ namespace SchedulerBot.Client
             _logger = logger;
             _shardedClient = shardedClient;
             _serviceProvider = serviceProvider;
-            _eventService = eventService;
             _cache = cache;
             _mediator = mediator;
             _configuration = configuration;
@@ -68,10 +66,9 @@ namespace SchedulerBot.Client
         {
             _logger.LogInformation($"SchedulerBot v{_version}");
 
-            // TODO: Replace with mediator command
             // Apply deletes and repeats to events that have ended
             _logger.LogInformation("Deleting and repeating past events");
-            await _eventService.ApplyDeleteAndRepeatPastEventsAsync();
+            await _mediator.Send(new CleanPastEventsCommand());
 
             _logger.LogInformation("Setting up client interactivity module");
             await _shardedClient.UseInteractivityAsync(new InteractivityConfiguration());
