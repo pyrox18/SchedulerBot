@@ -17,7 +17,7 @@ namespace SchedulerBot.Client.Scheduler.Jobs
 
         public async Task Execute(IJobExecutionContext context)
         {
-            var data = context.MergedJobDataMap as EventNotifyJobDataMap;
+            var data = new EventNotifyJobDataMap(context.MergedJobDataMap);
 
             await _mediator.Send(new DeleteEventByIdCommand
             {

@@ -10,9 +10,9 @@ namespace SchedulerBot.Client.Commands
 {
     public class InitializerCommands : BotCommandModule
     {
-        private readonly IConfigurationRoot _configuration;
+        private readonly IConfiguration _configuration;
 
-        public InitializerCommands(IMediator mediator, IConfigurationRoot configuration) :
+        public InitializerCommands(IMediator mediator, IConfiguration configuration) :
             base(mediator)
         {
             _configuration = configuration;

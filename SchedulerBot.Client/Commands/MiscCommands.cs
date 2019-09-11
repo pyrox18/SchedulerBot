@@ -22,9 +22,9 @@ namespace SchedulerBot.Client.Commands
     public class MiscCommands : BotCommandModule
     {
         private readonly IShardedClientInformationService _shardedClientInformationService;
-        private readonly IConfigurationRoot _configuration;
+        private readonly IConfiguration _configuration;
 
-        public MiscCommands(IMediator mediator, IShardedClientInformationService shardedClientInformationService, IConfigurationRoot configuration) :
+        public MiscCommands(IMediator mediator, IShardedClientInformationService shardedClientInformationService, IConfiguration configuration) :
             base(mediator)
         {
             _shardedClientInformationService = shardedClientInformationService;

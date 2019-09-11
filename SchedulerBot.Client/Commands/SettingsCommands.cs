@@ -23,10 +23,10 @@ namespace SchedulerBot.Client.Commands
     public class SettingsCommands : BotCommandModule
     {
         private readonly IEventScheduler _eventScheduler;
-        private readonly IConfigurationRoot _configuration;
+        private readonly IConfiguration _configuration;
         private readonly IMemoryCache _cache;
 
-        public SettingsCommands(IMediator mediator, IEventScheduler eventScheduler, IConfigurationRoot configuration, IMemoryCache cache) :
+        public SettingsCommands(IMediator mediator, IEventScheduler eventScheduler, IConfiguration configuration, IMemoryCache cache) :
             base(mediator)
         {
             _eventScheduler = eventScheduler;

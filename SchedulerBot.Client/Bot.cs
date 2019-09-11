@@ -1,12 +1,9 @@
-using System;
-using System.Collections.Generic;
-using System.Collections.Specialized;
-using System.IO;
+﻿using System;
 using System.Linq;
 using System.Reflection;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
-using System.Timers;
 using DSharpPlus;
 using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Exceptions;
@@ -15,275 +12,180 @@ using DSharpPlus.EventArgs;
 using DSharpPlus.Exceptions;
 using DSharpPlus.Interactivity;
 using MediatR;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using NLog.Extensions.Logging;
-using Quartz;
-using Quartz.Impl;
-using Quartz.Spi;
-using SchedulerBot.Application.Calendars.Commands.InitialiseCalendar;
-using SchedulerBot.Application.Interfaces;
+using SchedulerBot.Application.Calendars.Commands.CreateCalendar;
+using SchedulerBot.Application.Calendars.Commands.DeleteCalendar;
+using SchedulerBot.Application.Exceptions;
+using SchedulerBot.Application.Permissions.Commands.DeleteRolePermissions;
+using SchedulerBot.Application.Permissions.Commands.DeleteUserPermissions;
+using SchedulerBot.Application.Settings.Queries.GetSetting;
 using SchedulerBot.Client.Attributes;
 using SchedulerBot.Client.Commands;
-using SchedulerBot.Client.Configuration;
 using SchedulerBot.Client.Extensions;
-using SchedulerBot.Client.Parsers;
-using SchedulerBot.Client.Scheduler;
-using SchedulerBot.Client.Services;
-using SchedulerBot.Data;
-using SchedulerBot.Data.Models;
 using SchedulerBot.Data.Services;
-using SchedulerBot.Infrastructure;
-using SchedulerBot.Persistence;
-using SchedulerBot.Persistence.Repositories;
 using SharpRaven;
 using SharpRaven.Data;
 
 namespace SchedulerBot.Client
 {
-    public class Bot
+    public class Bot : IHostedService
     {
-        private readonly IConfigurationRoot _configuration;
-        private readonly DiscordShardedClient _client;
+        private readonly ILogger<Bot> _logger;
+        private readonly DiscordShardedClient _shardedClient;
         private readonly IServiceProvider _serviceProvider;
+        private readonly IMediator _mediator;
+        private readonly IEventService _eventService;
+        private readonly IMemoryCache _cache;
+        private readonly IConfiguration _configuration;
+        private readonly string _version;
 
-        public Bot()
+        public Bot(
+            ILogger<Bot> logger,
+            DiscordShardedClient shardedClient,
+            IServiceProvider serviceProvider,
+            IEventService eventService,
+            IMemoryCache cache,
+            IMediator mediator,
+            IConfiguration configuration)
         {
-            // Build configuration
-            var builder = new ConfigurationBuilder();
+            _logger = logger;
+            _shardedClient = shardedClient;
+            _serviceProvider = serviceProvider;
+            _eventService = eventService;
+            _cache = cache;
+            _mediator = mediator;
+            _configuration = configuration;
 
-            string environment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT");
-
-            if (string.IsNullOrWhiteSpace(environment))
-            {
-                throw new ArgumentNullException("Environment not found in ASPNETCORE_ENVIRONMENT");
-            }
-
-            Console.WriteLine($"Environment: {environment}");
-
-            builder.SetBasePath(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location));
-
-            builder.AddJsonFile("appsettings.json")
-                .AddJsonFile($"appsettings.{environment}.json", true);
-
-            builder.AddEnvironmentVariables();
-            _configuration = builder.Build();
-
-            // Configure service provider
-            Console.WriteLine("Configuring services...");
-            var services = new ServiceCollection();
-            ConfigureServices(services);
-            _serviceProvider = services.BuildServiceProvider();
-
-            // Configure services
-            var loggerFactory = _serviceProvider.GetRequiredService<ILoggerFactory>();
-            Configure(loggerFactory);
-
-            // Initialise bot client
-            var configBuilder = new DiscordConfigurationBuilder();
-            var config = configBuilder.WithToken(_configuration.GetSection("Bot").GetValue<string>("Token"))
-                .WithLogLevel(_configuration.GetSection("Logging").GetSection("LogLevel").GetValue<string>("Default"))
-                .Build();
-            _client = new DiscordShardedClient(config);
-        }
-        public async Task Run()
-        {
-            var logger = _serviceProvider.GetService<ILogger<Program>>();
-            var version = Assembly.GetEntryAssembly()
+            _version = Assembly.GetEntryAssembly()
                 .GetCustomAttribute<AssemblyInformationalVersionAttribute>()
                 .InformationalVersion;
+        }
 
-            // Bot
-            logger.LogInformation($"SchedulerBot v{version}");
+        public async Task StartAsync(CancellationToken cancellationToken)
+        {
+            _logger.LogInformation($"SchedulerBot v{_version}");
 
+            // TODO: Replace with mediator command
             // Apply deletes and repeats to events that have ended
-            var eventService = _serviceProvider.GetService<IEventService>();
-            logger.LogInformation("Deleting and repeating past events");
-            await eventService.ApplyDeleteAndRepeatPastEventsAsync();
+            _logger.LogInformation("Deleting and repeating past events");
+            await _eventService.ApplyDeleteAndRepeatPastEventsAsync();
 
-            logger.LogInformation("Setting up client");
-            await _client.UseInteractivityAsync(new InteractivityConfiguration());
-            _client.DebugLogger.LogMessageReceived += OnLogMessageReceived;
+            _logger.LogInformation("Setting up client interactivity module");
+            await _shardedClient.UseInteractivityAsync(new InteractivityConfiguration());
+            _shardedClient.DebugLogger.LogMessageReceived += OnLogMessageReceived;
 
-            logger.LogInformation("Initialising command module");
-            var commandsNextExtensions = await _client.UseCommandsNextAsync(new CommandsNextConfiguration
+            _logger.LogInformation("Initialising command module");
+            var commandsNextExtensions = await _shardedClient.UseCommandsNextAsync(new CommandsNextConfiguration
             {
                 PrefixResolver = ResolvePrefix,
                 Services = _serviceProvider,
                 EnableDefaultHelp = false
             });
 
-            logger.LogInformation("Registering command extensions");
+            _logger.LogInformation("Registering command extensions");
             foreach (var ext in commandsNextExtensions)
             {
                 var commands = ext.Value;
-                commands.RegisterCommands<AdminCommands>();
-                commands.RegisterCommands<EventCommands>();
-                commands.RegisterCommands<InitializerCommands>();
-                commands.RegisterCommands<MiscCommands>();
-                commands.RegisterCommands<PermissionsCommands>();
-                commands.RegisterCommands<SettingsCommands>();
-                commands.RegisterCommands<HelpCommands>();
+                commands.RegisterCommands(typeof(AdminCommands).Assembly);
 
                 commands.CommandErrored += OnCommandError;
             }
 
             // Register event handlers
-            logger.LogInformation("Registering event handlers");
-            _client.GuildCreated += OnGuildCreate;
-            _client.GuildDeleted += OnGuildDelete;
-            _client.GuildMemberRemoved += OnGuildMemberRemove;
-            _client.GuildRoleDeleted += OnGuildRoleDelete;
-            _client.Ready += OnClientReady;
+            _logger.LogInformation("Registering event handlers");
+            _shardedClient.GuildCreated += OnGuildCreate;
+            _shardedClient.GuildDeleted += OnGuildDelete;
+            _shardedClient.GuildMemberRemoved += OnGuildMemberRemove;
+            _shardedClient.GuildRoleDeleted += OnGuildRoleDelete;
+            _shardedClient.Ready += OnClientReady;
 
-            // TODO: Delete
-            // Start event scheduler
-            //var scheduler = _serviceProvider.GetService<IEventScheduler>();
-            //logger.LogInformation("Starting event scheduler");
-            //await scheduler.Start();
-
-            logger.LogInformation("Connecting all shards...");
-            await _client.StartAsync();
-            logger.LogInformation("All shards connected");
-
-            await Task.Delay(-1);
-
-            
-            //await scheduler.Shutdown(); // TODO: Delete
-            NLog.LogManager.Shutdown();
+            _logger.LogInformation("Connecting all shards...");
+            await _shardedClient.StartAsync();
+            _logger.LogInformation("All shards connected");
         }
 
-        private void ConfigureServices(IServiceCollection services)
+        public Task StopAsync(CancellationToken cancellationToken)
         {
-            var connectionString = _configuration.GetConnectionString("SchedulerBotContext");
-            var connectionString2 = _configuration.GetConnectionString("SchedulerBot");
+            NLog.LogManager.Shutdown();
 
-            var loggerFactory = new LoggerFactory();
-            services.AddSingleton<ILoggerFactory>(loggerFactory);
-            services.AddSingleton(typeof(ILogger<>), typeof(Logger<>));
-            services.AddLogging(options =>
+            return Task.CompletedTask;
+        }
+
+        private async Task<int> ResolvePrefix(DiscordMessage msg)
+        {
+            if (!_cache.TryGetValue($"prefix:{msg.Channel.GuildId}", out string prefix))
             {
-                var logLevel = Enum.Parse<Microsoft.Extensions.Logging.LogLevel>(_configuration.GetSection("Logging").GetSection("LogLevel").GetValue<string>("Default"));
-                options.SetMinimumLevel(logLevel);
-            });
+                try
+                {
+                    var result = await _mediator.Send(new GetPrefixSettingQuery
+                    {
+                        CalendarId = msg.Channel.GuildId
+                    });
 
-            // Add configuration as a service
-            services.AddSingleton(_configuration);
+                    prefix = result.Prefix;
+                }
+                catch (CalendarNotInitialisedException)
+                {
+                    prefix = _configuration.GetSection("Bot")
+                        .GetSection("Prefixes")
+                        .Get<string[]>()[0];
+                }
 
-            // Add cache service for caching prefixes
-            services.AddMemoryCache();
-
-            // Add Raven client as a service for production environment
-            if (Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") == "Production")
-            {
-                var dsn = _configuration.GetSection("Raven").GetValue<string>("DSN");
-                var ravenClient = new RavenClient(dsn);
-                services.AddSingleton<IRavenClient>(ravenClient);
+                // Store prefix in cache
+                _cache.Set($"prefix:{msg.Channel.GuildId}", prefix, new MemoryCacheEntryOptions().SetSlidingExpiration(TimeSpan.FromMinutes(3)));
             }
 
-            // Configure database
-            services.AddSingleton(new SchedulerBotContextFactory(connectionString));
-            services.AddDbContextPool<SchedulerBotDbContext>(options =>
+            if (!msg.Content.StartsWith(prefix))
             {
-                options.UseNpgsql(connectionString2);
-            }, 5);
+                return -1;
+            }
 
-            services.AddSingleton<ICalendarService, CalendarService>()
-                .AddSingleton<IEventService, EventService>()
-                .AddSingleton<IPermissionService, PermissionService>()
-                .AddSingleton<IShardedClientInformationService, ShardedClientInformationService>(s => new ShardedClientInformationService(_client));
-
-            // Repositories
-            services.AddScoped<ICalendarRepository, CalendarRepository>();
-            services.AddScoped<IEventRepository, EventRepository>();
-            services.AddScoped<IPermissionRepository, PermissionRepository>();
-
-            // Other services
-            services.AddScoped<IEventParser, EventParser>();
-            services.AddScoped<IDateTimeOffset, MachineDateTimeOffset>();
-
-            // MediatR
-            services.AddMediatR(typeof(InitialiseCalendarCommand).Assembly);
-
-            // Scheduler service
-            services.AddSingleton<IJobFactory, JobFactory>();
-            services.AddSingleton<ISchedulerFactory>(new StdSchedulerFactory(new NameValueCollection
-            {
-                // TODO: Move this to configuration
-                { "quartz.scheduler.instanceName", "SchedulerBotScheduler" },
-                { "quartz.jobStore.type", "Quartz.Simpl.RAMJobStore, Quartz" },
-                { "quartz.threadPool.threadCount", "3" }
-            }));
-            services.AddSingleton<IEventScheduler, QuartzEventScheduler>();
-            services.AddHostedService<QuartzHostedService>();
-
-            // TODO: Remove
-            // Scheduler service (OLD)
-            //services.AddSingleton<IEventScheduler, EventScheduler>();
-        }
-
-        private void Configure(ILoggerFactory loggerFactory)
-        {
-            loggerFactory.AddNLog(new NLogProviderOptions
-            {
-                CaptureMessageProperties = true,
-                CaptureMessageTemplates = true
-            });
-            NLog.LogManager.LoadConfiguration("nlog.config");
+            return prefix.Length;
         }
 
         private async Task OnGuildCreate(GuildCreateEventArgs e)
         {
-            var calendar = new Calendar
+            await _mediator.Send(new CreateCalendarCommand
             {
-                Id = e.Guild.Id,
-                Events = new List<Event>(),
+                CalendarId = e.Guild.Id,
                 Prefix = _configuration.GetSection("Bot").GetSection("Prefixes").Get<string[]>()[0]
-            };
-
-            var calendarService = _serviceProvider.GetService<ICalendarService>();
-            await calendarService.CreateCalendarAsync(calendar);
+            });
         }
 
         private async Task OnGuildDelete(GuildDeleteEventArgs e)
         {
-            var calendarService = _serviceProvider.GetService<ICalendarService>();
-            await calendarService.DeleteCalendarAsync(e.Guild.Id);
+            await _mediator.Send(new DeleteCalendarCommand
+            {
+                CalendarId = e.Guild.Id
+            });
         }
 
         private async Task OnGuildMemberRemove(GuildMemberRemoveEventArgs e)
         {
-            var permissionService = _serviceProvider.GetService<IPermissionService>();
-            await permissionService.RemoveUserPermissionsAsync(e.Guild.Id, e.Member.Id);
+            await _mediator.Send(new DeleteUserPermissionsCommand
+            {
+                CalendarId = e.Guild.Id,
+                UserId = e.Member.Id
+            });
         }
 
         private async Task OnGuildRoleDelete(GuildRoleDeleteEventArgs e)
         {
-            var permissionService = _serviceProvider.GetService<IPermissionService>();
-            await permissionService.RemoveRolePermissionsAsync(e.Guild.Id, e.Role.Id);
+            await _mediator.Send(new DeleteRolePermissionsCommand
+            {
+                CalendarId = e.Guild.Id,
+                RoleId = e.Role.Id
+            });
         }
 
         private async Task OnClientReady(ReadyEventArgs e)
         {
-            var logger = _serviceProvider.GetService<ILogger<Program>>();
-
             // Set status
-            logger.LogInformation("Updating status");
-            var version = Assembly.GetEntryAssembly().GetCustomAttribute<AssemblyInformationalVersionAttribute>().InformationalVersion;
-            await e.Client.UpdateStatusAsync(new DiscordActivity(string.Format(_configuration.GetSection("Bot").GetValue<string>("Status"), version)));
-
-            // TODO: Remove
-            // Start event polling
-            //logger.LogInformation($"Starting initial event poll for shard {e.Client.ShardId}");
-            //await PollAndScheduleEvents(e.Client);
-            //logger.LogInformation($"Initial event poll completed for shard {e.Client.ShardId}");
-            //logger.LogInformation($"Starting poll timer for shard {e.Client.ShardId}");
-            //StartEventPollTimer(e.Client);
-            //logger.LogInformation($"Poll timer started for shard {e.Client.ShardId}");
+            _logger.LogInformation("Updating status");
+            await e.Client.UpdateStatusAsync(new DiscordActivity(string.Format(_configuration.GetSection("Bot").GetValue<string>("Status"), _version)));
         }
 
         private async Task OnCommandError(CommandErrorEventArgs e)
@@ -298,12 +200,11 @@ namespace SchedulerBot.Client
 
             if (exceptionType != typeof(CommandNotFoundException) && exceptionType != typeof(ArgumentException) && exceptionType != typeof(UnauthorizedException) && exceptionType != typeof(InvalidOperationException))
             {
-                var logger = _serviceProvider.GetService<ILogger<Program>>();
                 var errorId = Guid.NewGuid();
-                logger.LogError($"{errorId}: {e.Exception.Message}\n{e.Exception.StackTrace}");
+                _logger.LogError($"{errorId}: {e.Exception.Message}\n{e.Exception.StackTrace}");
 
-                var ravenClient = _serviceProvider.GetService<IRavenClient>();
                 string sentryEventId = string.Empty;
+                IRavenClient ravenClient = (IRavenClient)_serviceProvider.GetService(typeof(IRavenClient));
                 if (ravenClient != null)
                 {
                     e.Exception.Data.Add("ErrorEventId", errorId.ToString());
@@ -330,73 +231,24 @@ namespace SchedulerBot.Client
             }
         }
 
-        private async Task<int> ResolvePrefix(DiscordMessage msg)
-        {
-            var cache = _serviceProvider.GetRequiredService<IMemoryCache>();
-            if (!cache.TryGetValue($"prefix:{msg.Channel.GuildId}", out string prefix))
-            {
-                var calendarService = _serviceProvider.GetService<ICalendarService>();
-                prefix = await calendarService.GetCalendarPrefixAsync(msg.Channel.GuildId);
-                var defaultPrefix = _configuration.GetSection("Bot")
-                    .GetSection("Prefixes")
-                    .Get<string[]>()[0];
-                
-                if (string.IsNullOrEmpty(prefix))
-                {
-                    prefix = defaultPrefix;
-                }
-
-                // Store prefix in cache
-                cache.Set($"prefix:{msg.Channel.GuildId}", prefix, new MemoryCacheEntryOptions().SetSlidingExpiration(TimeSpan.FromMinutes(3)));
-            }
-
-            if (!msg.Content.StartsWith(prefix))
-            {
-                return -1;
-            }
-
-            return prefix.Length;
-        }
-
-        // TODO: Delete
-        //private void StartEventPollTimer(DiscordClient client)
-        //{
-        //    Timer t = new Timer(60 * 60 * 1000)
-        //    {
-        //        AutoReset = true
-        //    };
-        //    t.Elapsed += new ElapsedEventHandler(async (sender, e) => await PollAndScheduleEvents(client));
-        //    t.Start();
-        //}
-
-        // TODO: Delete
-        //private async Task PollAndScheduleEvents(DiscordClient client)
-        //{
-        //    var logger = _serviceProvider.GetService<ILogger<Program>>();
-        //    var eventScheduler = _serviceProvider.GetService<IEventScheduler>();
-        //    logger.LogInformation($"Polling for events for shard {client.ShardId}");
-        //    await eventScheduler.PollAndScheduleEvents(client);
-        //}
-
         private void OnLogMessageReceived(object sender, DebugLogMessageEventArgs e)
         {
-            var logger = _serviceProvider.GetService<ILogger<Program>>();
             switch (e.Level)
             {
                 case DSharpPlus.LogLevel.Critical:
-                    logger.LogCritical($"[{e.Application}] {e.Message}");
+                    _logger.LogCritical($"[{e.Application}] {e.Message}");
                     break;
                 case DSharpPlus.LogLevel.Debug:
-                    logger.LogDebug($"[{e.Application}] {e.Message}");
+                    _logger.LogDebug($"[{e.Application}] {e.Message}");
                     break;
                 case DSharpPlus.LogLevel.Error:
-                    logger.LogError($"[{e.Application}] {e.Message}");
+                    _logger.LogError($"[{e.Application}] {e.Message}");
                     break;
                 case DSharpPlus.LogLevel.Info:
-                    logger.LogInformation($"[{e.Application}] {e.Message}");
+                    _logger.LogInformation($"[{e.Application}] {e.Message}");
                     break;
                 case DSharpPlus.LogLevel.Warning:
-                    logger.LogWarning($"[{e.Application}] {e.Message}");
+                    _logger.LogWarning($"[{e.Application}] {e.Message}");
                     break;
             }
         }

@@ -31,7 +31,7 @@ namespace SchedulerBot.Client.Scheduler
             // Schedule event polling job
             var pollingJobSchedule = new RecurringJobSchedule(new TimeSpan(1, 0, 0));
             var job = CreateJob(pollingJobSchedule);
-            var trigger = CreateTrigger(pollingJobSchedule);
+            var trigger = CreateTrigger(pollingJobSchedule, job);
 
             await Scheduler.ScheduleJob(job, trigger);
 
@@ -58,14 +58,14 @@ namespace SchedulerBot.Client.Scheduler
                 return;
             }
 
-            var jobDataMap = new EventNotifyJobDataMap(clientShardId, channelId, evt.Id);
+            var data = new EventNotifyJobDataMap(clientShardId, channelId, evt.Id);
 
             if (!evt.HasStarted())
             {
-                var schedule = new FixedJobSchedule(typeof(EventNotifyJob), jobDataMap, evt.StartTimestamp);
+                var schedule = new FixedJobSchedule(typeof(EventNotifyJob), data.JobDataMap, evt.StartTimestamp);
 
                 var job = CreateJob(evt.Id, schedule);
-                var trigger = CreateTrigger(evt.Id, schedule);
+                var trigger = CreateTrigger(evt.Id, schedule, job);
 
                 await Scheduler.ScheduleJob(job, trigger);
 
@@ -73,10 +73,10 @@ namespace SchedulerBot.Client.Scheduler
                 {
                     // TODO: Replace DateTimeOffset.Now with abstracted interface
                     var reminderTimestamp = evt.ReminderTimestamp ?? DateTimeOffset.Now;
-                    var reminderSchedule = new FixedJobSchedule(typeof(EventReminderJob), jobDataMap, reminderTimestamp);
+                    var reminderSchedule = new FixedJobSchedule(typeof(EventReminderJob), data.JobDataMap, reminderTimestamp);
 
                     var reminderJob = CreateJob(evt.Id, reminderSchedule);
-                    var reminderTrigger = CreateTrigger(evt.Id, reminderSchedule);
+                    var reminderTrigger = CreateTrigger(evt.Id, reminderSchedule, reminderJob);
 
                     await Scheduler.ScheduleJob(reminderJob, reminderTrigger);
                 }
@@ -85,20 +85,20 @@ namespace SchedulerBot.Client.Scheduler
             if (evt.Repeat != RepeatType.None)
             {
                 // Schedule event repeat job
-                var schedule = new FixedJobSchedule(typeof(EventRepeatJob), jobDataMap, evt.EndTimestamp);
+                var schedule = new FixedJobSchedule(typeof(EventRepeatJob), data.JobDataMap, evt.EndTimestamp);
 
                 var job = CreateJob(evt.Id, schedule);
-                var trigger = CreateTrigger(evt.Id, schedule);
+                var trigger = CreateTrigger(evt.Id, schedule, job);
 
                 await Scheduler.ScheduleJob(job, trigger);
             }
             else
             {
                 // Schedule event delete job
-                var schedule = new FixedJobSchedule(typeof(EventDeleteJob), jobDataMap, evt.EndTimestamp);
+                var schedule = new FixedJobSchedule(typeof(EventDeleteJob), data.JobDataMap, evt.EndTimestamp);
 
                 var job = CreateJob(evt.Id, schedule);
-                var trigger = CreateTrigger(evt.Id, schedule);
+                var trigger = CreateTrigger(evt.Id, schedule, job);
 
                 await Scheduler.ScheduleJob(job, trigger);
             }
@@ -111,10 +111,10 @@ namespace SchedulerBot.Client.Scheduler
 
         public async Task UnscheduleEvent(Guid eventId)
         {
-            await Scheduler.UnscheduleJob(new TriggerKey(eventId.ToString(), typeof(EventNotifyJob).FullName));
-            await Scheduler.UnscheduleJob(new TriggerKey(eventId.ToString(), typeof(EventReminderJob).FullName));
-            await Scheduler.UnscheduleJob(new TriggerKey(eventId.ToString(), typeof(EventRepeatJob).FullName));
-            await Scheduler.UnscheduleJob(new TriggerKey(eventId.ToString(), typeof(EventDeleteJob).FullName));
+            await Scheduler.DeleteJob(new JobKey(eventId.ToString(), typeof(EventNotifyJob).FullName));
+            await Scheduler.DeleteJob(new JobKey(eventId.ToString(), typeof(EventReminderJob).FullName));
+            await Scheduler.DeleteJob(new JobKey(eventId.ToString(), typeof(EventRepeatJob).FullName));
+            await Scheduler.DeleteJob(new JobKey(eventId.ToString(), typeof(EventDeleteJob).FullName));
         }
 
         private static IJobDetail CreateJob(Guid id, FixedJobSchedule schedule)
@@ -129,7 +129,7 @@ namespace SchedulerBot.Client.Scheduler
                 .Build();
         }
 
-        private static ITrigger CreateTrigger(Guid id, FixedJobSchedule schedule)
+        private static ITrigger CreateTrigger(Guid id, FixedJobSchedule schedule, IJobDetail jobDetail)
         {
             var jobType = schedule.JobType;
 
@@ -137,6 +137,7 @@ namespace SchedulerBot.Client.Scheduler
                 .Create()
                 .WithIdentity(id.ToString(), $"{jobType.FullName}.trigger")
                 .StartAt(schedule.Timestamp)
+                .ForJob(jobDetail)
                 .Build();
         }
 
@@ -152,7 +153,7 @@ namespace SchedulerBot.Client.Scheduler
                 .Build();
         }
 
-        private static ITrigger CreateTrigger(RecurringJobSchedule schedule)
+        private static ITrigger CreateTrigger(RecurringJobSchedule schedule, IJobDetail jobDetail)
         {
             var jobType = schedule.JobType;
 
@@ -160,6 +161,7 @@ namespace SchedulerBot.Client.Scheduler
                 .Create()
                 .WithIdentity($"{jobType.FullName}.trigger")
                 .WithSimpleSchedule(x => x.WithInterval(schedule.Interval).RepeatForever())
+                .ForJob(jobDetail)
                 .Build();
         }
     }

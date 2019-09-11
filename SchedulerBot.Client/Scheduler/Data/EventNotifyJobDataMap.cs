@@ -3,17 +3,23 @@ using System;
 
 namespace SchedulerBot.Client.Scheduler.Data
 {
-    public class EventNotifyJobDataMap : JobDataMap
+    public class EventNotifyJobDataMap 
     {
         private const string _shardClientIdKey = "shardClientId";
         private const string _channelIdKey = "channelId";
         private const string _eventIdKey = "eventId";
 
+        public JobDataMap JobDataMap { get; }
+
         public int ShardClientId
         {
             get
             {
-                return GetIntValue(_shardClientIdKey);
+                return JobDataMap.GetIntValue(_shardClientIdKey);
+            }
+            set
+            {
+                JobDataMap[_shardClientIdKey] = value;
             }
         }
 
@@ -21,7 +27,11 @@ namespace SchedulerBot.Client.Scheduler.Data
         {
             get
             {
-                return (ulong)Get(_channelIdKey);
+                return (ulong)JobDataMap.Get(_channelIdKey);
+            }
+            set
+            {
+                JobDataMap[_channelIdKey] = value;
             }
         }
 
@@ -29,15 +39,26 @@ namespace SchedulerBot.Client.Scheduler.Data
         {
             get
             {
-                return (Guid)Get(_eventIdKey);
+                return (Guid)JobDataMap.Get(_eventIdKey);
             }
+            set
+            {
+                JobDataMap[_eventIdKey] = value;
+            }
+        }
+
+        public EventNotifyJobDataMap(JobDataMap jobDataMap)
+        {
+            JobDataMap = jobDataMap;
         }
 
         public EventNotifyJobDataMap(int shardClientId, ulong channelId, Guid eventId)
         {
-            Put(_shardClientIdKey, shardClientId);
-            Put(_channelIdKey, channelId);
-            Put(_eventIdKey, eventId);
+            JobDataMap = new JobDataMap();
+
+            ShardClientId = shardClientId;
+            ChannelId = channelId;
+            EventId = eventId;
         }
     }
 }

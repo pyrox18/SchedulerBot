@@ -11,9 +11,9 @@ namespace SchedulerBot.Client.Commands
     [Group("help")]
     public class HelpCommands : BaseCommandModule
     {
-        private readonly IConfigurationRoot _configuration;
+        private readonly IConfiguration _configuration;
 
-        public HelpCommands(IConfigurationRoot configuration) => _configuration = configuration;
+        public HelpCommands(IConfiguration configuration) => _configuration = configuration;
 
         [GroupCommand]
         public async Task Help(CommandContext ctx)
@@ -459,9 +459,9 @@ namespace SchedulerBot.Client.Commands
         [Group("settings")]
         public class SettingsHelpCommands : BaseCommandModule
         {
-            private readonly IConfigurationRoot _configuration;
+            private readonly IConfiguration _configuration;
 
-            public SettingsHelpCommands(IConfigurationRoot configuration) => _configuration = configuration;
+            public SettingsHelpCommands(IConfiguration configuration) => _configuration = configuration;
             
             [GroupCommand]
             public async Task Help(CommandContext ctx)
