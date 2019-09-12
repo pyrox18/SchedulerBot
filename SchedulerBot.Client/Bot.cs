@@ -13,7 +13,6 @@ using DSharpPlus.Exceptions;
 using DSharpPlus.Interactivity;
 using MediatR;
 using Microsoft.Extensions.Caching.Memory;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -28,7 +27,6 @@ using SchedulerBot.Client.Attributes;
 using SchedulerBot.Client.Commands;
 using SchedulerBot.Client.Configuration;
 using SchedulerBot.Client.Extensions;
-using SchedulerBot.Data.Services;
 using SharpRaven;
 using SharpRaven.Data;
 
@@ -108,8 +106,6 @@ namespace SchedulerBot.Client
 
         public Task StopAsync(CancellationToken cancellationToken)
         {
-            NLog.LogManager.Shutdown();
-
             return Task.CompletedTask;
         }
 

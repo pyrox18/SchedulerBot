@@ -3,8 +3,6 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
-using NLog.Extensions.Logging;
 using Quartz;
 using Quartz.Impl;
 using Quartz.Spi;
@@ -20,6 +18,7 @@ using SchedulerBot.Data.Services;
 using SchedulerBot.Infrastructure;
 using SchedulerBot.Persistence;
 using SchedulerBot.Persistence.Repositories;
+using Serilog;
 using SharpRaven;
 using System;
 using System.Collections.Specialized;
@@ -32,11 +31,48 @@ namespace SchedulerBot.Client
 {
     class Program
     {
-        static async Task Main(string[] args)
+        public static IConfiguration Configuration { get; }
+
+        static Program()
+        {
+            Configuration = new ConfigurationBuilder()
+                .SetBasePath(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location))
+                .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
+                .AddJsonFile($"appsettings.{Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Production"}.json", optional: true)
+                .AddEnvironmentVariables()
+                .Build();
+        }
+
+        static async Task<int> Main(string[] args)
         {
             Console.OutputEncoding = Encoding.UTF8;
 
-            var hostBuilder = new HostBuilder()
+            Log.Logger = new LoggerConfiguration()
+                .ReadFrom.Configuration(Configuration)
+                .CreateLogger();
+
+            try
+            {
+                var hostBuilder = CreateHostBuilder(args);
+
+                await hostBuilder.RunConsoleAsync();
+
+                return 0;
+            }
+            catch (Exception ex)
+            {
+                Log.Fatal("Host terminated unexpectedly");
+                return 1;
+            }
+            finally
+            {
+                Log.CloseAndFlush();
+            }
+        }
+
+        static IHostBuilder CreateHostBuilder(string[] args)
+        {
+            return new HostBuilder()
                 .ConfigureHostConfiguration(configHost =>
                 {
                     configHost.SetBasePath(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location));
@@ -61,25 +97,6 @@ namespace SchedulerBot.Client
 
                     var connectionString = configuration.GetConnectionString("SchedulerBotContext");
                     var connectionString2 = configuration.GetConnectionString("SchedulerBot");
-
-                    var loggerFactory = new LoggerFactory();
-                    loggerFactory.AddNLog(new NLogProviderOptions
-                    {
-                        CaptureMessageProperties = true,
-                        CaptureMessageTemplates = true
-                    });
-                    NLog.LogManager.LoadConfiguration("nlog.config");
-                    services.AddSingleton<ILoggerFactory>(loggerFactory);
-                    services.AddSingleton(typeof(ILogger<>), typeof(Logger<>));
-                    services.AddLogging(options =>
-                    {
-                        var logLevel = Enum.Parse<Microsoft.Extensions.Logging.LogLevel>(configuration.GetSection("Logging").GetSection("LogLevel").GetValue<string>("Default"));
-                        options.SetMinimumLevel(logLevel);
-                    });
-
-                    // TODO: Remove
-                    // Add configuration as a service
-                    //services.AddSingleton(configuration);
 
                     // Add configuration options
                     services.Configure<BotConfiguration>(configuration.GetSection("Bot"));
@@ -136,17 +153,16 @@ namespace SchedulerBot.Client
                     services.AddSingleton<IEventScheduler, QuartzEventScheduler>();
                     services.AddHostedService<QuartzHostedService>();
                 })
+                .UseSerilog()
                 .ConfigureBot((hostContext, configBuilder) =>
                 {
                     var config = hostContext.Configuration;
                     var token = config.GetSection("Bot").GetValue<string>("Token");
-                    var logLevel = config.GetSection("Logging").GetSection("LogLevel").GetValue<string>("Default");
+                    var logLevel = config.GetSection("Serilog").GetSection("MinimumLevel").GetValue<string>("Default");
 
                     configBuilder.WithToken(token);
                     configBuilder.WithLogLevel(logLevel);
                 });
-
-            await hostBuilder.RunConsoleAsync();
         }
     }
 }
