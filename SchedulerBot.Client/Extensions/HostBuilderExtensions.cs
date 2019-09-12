@@ -2,7 +2,6 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using SchedulerBot.Client.Configuration;
-using SchedulerBot.Client.Services;
 using System;
 
 namespace SchedulerBot.Client.Extensions
@@ -21,7 +20,6 @@ namespace SchedulerBot.Client.Extensions
                 var client = new DiscordShardedClient(botConfig);
 
                 services.AddSingleton(client);
-                services.AddSingleton<IShardedClientInformationService, ShardedClientInformationService>();
                 services.AddHostedService<Bot>();
             });
 

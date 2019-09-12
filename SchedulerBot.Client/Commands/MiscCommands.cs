@@ -1,14 +1,15 @@
 ﻿using System;
 using System.Diagnostics;
 using System.Globalization;
+using System.Linq;
 using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
+using DSharpPlus;
 using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Attributes;
 using DSharpPlus.Entities;
 using MediatR;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Options;
 using NodaTime;
 using SchedulerBot.Application.Exceptions;
@@ -16,22 +17,21 @@ using SchedulerBot.Application.Permissions.Enumerations;
 using SchedulerBot.Application.Settings.Queries.GetSetting;
 using SchedulerBot.Client.Attributes;
 using SchedulerBot.Client.Configuration;
-using SchedulerBot.Client.Services;
 
 namespace SchedulerBot.Client.Commands
 {
     public class MiscCommands : BotCommandModule
     {
-        private readonly IShardedClientInformationService _shardedClientInformationService;
+        private readonly DiscordShardedClient _shardedClient;
         private readonly BotConfiguration _configuration;
 
         public MiscCommands(
             IMediator mediator,
-            IShardedClientInformationService shardedClientInformationService,
+            DiscordShardedClient shardedClient,
             IOptions<BotConfiguration> configuration) :
             base(mediator)
         {
-            _shardedClientInformationService = shardedClientInformationService;
+            _shardedClient = shardedClient;
             _configuration = configuration.Value;
         }
 
@@ -89,8 +89,8 @@ namespace SchedulerBot.Client.Commands
                 }
             };
             embed.AddField("Version", version, true);
-            embed.AddField("Guilds", _shardedClientInformationService.GetTotalGuildCount().ToString(), true);
-            embed.AddField("Users", _shardedClientInformationService.GetTotalUserCount().ToString(), true);
+            embed.AddField("Guilds", _shardedClient.ShardClients.Values.Sum(c => c.Guilds.Count).ToString(), true);
+            embed.AddField("Users", _shardedClient.ShardClients.Values.Sum(c => c.Guilds.Values.Sum(g => g.MemberCount)).ToString(), true);
             embed.AddField("Shard Number", $"{ctx.Client.ShardId + 1}/{ctx.Client.ShardCount}", true);
             embed.AddField("Uptime", $"{uptime.Days} day(s), {uptime.Hours} hour(s), {uptime.Minutes} minute(s), {uptime.Seconds} second(s)");
             embed.AddField("Like the bot?", "[Support us on Patreon!](https://patreon.com/SchedulerBot)");
