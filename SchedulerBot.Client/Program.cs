@@ -13,7 +13,6 @@ using SchedulerBot.Client.Extensions;
 using SchedulerBot.Client.Parsers;
 using SchedulerBot.Client.Scheduler;
 using SchedulerBot.Client.Scheduler.Jobs;
-using SchedulerBot.Data;
 using SchedulerBot.Infrastructure;
 using SchedulerBot.Persistence;
 using SchedulerBot.Persistence.Repositories;
