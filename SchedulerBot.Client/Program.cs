@@ -14,7 +14,6 @@ using SchedulerBot.Client.Parsers;
 using SchedulerBot.Client.Scheduler;
 using SchedulerBot.Client.Scheduler.Jobs;
 using SchedulerBot.Data;
-using SchedulerBot.Data.Services;
 using SchedulerBot.Infrastructure;
 using SchedulerBot.Persistence;
 using SchedulerBot.Persistence.Repositories;
@@ -59,7 +58,7 @@ namespace SchedulerBot.Client
 
                 return 0;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 Log.Fatal("Host terminated unexpectedly");
                 return 1;
@@ -118,10 +117,6 @@ namespace SchedulerBot.Client
                     {
                         options.UseNpgsql(connectionString2);
                     }, 5); // TODO: Control pool size from config
-
-                    services.AddSingleton<ICalendarService, CalendarService>()
-                        .AddSingleton<IEventService, EventService>()
-                        .AddSingleton<IPermissionService, PermissionService>();
 
                     // Repositories
                     services.AddScoped<ICalendarRepository, CalendarRepository>();
