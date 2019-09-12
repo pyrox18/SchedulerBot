@@ -6,6 +6,7 @@ using DSharpPlus.Entities;
 using MediatR;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Options;
 using SchedulerBot.Application.Events.Queries.GetEvents;
 using SchedulerBot.Application.Exceptions;
 using SchedulerBot.Application.Permissions.Enumerations;
@@ -13,6 +14,7 @@ using SchedulerBot.Application.Settings.Commands.ModifySetting;
 using SchedulerBot.Application.Settings.Queries.GetAllSettings;
 using SchedulerBot.Application.Settings.Queries.GetSetting;
 using SchedulerBot.Client.Attributes;
+using SchedulerBot.Client.Configuration;
 using SchedulerBot.Client.Extensions;
 using SchedulerBot.Client.Scheduler;
 
@@ -23,14 +25,18 @@ namespace SchedulerBot.Client.Commands
     public class SettingsCommands : BotCommandModule
     {
         private readonly IEventScheduler _eventScheduler;
-        private readonly IConfiguration _configuration;
+        private readonly BotConfiguration _configuration;
         private readonly IMemoryCache _cache;
 
-        public SettingsCommands(IMediator mediator, IEventScheduler eventScheduler, IConfiguration configuration, IMemoryCache cache) :
+        public SettingsCommands(
+            IMediator mediator,
+            IEventScheduler eventScheduler,
+            IOptions<BotConfiguration> configuration,
+            IMemoryCache cache) :
             base(mediator)
         {
             _eventScheduler = eventScheduler;
-            _configuration = configuration;
+            _configuration = configuration.Value;
             _cache = cache;
         }
 
@@ -204,7 +210,7 @@ namespace SchedulerBot.Client.Commands
                     CalendarId = ctx.Guild.Id
                 });
 
-                var timezoneLink = _configuration.GetSection("Bot").GetSection("Links").GetValue<string>("TimezoneList");
+                var timezoneLink = _configuration.Links.TimezoneList;
                 var embed = new DiscordEmbedBuilder
                 {
                     Author = new DiscordEmbedBuilder.EmbedAuthor
@@ -243,7 +249,7 @@ namespace SchedulerBot.Client.Commands
             var validationResult = validator.Validate(command);
             if (!validationResult.IsValid)
             {
-                var timezoneLink = _configuration.GetSection("Bot").GetSection("Links").GetValue<string>("TimezoneList");
+                var timezoneLink = _configuration.Links.TimezoneList;
                 await ctx.RespondAsync($"Timezone not found. See {timezoneLink} under the TZ column for a list of valid timezones.");
                 return;
             }

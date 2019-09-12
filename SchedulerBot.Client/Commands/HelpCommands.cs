@@ -4,16 +4,21 @@ using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Attributes;
 using DSharpPlus.Entities;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Options;
 using SchedulerBot.Client.Builders;
+using SchedulerBot.Client.Configuration;
 
 namespace SchedulerBot.Client.Commands
 {
     [Group("help")]
     public class HelpCommands : BaseCommandModule
     {
-        private readonly IConfiguration _configuration;
+        private readonly BotConfiguration _configuration;
 
-        public HelpCommands(IConfiguration configuration) => _configuration = configuration;
+        public HelpCommands(IOptions<BotConfiguration> configuration)
+        {
+            _configuration = configuration.Value;
+        }
 
         [GroupCommand]
         public async Task Help(CommandContext ctx)
@@ -55,7 +60,7 @@ namespace SchedulerBot.Client.Commands
         {
             await ctx.TriggerTypingAsync();
 
-            var timezoneLink = _configuration.GetSection("Bot").GetSection("Links").GetValue<string>("TimezoneList");
+            var timezoneLink = _configuration.Links.TimezoneList;
 
             var usageOptions = new Dictionary<string, string>
             {
@@ -459,10 +464,13 @@ namespace SchedulerBot.Client.Commands
         [Group("settings")]
         public class SettingsHelpCommands : BaseCommandModule
         {
-            private readonly IConfiguration _configuration;
+            private readonly BotConfiguration _configuration;
 
-            public SettingsHelpCommands(IConfiguration configuration) => _configuration = configuration;
-            
+            public SettingsHelpCommands(IOptions<BotConfiguration> configuration)
+            {
+                _configuration = configuration.Value;
+            }
+
             [GroupCommand]
             public async Task Help(CommandContext ctx)
             {
@@ -490,7 +498,7 @@ namespace SchedulerBot.Client.Commands
             {
                 await ctx.TriggerTypingAsync();
 
-                var timezoneLink = _configuration.GetSection("Bot").GetSection("Links").GetValue<string>("TimezoneList");
+                var timezoneLink = _configuration.Links.TimezoneList;
 
                 var usageOptions = new Dictionary<string, string>
                 {

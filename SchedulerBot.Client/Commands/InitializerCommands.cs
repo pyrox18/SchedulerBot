@@ -3,19 +3,21 @@ using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Attributes;
 using MediatR;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Options;
 using SchedulerBot.Application.Calendars.Commands.InitialiseCalendar;
 using SchedulerBot.Application.Exceptions;
+using SchedulerBot.Client.Configuration;
 
 namespace SchedulerBot.Client.Commands
 {
     public class InitializerCommands : BotCommandModule
     {
-        private readonly IConfiguration _configuration;
+        private readonly BotConfiguration _configuration;
 
-        public InitializerCommands(IMediator mediator, IConfiguration configuration) :
+        public InitializerCommands(IMediator mediator, IOptions<BotConfiguration> configuration) :
             base(mediator)
         {
-            _configuration = configuration;
+            _configuration = configuration.Value;
         }
 
         [Command("init"), Description("Initialize the bot with a timezone and a default channel.")]
@@ -28,14 +30,14 @@ namespace SchedulerBot.Client.Commands
                 CalendarId = ctx.Guild.Id,
                 Timezone = timezone,
                 ChannelId = ctx.Channel.Id,
-                Prefix = _configuration.GetSection("Bot").GetSection("Prefixes").Get<string[]>()[0]
+                Prefix = _configuration.Prefixes[0]
             };
 
             var validator = new InitialiseCalendarCommandValidator();
             var validationResult = validator.Validate(command);
             if (!validationResult.IsValid)
             {
-                var timezoneLink = _configuration.GetSection("Bot").GetSection("Links").GetValue<string>("TimezoneList");
+                var timezoneLink = _configuration.Links.TimezoneList;
                 await ctx.RespondAsync($"Timezone not found. See {timezoneLink} under the TZ column for a list of valid timezones.");
                 return;
             }

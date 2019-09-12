@@ -10,6 +10,7 @@ using Quartz.Impl;
 using Quartz.Spi;
 using SchedulerBot.Application.Calendars.Commands.InitialiseCalendar;
 using SchedulerBot.Application.Interfaces;
+using SchedulerBot.Client.Configuration;
 using SchedulerBot.Client.Extensions;
 using SchedulerBot.Client.Parsers;
 using SchedulerBot.Client.Scheduler;
@@ -76,8 +77,12 @@ namespace SchedulerBot.Client
                         options.SetMinimumLevel(logLevel);
                     });
 
+                    // TODO: Remove
                     // Add configuration as a service
-                    services.AddSingleton(configuration);
+                    //services.AddSingleton(configuration);
+
+                    // Add configuration options
+                    services.Configure<BotConfiguration>(configuration.GetSection("Bot"));
 
                     // Add cache service for caching prefixes
                     services.AddMemoryCache();

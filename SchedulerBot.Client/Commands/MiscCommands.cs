@@ -9,26 +9,30 @@ using DSharpPlus.CommandsNext.Attributes;
 using DSharpPlus.Entities;
 using MediatR;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Options;
 using NodaTime;
 using SchedulerBot.Application.Exceptions;
 using SchedulerBot.Application.Permissions.Enumerations;
 using SchedulerBot.Application.Settings.Queries.GetSetting;
 using SchedulerBot.Client.Attributes;
+using SchedulerBot.Client.Configuration;
 using SchedulerBot.Client.Services;
-using SchedulerBot.Data.Models;
 
 namespace SchedulerBot.Client.Commands
 {
     public class MiscCommands : BotCommandModule
     {
         private readonly IShardedClientInformationService _shardedClientInformationService;
-        private readonly IConfiguration _configuration;
+        private readonly BotConfiguration _configuration;
 
-        public MiscCommands(IMediator mediator, IShardedClientInformationService shardedClientInformationService, IConfiguration configuration) :
+        public MiscCommands(
+            IMediator mediator,
+            IShardedClientInformationService shardedClientInformationService,
+            IOptions<BotConfiguration> configuration) :
             base(mediator)
         {
             _shardedClientInformationService = shardedClientInformationService;
-            _configuration = configuration;
+            _configuration = configuration.Value;
         }
 
         [Command("ping"), Description("Pings the bot.")]
@@ -99,7 +103,7 @@ namespace SchedulerBot.Client.Commands
         {
             await ctx.TriggerTypingAsync();
 
-            var supportLink = _configuration.GetSection("Bot").GetSection("Links").GetValue<string>("SupportServer");
+            var supportLink = _configuration.Links.SupportServer;
             await ctx.RespondAsync($"Click the following link to join the bot's support server. {supportLink}");
         }
 
@@ -108,7 +112,7 @@ namespace SchedulerBot.Client.Commands
         {
             await ctx.TriggerTypingAsync();
 
-            var inviteLink = _configuration.GetSection("Bot").GetSection("Links").GetValue<string>("BotInvite");
+            var inviteLink = _configuration.Links.BotInvite;
             await ctx.RespondAsync($"Click the following link to invite the bot to your server. {inviteLink}");
         }
 

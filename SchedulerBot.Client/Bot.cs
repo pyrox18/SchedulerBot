@@ -16,6 +16,7 @@ using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using SchedulerBot.Application.Calendars.Commands.CreateCalendar;
 using SchedulerBot.Application.Calendars.Commands.DeleteCalendar;
 using SchedulerBot.Application.Events.Commands.CleanPastEvents;
@@ -25,6 +26,7 @@ using SchedulerBot.Application.Permissions.Commands.DeleteUserPermissions;
 using SchedulerBot.Application.Settings.Queries.GetSetting;
 using SchedulerBot.Client.Attributes;
 using SchedulerBot.Client.Commands;
+using SchedulerBot.Client.Configuration;
 using SchedulerBot.Client.Extensions;
 using SchedulerBot.Data.Services;
 using SharpRaven;
@@ -39,7 +41,7 @@ namespace SchedulerBot.Client
         private readonly IServiceProvider _serviceProvider;
         private readonly IMediator _mediator;
         private readonly IMemoryCache _cache;
-        private readonly IConfiguration _configuration;
+        private readonly BotConfiguration _configuration;
         private readonly string _version;
 
         public Bot(
@@ -48,14 +50,14 @@ namespace SchedulerBot.Client
             IServiceProvider serviceProvider,
             IMemoryCache cache,
             IMediator mediator,
-            IConfiguration configuration)
+            IOptions<BotConfiguration> configuration)
         {
             _logger = logger;
             _shardedClient = shardedClient;
             _serviceProvider = serviceProvider;
             _cache = cache;
             _mediator = mediator;
-            _configuration = configuration;
+            _configuration = configuration.Value;
 
             _version = Assembly.GetEntryAssembly()
                 .GetCustomAttribute<AssemblyInformationalVersionAttribute>()
@@ -126,9 +128,7 @@ namespace SchedulerBot.Client
                 }
                 catch (CalendarNotInitialisedException)
                 {
-                    prefix = _configuration.GetSection("Bot")
-                        .GetSection("Prefixes")
-                        .Get<string[]>()[0];
+                    prefix = _configuration.Prefixes[0];
                 }
 
                 // Store prefix in cache
@@ -148,7 +148,7 @@ namespace SchedulerBot.Client
             await _mediator.Send(new CreateCalendarCommand
             {
                 CalendarId = e.Guild.Id,
-                Prefix = _configuration.GetSection("Bot").GetSection("Prefixes").Get<string[]>()[0]
+                Prefix = _configuration.Prefixes[0]
             });
         }
 
@@ -182,7 +182,7 @@ namespace SchedulerBot.Client
         {
             // Set status
             _logger.LogInformation("Updating status");
-            await e.Client.UpdateStatusAsync(new DiscordActivity(string.Format(_configuration.GetSection("Bot").GetValue<string>("Status"), _version)));
+            await e.Client.UpdateStatusAsync(new DiscordActivity(string.Format(_configuration.Status, _version)));
         }
 
         private async Task OnCommandError(CommandErrorEventArgs e)
