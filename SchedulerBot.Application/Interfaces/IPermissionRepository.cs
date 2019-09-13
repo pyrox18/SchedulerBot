@@ -1,5 +1,5 @@
-﻿using SchedulerBot.Data.Enumerations;
-using SchedulerBot.Data.Models;
+﻿using SchedulerBot.Domain.Enumerations;
+using SchedulerBot.Domain.Models;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 

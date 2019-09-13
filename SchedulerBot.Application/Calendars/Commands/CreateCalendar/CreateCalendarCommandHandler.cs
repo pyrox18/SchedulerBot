@@ -2,7 +2,7 @@
 using System.Threading.Tasks;
 using MediatR;
 using SchedulerBot.Application.Interfaces;
-using SchedulerBot.Data.Models;
+using SchedulerBot.Domain.Models;
 
 namespace SchedulerBot.Application.Calendars.Commands.CreateCalendar
 {

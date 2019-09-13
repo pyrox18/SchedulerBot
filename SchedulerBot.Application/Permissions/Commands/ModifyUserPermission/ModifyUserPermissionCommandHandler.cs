@@ -2,7 +2,7 @@
 using System.Threading.Tasks;
 using MediatR;
 using SchedulerBot.Application.Interfaces;
-using SchedulerBot.Data.Enumerations;
+using SchedulerBot.Domain.Enumerations;
 
 namespace SchedulerBot.Application.Permissions.Commands.ModifyUserPermission
 {

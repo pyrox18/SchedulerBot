@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace SchedulerBot.Data.Models
+namespace SchedulerBot.Domain.Models
 {
     public class EventMention
     {

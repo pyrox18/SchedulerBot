@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Text;
 using DSharpPlus.Interactivity;
-using SchedulerBot.Data.Models;
+using SchedulerBot.Domain.Models;
 
 namespace SchedulerBot.Client.Factories
 {

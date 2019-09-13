@@ -1,7 +1,7 @@
 ﻿using Moq;
 using SchedulerBot.Application.Interfaces;
 using SchedulerBot.Application.Permissions.Queries.CheckPermission;
-using SchedulerBot.Data.Enumerations;
+using SchedulerBot.Domain.Enumerations;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Xunit;

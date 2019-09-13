@@ -1,4 +1,4 @@
-﻿namespace SchedulerBot.Data.Enumerations
+﻿namespace SchedulerBot.Domain.Enumerations
 {
     public enum PermissionNode
     {

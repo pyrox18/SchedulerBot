@@ -14,7 +14,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\SchedulerBot.Application\SchedulerBot.Application.csproj" />
-    <ProjectReference Include="..\SchedulerBot.Data\SchedulerBot.Data.csproj" />
+    <ProjectReference Include="..\SchedulerBot.Data\SchedulerBot.Domain.csproj" />
   </ItemGroup>
 
 </Project>

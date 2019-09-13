@@ -1,7 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Moq;
 using SchedulerBot.Application.Interfaces;
-using SchedulerBot.Data.Models;
+using SchedulerBot.Domain.Models;
 using SchedulerBot.Persistence.Repositories;
 using System;
 using System.Collections.Generic;

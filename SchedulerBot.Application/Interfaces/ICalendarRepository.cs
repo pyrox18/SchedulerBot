@@ -1,5 +1,5 @@
 ﻿using System.Threading.Tasks;
-using SchedulerBot.Data.Models;
+using SchedulerBot.Domain.Models;
 
 namespace SchedulerBot.Application.Interfaces
 {

@@ -4,7 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using SchedulerBot.Application.Interfaces;
-using SchedulerBot.Data.Models;
+using SchedulerBot.Domain.Models;
 using SchedulerBot.Persistence.Specifications;
 
 namespace SchedulerBot.Persistence.Repositories

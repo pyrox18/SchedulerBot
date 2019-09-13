@@ -1,6 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using SchedulerBot.Application.Interfaces;
-using SchedulerBot.Data.Models;
+using SchedulerBot.Domain.Models;
 using System.Linq;
 
 namespace SchedulerBot.Persistence.Specifications

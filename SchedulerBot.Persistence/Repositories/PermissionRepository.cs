@@ -5,8 +5,8 @@ using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using SchedulerBot.Application.Exceptions;
 using SchedulerBot.Application.Interfaces;
-using SchedulerBot.Data.Enumerations;
-using SchedulerBot.Data.Models;
+using SchedulerBot.Domain.Enumerations;
+using SchedulerBot.Domain.Models;
 using SchedulerBot.Persistence.Specifications;
 
 namespace SchedulerBot.Persistence.Repositories

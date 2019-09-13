@@ -4,7 +4,7 @@ using MediatR;
 using SchedulerBot.Application.Calendars.Models;
 using SchedulerBot.Application.Exceptions;
 using SchedulerBot.Application.Interfaces;
-using SchedulerBot.Data.Models;
+using SchedulerBot.Domain.Models;
 
 namespace SchedulerBot.Application.Calendars.Commands.InitialiseCalendar
 {

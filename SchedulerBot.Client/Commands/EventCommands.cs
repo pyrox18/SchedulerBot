@@ -9,7 +9,7 @@ using SchedulerBot.Client.Factories;
 using SchedulerBot.Client.Exceptions;
 using SchedulerBot.Client.Extensions;
 using SchedulerBot.Client.Scheduler;
-using SchedulerBot.Data.Models;
+using SchedulerBot.Domain.Models;
 using MediatR;
 using SchedulerBot.Application.Events.Commands.CreateEvent;
 using SchedulerBot.Application.Exceptions;

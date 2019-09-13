@@ -3,7 +3,7 @@ using Moq;
 using SchedulerBot.Application.Calendars.Commands.InitialiseCalendar;
 using SchedulerBot.Application.Exceptions;
 using SchedulerBot.Application.Interfaces;
-using SchedulerBot.Data.Models;
+using SchedulerBot.Domain.Models;
 using Xunit;
 
 namespace SchedulerBot.Application.UnitTests.Calendars.Commands.InitialiseCalendar

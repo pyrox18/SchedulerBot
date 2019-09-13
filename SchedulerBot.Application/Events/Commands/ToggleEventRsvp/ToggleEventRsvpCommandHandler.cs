@@ -6,7 +6,7 @@ using SchedulerBot.Application.Events.Models;
 using SchedulerBot.Application.Exceptions;
 using SchedulerBot.Application.Interfaces;
 using SchedulerBot.Application.Specifications;
-using SchedulerBot.Data.Models;
+using SchedulerBot.Domain.Models;
 
 namespace SchedulerBot.Application.Events.Commands.ToggleEventRsvp
 {

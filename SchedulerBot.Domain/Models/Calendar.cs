@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 
-namespace SchedulerBot.Data.Models
+namespace SchedulerBot.Domain.Models
 {
     public class Calendar
     {

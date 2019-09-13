@@ -2,7 +2,7 @@
 using SchedulerBot.Application.Exceptions;
 using SchedulerBot.Application.Interfaces;
 using SchedulerBot.Application.Settings.Commands.ModifySetting;
-using SchedulerBot.Data.Models;
+using SchedulerBot.Domain.Models;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;

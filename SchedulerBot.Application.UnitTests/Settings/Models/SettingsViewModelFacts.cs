@@ -1,5 +1,5 @@
 using SchedulerBot.Application.Settings.Models;
-using SchedulerBot.Data.Models;
+using SchedulerBot.Domain.Models;
 using Xunit;
 
 namespace SchedulerBot.Application.UnitTests.Settings.Models

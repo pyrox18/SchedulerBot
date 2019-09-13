@@ -3,7 +3,7 @@ using Moq;
 using SchedulerBot.Application.Exceptions;
 using SchedulerBot.Application.Interfaces;
 using SchedulerBot.Application.Settings.Queries.GetSetting;
-using SchedulerBot.Data.Models;
+using SchedulerBot.Domain.Models;
 using Xunit;
 
 namespace SchedulerBot.Application.UnitTests.Settings.Queries.GetSetting

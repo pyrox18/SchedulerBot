@@ -1,5 +1,5 @@
 ﻿using System;
-using SchedulerBot.Data.Models;
+using SchedulerBot.Domain.Models;
 
 namespace SchedulerBot.Application.Events.Models
 {

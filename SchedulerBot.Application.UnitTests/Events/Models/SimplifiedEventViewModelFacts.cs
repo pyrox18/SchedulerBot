@@ -1,6 +1,6 @@
 ﻿using System;
 using SchedulerBot.Application.Events.Models;
-using SchedulerBot.Data.Models;
+using SchedulerBot.Domain.Models;
 using Xunit;
 
 namespace SchedulerBot.Application.UnitTests.Events.Models

@@ -93,8 +93,7 @@ namespace SchedulerBot.Client
                 {
                     var configuration = hostContext.Configuration;
 
-                    var connectionString = configuration.GetConnectionString("SchedulerBotContext");
-                    var connectionString2 = configuration.GetConnectionString("SchedulerBot");
+                    var connectionString = configuration.GetConnectionString("SchedulerBot");
 
                     // Add configuration options
                     services.Configure<BotConfiguration>(configuration.GetSection("Bot"));
@@ -111,10 +110,9 @@ namespace SchedulerBot.Client
                     }
 
                     // Configure database
-                    services.AddSingleton(new SchedulerBotContextFactory(connectionString));
                     services.AddDbContextPool<SchedulerBotDbContext>(options =>
                     {
-                        options.UseNpgsql(connectionString2);
+                        options.UseNpgsql(connectionString);
                     }, 5); // TODO: Control pool size from config
 
                     // Repositories

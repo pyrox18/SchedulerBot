@@ -7,7 +7,7 @@ using SchedulerBot.Application.Events.Models;
 using SchedulerBot.Application.Interfaces;
 using SchedulerBot.Client.Scheduler.Data;
 using SchedulerBot.Client.Scheduler.Jobs;
-using SchedulerBot.Data.Models;
+using SchedulerBot.Domain.Models;
 
 namespace SchedulerBot.Client.Scheduler
 {

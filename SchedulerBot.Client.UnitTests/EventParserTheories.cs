@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using Xunit;
 using SchedulerBot.Client.Parsers;
-using SchedulerBot.Data.Models;
+using SchedulerBot.Domain.Models;
 using SchedulerBot.Client.Exceptions;
 
 namespace SchedulerBot.Client.UnitTests

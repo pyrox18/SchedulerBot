@@ -2,7 +2,7 @@
 using Moq;
 using SchedulerBot.Application.Calendars.Commands.DeleteCalendar;
 using SchedulerBot.Application.Interfaces;
-using SchedulerBot.Data.Models;
+using SchedulerBot.Domain.Models;
 using System.Threading.Tasks;
 using Xunit;
 

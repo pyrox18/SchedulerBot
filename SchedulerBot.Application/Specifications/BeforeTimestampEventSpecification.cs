@@ -1,4 +1,4 @@
-﻿using SchedulerBot.Data.Models;
+﻿using SchedulerBot.Domain.Models;
 using System;
 using System.Linq.Expressions;
 

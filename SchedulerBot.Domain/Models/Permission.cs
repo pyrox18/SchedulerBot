@@ -1,7 +1,7 @@
-﻿using SchedulerBot.Data.Enumerations;
+﻿using SchedulerBot.Domain.Enumerations;
 using System;
 
-namespace SchedulerBot.Data.Models
+namespace SchedulerBot.Domain.Models
 {
     public class Permission
     {

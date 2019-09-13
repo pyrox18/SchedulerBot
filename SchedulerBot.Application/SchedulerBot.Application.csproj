@@ -11,7 +11,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\SchedulerBot.Data\SchedulerBot.Data.csproj" />
+    <ProjectReference Include="..\SchedulerBot.Data\SchedulerBot.Domain.csproj" />
   </ItemGroup>
 
 </Project>

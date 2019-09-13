@@ -4,7 +4,7 @@ using System.Text;
 using DSharpPlus.Entities;
 using SchedulerBot.Application.Events.Models;
 using SchedulerBot.Client.Extensions;
-using SchedulerBot.Data.Models;
+using SchedulerBot.Domain.Models;
 
 namespace SchedulerBot.Client.Factories
 {

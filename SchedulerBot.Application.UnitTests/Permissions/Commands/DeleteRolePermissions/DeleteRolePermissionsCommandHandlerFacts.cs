@@ -2,7 +2,7 @@
 using Moq;
 using SchedulerBot.Application.Interfaces;
 using SchedulerBot.Application.Permissions.Commands.DeleteRolePermissions;
-using SchedulerBot.Data.Models;
+using SchedulerBot.Domain.Models;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;

@@ -6,7 +6,7 @@ using MediatR;
 using NodaTime;
 using SchedulerBot.Application.Events.Models;
 using SchedulerBot.Application.Interfaces;
-using SchedulerBot.Data.Models;
+using SchedulerBot.Domain.Models;
 
 namespace SchedulerBot.Application.Events.Commands.ApplyEventRepeat
 {

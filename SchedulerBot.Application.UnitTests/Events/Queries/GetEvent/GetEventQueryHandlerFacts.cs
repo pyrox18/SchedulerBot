@@ -6,7 +6,7 @@ using Moq;
 using SchedulerBot.Application.Events.Queries.GetEvent;
 using SchedulerBot.Application.Exceptions;
 using SchedulerBot.Application.Interfaces;
-using SchedulerBot.Data.Models;
+using SchedulerBot.Domain.Models;
 using Xunit;
 
 namespace SchedulerBot.Application.UnitTests.Events.Queries.GetEvent

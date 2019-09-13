@@ -5,21 +5,19 @@ VisualStudioVersion = 16.0.28917.181
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SchedulerBot.Client", "SchedulerBot.Client\SchedulerBot.Client.csproj", "{70630CBA-AF33-4574-989D-EE711FCE017B}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SchedulerBot.Data", "SchedulerBot.Data\SchedulerBot.Data.csproj", "{ADD9096A-CB1C-4406-8970-B382302AF254}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SchedulerBot.MigrationTool", "SchedulerBot.MigrationTool\SchedulerBot.MigrationTool.csproj", "{A530AAE0-BF1A-489E-9297-E4B0B618B6CC}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SchedulerBot.Domain", "SchedulerBot.Data\SchedulerBot.Domain.csproj", "{ADD9096A-CB1C-4406-8970-B382302AF254}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SchedulerBot.Client.UnitTests", "SchedulerBot.Client.UnitTests\SchedulerBot.Client.UnitTests.csproj", "{82D3A425-D9C8-4678-ABA7-757FB04B3438}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SchedulerBot.Application", "SchedulerBot.Application\SchedulerBot.Application.csproj", "{BC7CC48D-D103-4769-80BF-585080944D24}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SchedulerBot.Application.UnitTests", "SchedulerBot.Application.UnitTests\SchedulerBot.Application.UnitTests.csproj", "{B81DF94D-6222-492C-8F6C-689954DDB8B3}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SchedulerBot.Application.UnitTests", "SchedulerBot.Application.UnitTests\SchedulerBot.Application.UnitTests.csproj", "{B81DF94D-6222-492C-8F6C-689954DDB8B3}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SchedulerBot.Persistence", "SchedulerBot.Persistence\SchedulerBot.Persistence.csproj", "{15684509-592C-4FC9-8C2C-D9C2A6D463B9}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SchedulerBot.Persistence", "SchedulerBot.Persistence\SchedulerBot.Persistence.csproj", "{15684509-592C-4FC9-8C2C-D9C2A6D463B9}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SchedulerBot.Persistence.UnitTests", "SchedulerBot.Persistence.UnitTests\SchedulerBot.Persistence.UnitTests.csproj", "{FFE147A9-30C0-455E-A5C2-74EC94A75EA3}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SchedulerBot.Persistence.UnitTests", "SchedulerBot.Persistence.UnitTests\SchedulerBot.Persistence.UnitTests.csproj", "{FFE147A9-30C0-455E-A5C2-74EC94A75EA3}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SchedulerBot.Infrastructure", "SchedulerBot.Infrastructure\SchedulerBot.Infrastructure.csproj", "{0206505B-9A00-49CB-8B7B-58398035EE67}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SchedulerBot.Infrastructure", "SchedulerBot.Infrastructure\SchedulerBot.Infrastructure.csproj", "{0206505B-9A00-49CB-8B7B-58398035EE67}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -35,10 +33,6 @@ Global
 		{ADD9096A-CB1C-4406-8970-B382302AF254}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{ADD9096A-CB1C-4406-8970-B382302AF254}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{ADD9096A-CB1C-4406-8970-B382302AF254}.Release|Any CPU.Build.0 = Release|Any CPU
-		{A530AAE0-BF1A-489E-9297-E4B0B618B6CC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{A530AAE0-BF1A-489E-9297-E4B0B618B6CC}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{A530AAE0-BF1A-489E-9297-E4B0B618B6CC}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{A530AAE0-BF1A-489E-9297-E4B0B618B6CC}.Release|Any CPU.Build.0 = Release|Any CPU
 		{82D3A425-D9C8-4678-ABA7-757FB04B3438}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{82D3A425-D9C8-4678-ABA7-757FB04B3438}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{82D3A425-D9C8-4678-ABA7-757FB04B3438}.Release|Any CPU.ActiveCfg = Release|Any CPU
