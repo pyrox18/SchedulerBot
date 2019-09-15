@@ -9,6 +9,7 @@ using SchedulerBot.Application.Events.Queries.GetEvents;
 
 namespace SchedulerBot.Client.Scheduler.Jobs
 {
+    [DisallowConcurrentExecution]
     public class EventPollingJob : IJob
     {
         private readonly IMediator _mediator;

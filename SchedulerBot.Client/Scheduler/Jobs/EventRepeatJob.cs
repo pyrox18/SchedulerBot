@@ -6,6 +6,7 @@ using SchedulerBot.Client.Scheduler.Data;
 
 namespace SchedulerBot.Client.Scheduler.Jobs
 {
+    [DisallowConcurrentExecution]
     public class EventRepeatJob : IJob
     {
         private readonly IMediator _mediator;
