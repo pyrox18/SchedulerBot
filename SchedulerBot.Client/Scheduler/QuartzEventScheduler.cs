@@ -64,7 +64,7 @@ namespace SchedulerBot.Client.Scheduler
                 return;
             }
 
-            var data = new EventNotifyJobDataMap(clientShardId, channelId, evt.Id);
+            var data = new EventJobDataMap(clientShardId, channelId, evt.Id);
 
             if (!evt.HasStarted())
             {

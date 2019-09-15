@@ -3,7 +3,7 @@ using System;
 
 namespace SchedulerBot.Client.Scheduler.Data
 {
-    public class EventNotifyJobDataMap 
+    public class EventJobDataMap
     {
         private const string _shardClientIdKey = "shardClientId";
         private const string _channelIdKey = "channelId";
@@ -47,12 +47,12 @@ namespace SchedulerBot.Client.Scheduler.Data
             }
         }
 
-        public EventNotifyJobDataMap(JobDataMap jobDataMap)
+        public EventJobDataMap(JobDataMap jobDataMap)
         {
             JobDataMap = jobDataMap;
         }
 
-        public EventNotifyJobDataMap(int shardClientId, ulong channelId, Guid eventId)
+        public EventJobDataMap(int shardClientId, ulong channelId, Guid eventId)
         {
             JobDataMap = new JobDataMap();
 

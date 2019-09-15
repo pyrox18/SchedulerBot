@@ -20,7 +20,7 @@ namespace SchedulerBot.Client.Scheduler.Jobs
 
         public async Task Execute(IJobExecutionContext context)
         {
-            var data = new EventNotifyJobDataMap(context.MergedJobDataMap);
+            var data = new EventJobDataMap(context.MergedJobDataMap);
 
             var result = await _mediator.Send(new ApplyEventRepeatCommand
             {
