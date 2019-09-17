@@ -1,4 +1,5 @@
-﻿using System;
+﻿using SchedulerBot.Domain.Enumerations;
+using System;
 
 namespace SchedulerBot.Domain.Models
 {
@@ -8,13 +9,5 @@ namespace SchedulerBot.Domain.Models
         public Event Event { get; set; }
         public ulong TargetId { get; set; }
         public MentionType Type { get; set; }
-    }
-
-    public enum MentionType
-    {
-        Role,
-        User,
-        Everyone,
-        RSVP
     }
 }

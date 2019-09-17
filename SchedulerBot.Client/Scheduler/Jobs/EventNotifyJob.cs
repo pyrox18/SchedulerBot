@@ -45,16 +45,16 @@ namespace SchedulerBot.Client.Scheduler.Jobs
                     {
                         switch (mention.Type)
                         {
-                            case SchedulerBot.Domain.Models.MentionType.Role:
+                            case Domain.Enumerations.MentionType.Role:
                                 sb.Append($"{mention.TargetId.AsRoleMention()} ");
                                 break;
-                            case SchedulerBot.Domain.Models.MentionType.User:
+                            case Domain.Enumerations.MentionType.User:
                                 sb.Append($"{mention.TargetId.AsUserMention()} ");
                                 break;
-                            case SchedulerBot.Domain.Models.MentionType.Everyone:
+                            case Domain.Enumerations.MentionType.Everyone:
                                 sb.Append("@everyone");
                                 break;
-                            case SchedulerBot.Domain.Models.MentionType.RSVP:
+                            case Domain.Enumerations.MentionType.RSVP:
                                 foreach (var rsvp in @event.RSVPs)
                                 {
                                     sb.Append($"{rsvp.UserId.AsUserMention()} ");

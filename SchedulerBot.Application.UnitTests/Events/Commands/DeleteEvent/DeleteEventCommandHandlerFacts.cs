@@ -7,6 +7,7 @@ using SchedulerBot.Application.Events.Commands.DeleteEvent;
 using SchedulerBot.Application.Events.Queries.GetEvent;
 using SchedulerBot.Application.Exceptions;
 using SchedulerBot.Application.Interfaces;
+using SchedulerBot.Domain.Enumerations;
 using SchedulerBot.Domain.Models;
 using Xunit;
 

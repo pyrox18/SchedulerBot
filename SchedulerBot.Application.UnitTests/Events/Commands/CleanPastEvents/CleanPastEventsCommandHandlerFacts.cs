@@ -2,6 +2,7 @@
 using Moq;
 using SchedulerBot.Application.Events.Commands.CleanPastEvents;
 using SchedulerBot.Application.Interfaces;
+using SchedulerBot.Domain.Enumerations;
 using SchedulerBot.Domain.Models;
 using System;
 using System.Collections.Generic;

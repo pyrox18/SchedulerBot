@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using SchedulerBot.Application.Events.Models;
+using SchedulerBot.Domain.Enumerations;
 using SchedulerBot.Domain.Models;
 using Xunit;
 

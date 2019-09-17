@@ -12,11 +12,4 @@ namespace SchedulerBot.Domain.Models
         public ulong TargetId { get; set; }
         public bool IsDenied { get; set; }
     }
-
-    public enum PermissionType
-    {
-        Role,
-        User,
-        Everyone
-    }
 }

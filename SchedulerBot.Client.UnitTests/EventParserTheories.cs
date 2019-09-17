@@ -4,6 +4,7 @@ using Xunit;
 using SchedulerBot.Client.Parsers;
 using SchedulerBot.Domain.Models;
 using SchedulerBot.Client.Exceptions;
+using SchedulerBot.Domain.Enumerations;
 
 namespace SchedulerBot.Client.UnitTests
 {

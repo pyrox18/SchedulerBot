@@ -1,4 +1,5 @@
-﻿using SchedulerBot.Domain.Models;
+﻿using SchedulerBot.Domain.Enumerations;
+using SchedulerBot.Domain.Models;
 using System.Collections.Generic;
 using System.Linq;
 

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using SchedulerBot.Domain.Enumerations;
 using SchedulerBot.Domain.Models;
 
 namespace SchedulerBot.Application.Events.Models

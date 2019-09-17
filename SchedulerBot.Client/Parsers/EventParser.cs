@@ -10,6 +10,7 @@ using NodaTime.Text;
 using SchedulerBot.Application.Interfaces;
 using SchedulerBot.Client.Exceptions;
 using SchedulerBot.Client.Extensions;
+using SchedulerBot.Domain.Enumerations;
 using SchedulerBot.Domain.Models;
 
 namespace SchedulerBot.Client.Parsers

@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using MediatR;
 using SchedulerBot.Application.Interfaces;
 using SchedulerBot.Application.Specifications;
+using SchedulerBot.Domain.Enumerations;
 using SchedulerBot.Domain.Models;
 
 namespace SchedulerBot.Application.Events.Commands.CleanPastEvents

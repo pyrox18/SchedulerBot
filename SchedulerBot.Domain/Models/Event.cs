@@ -1,4 +1,5 @@
-﻿using System;
+﻿using SchedulerBot.Domain.Enumerations;
+using System;
 using System.Collections.Generic;
 
 namespace SchedulerBot.Domain.Models
@@ -49,14 +50,5 @@ namespace SchedulerBot.Domain.Models
             }
             return ReminderTimestamp <= DateTimeOffset.Now;
         }
-    }
-
-    public enum RepeatType
-    {
-        None,
-        Daily,
-        Weekly,
-        Monthly,
-        MonthlyWeekday
     }
 }
