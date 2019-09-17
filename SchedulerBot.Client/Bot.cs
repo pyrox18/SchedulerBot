@@ -27,6 +27,7 @@ using SchedulerBot.Client.Attributes;
 using SchedulerBot.Client.Commands;
 using SchedulerBot.Client.Configuration;
 using SchedulerBot.Client.Extensions;
+using SchedulerBot.Client.Services;
 using SharpRaven;
 using SharpRaven.Data;
 
@@ -39,6 +40,7 @@ namespace SchedulerBot.Client
         private readonly IServiceProvider _serviceProvider;
         private readonly IMediator _mediator;
         private readonly IMemoryCache _cache;
+        private readonly IErrorHandlerService _errorHandlerService;
         private readonly BotConfiguration _configuration;
         private readonly string _version;
 
@@ -48,7 +50,8 @@ namespace SchedulerBot.Client
             IServiceProvider serviceProvider,
             IMemoryCache cache,
             IMediator mediator,
-            IOptions<BotConfiguration> configuration)
+            IOptions<BotConfiguration> configuration,
+            IErrorHandlerService errorHandlerService)
         {
             _logger = logger;
             _shardedClient = shardedClient;
@@ -56,6 +59,7 @@ namespace SchedulerBot.Client
             _cache = cache;
             _mediator = mediator;
             _configuration = configuration.Value;
+            _errorHandlerService = errorHandlerService;
 
             _version = Assembly.GetEntryAssembly()
                 .GetCustomAttribute<AssemblyInformationalVersionAttribute>()
@@ -88,7 +92,7 @@ namespace SchedulerBot.Client
                 var commands = ext.Value;
                 commands.RegisterCommands(typeof(AdminCommands).Assembly);
 
-                commands.CommandErrored += OnCommandError;
+                commands.CommandErrored += _errorHandlerService.HandleCommandErrorAsync;
             }
 
             // Register event handlers

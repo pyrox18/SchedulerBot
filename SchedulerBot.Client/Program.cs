@@ -13,6 +13,7 @@ using SchedulerBot.Client.Extensions;
 using SchedulerBot.Client.Parsers;
 using SchedulerBot.Client.Scheduler;
 using SchedulerBot.Client.Scheduler.Jobs;
+using SchedulerBot.Client.Services;
 using SchedulerBot.Infrastructure;
 using SchedulerBot.Persistence;
 using SchedulerBot.Persistence.Repositories;
@@ -101,12 +102,19 @@ namespace SchedulerBot.Client
                     // Add cache service for caching prefixes
                     services.AddMemoryCache();
 
-                    // Add Raven client as a service for production environment
-                    if (Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") == "Production")
+                    // Error handler service
+                    if (hostContext.HostingEnvironment.IsProduction())
                     {
-                        var dsn = configuration.GetSection("Raven").GetValue<string>("DSN");
-                        var ravenClient = new RavenClient(dsn);
-                        services.AddSingleton<IRavenClient>(ravenClient);
+                        services.AddSingleton<IRavenClient>(_ =>
+                        {
+                            var dsn = configuration.GetSection("Raven").GetValue<string>("DSN");
+                            return new RavenClient(dsn);
+                        });
+                        services.AddSingleton<IErrorHandlerService, SentryErrorHandlerService>();
+                    }
+                    else
+                    {
+                        services.AddSingleton<IErrorHandlerService, ErrorHandlerService>();
                     }
 
                     // Configure database
