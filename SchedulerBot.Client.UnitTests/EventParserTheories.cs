@@ -5,11 +5,16 @@ using SchedulerBot.Client.Parsers;
 using SchedulerBot.Domain.Models;
 using SchedulerBot.Client.Exceptions;
 using SchedulerBot.Domain.Enumerations;
+using Moq;
+using SchedulerBot.Application.Interfaces;
 
 namespace SchedulerBot.Client.UnitTests
 {
     public class EventParserTheories
     {
+        // Fixed IDateTimeOffset.Now value
+        public static DateTimeOffset Now = new DateTimeOffset(2019, 1, 1, 12, 0, 0, new TimeSpan(8, 0, 0));
+
         public class ParseNewEventMethod
         {
             public static IEnumerable<object[]> NewEventSuccessTestData => new List<object[]>
@@ -564,7 +569,12 @@ namespace SchedulerBot.Client.UnitTests
             [MemberData(nameof(NewEventSuccessTestData))]
             public void ReturnsNewEvent(string args, string timezone, Event expected)
             {
-                var result = new EventParser().ParseNewEvent(args.Split(' '), timezone);
+                var mockDateTimeOffset = new Mock<IDateTimeOffset>();
+                mockDateTimeOffset.Setup(x => x.Now)
+                    .Returns(Now);
+
+                var result = new EventParser(mockDateTimeOffset.Object)
+                    .ParseNewEvent(args.Split(' '), timezone);
 
                 Assert.Equal(expected.Name, result.Name);
                 Assert.Equal(expected.StartTimestamp, result.StartTimestamp);
@@ -610,9 +620,14 @@ namespace SchedulerBot.Client.UnitTests
             [MemberData(nameof(NewEventParseExceptionTestData))]
             public void ThrowsEventParseException(string args)
             {
+                var mockDateTimeOffset = new Mock<IDateTimeOffset>();
+                mockDateTimeOffset.Setup(x => x.Now)
+                    .Returns(Now);
+
                 Assert.Throws<EventParseException>(() =>
                 {
-                    new EventParser().ParseNewEvent(args.Split(' '), "Europe/London");
+                    new EventParser(mockDateTimeOffset.Object)
+                        .ParseNewEvent(args.Split(' '), "Europe/London");
                 });
             }
 
@@ -620,9 +635,14 @@ namespace SchedulerBot.Client.UnitTests
             [MemberData(nameof(NewEventTimezoneExceptionTestData))]
             public void ThrowsInvalidTimezoneException(string timezone)
             {
+                var mockDateTimeOffset = new Mock<IDateTimeOffset>();
+                mockDateTimeOffset.Setup(x => x.Now)
+                    .Returns(Now);
+
                 Assert.Throws<InvalidTimeZoneException>(() =>
                 {
-                    new EventParser().ParseNewEvent("Test Event 8pm".Split(' '), timezone);
+                    new EventParser(mockDateTimeOffset.Object)
+                        .ParseNewEvent("Test Event 8pm".Split(' '), timezone);
                 });
             }
         }
@@ -720,7 +740,12 @@ namespace SchedulerBot.Client.UnitTests
                     }
                 };
 
-                var result = new EventParser().ParseUpdateEvent(baseEvent, args, timezone);
+                var mockDateTimeOffset = new Mock<IDateTimeOffset>();
+                mockDateTimeOffset.Setup(x => x.Now)
+                    .Returns(Now);
+
+                var result = new EventParser(mockDateTimeOffset.Object)
+                    .ParseUpdateEvent(baseEvent, args, timezone);
 
                 Assert.Equal(expected.Name, result.Name);
                 Assert.Equal(expected.StartTimestamp, result.StartTimestamp);
@@ -758,8 +783,8 @@ namespace SchedulerBot.Client.UnitTests
 
         private static DateTimeOffset GetDateTimeOffsetFuture(int hour, int minute, int second, TimeSpan timespan)
         {
-            var now = DateTimeOffset.Now;
-            var timestamp = new DateTimeOffset(DateTimeOffset.Now.Year, DateTimeOffset.Now.Month, DateTimeOffset.Now.Day, hour, minute, second, timespan);
+            var now = Now;
+            var timestamp = new DateTimeOffset(Now.Year, Now.Month, Now.Day, hour, minute, second, timespan);
             if (timestamp <= now)
             {
                 timestamp = timestamp.AddDays(1);
@@ -769,8 +794,8 @@ namespace SchedulerBot.Client.UnitTests
 
         private static DateTimeOffset GetDateTimeOffsetFuture(int month, int day, int hour, int minute, int second, TimeSpan timespan)
         {
-            var now = DateTimeOffset.Now;
-            var timestamp = new DateTimeOffset(DateTimeOffset.Now.Year, month, day, hour, minute, second, timespan);
+            var now = Now;
+            var timestamp = new DateTimeOffset(Now.Year, month, day, hour, minute, second, timespan);
             if (timestamp <= now)
             {
                 timestamp = timestamp.AddYears(1);
