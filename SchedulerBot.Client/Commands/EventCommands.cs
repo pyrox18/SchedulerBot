@@ -14,6 +14,7 @@ using SchedulerBot.Client.Scheduler;
 using SchedulerBot.Data.Exceptions;
 using SchedulerBot.Data.Models;
 using SchedulerBot.Data.Services;
+using DSharpPlus.Interactivity.Extensions;
 
 namespace SchedulerBot.Client.Commands
 {
@@ -123,7 +124,7 @@ namespace SchedulerBot.Client.Commands
 
             var pages = EventListPageFactory.GetEventListPages(events);
             var interactivity = ctx.Client.GetInteractivity();
-            await interactivity.SendPaginatedMessage(ctx.Channel, ctx.User, pages);
+            await interactivity.SendPaginatedMessageAsync(ctx.Channel, ctx.User, pages);
         }
 
         [Command("list"), Description("List the details of a single event.")]

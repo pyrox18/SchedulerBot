@@ -5,7 +5,6 @@ using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 using System.Timers;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -27,6 +26,7 @@ using SchedulerBot.Data.Models;
 using SchedulerBot.Data.Services;
 using DSharpPlus.CommandsNext.Exceptions;
 using SchedulerBot.Client.Services;
+using DSharpPlus.Interactivity.Extensions;
 
 namespace SchedulerBot.Client
 {
@@ -69,13 +69,9 @@ namespace SchedulerBot.Client
                 TokenType = TokenType.Bot
             };
             var logLevel = Configuration.GetSection("Logging").GetSection("LogLevel").GetValue<string>("Default");
-            config.LogLevel = logLevel == "Information" ? DSharpPlus.LogLevel.Info : Enum.Parse<DSharpPlus.LogLevel>(logLevel);
+            config.MinimumLogLevel = logLevel == "Information" ? LogLevel.Information : Enum.Parse<LogLevel>(logLevel);
             Client = new DiscordShardedClient(config);
-            await Client.UseInteractivityAsync(new InteractivityConfiguration
-            {
-                PaginationBehavior = TimeoutBehaviour.DeleteReactions
-            });
-            Client.DebugLogger.LogMessageReceived += OnLogMessageReceived;
+            await Client.UseInteractivityAsync(new InteractivityConfiguration());
 
             logger.LogInformation("Initialising command module");
             var commandsNextExtensions = await Client.UseCommandsNextAsync(new CommandsNextConfiguration
@@ -201,7 +197,7 @@ namespace SchedulerBot.Client
 
         }
 
-        private async Task OnGuildCreate(GuildCreateEventArgs e)
+        private async Task OnGuildCreate(DiscordClient client, GuildCreateEventArgs e)
         {
             var calendar = new Calendar
             {
@@ -214,43 +210,43 @@ namespace SchedulerBot.Client
             await calendarService.CreateCalendarAsync(calendar);
         }
 
-        private async Task OnGuildDelete(GuildDeleteEventArgs e)
+        private async Task OnGuildDelete(DiscordClient client, GuildDeleteEventArgs e)
         {
             var calendarService = ServiceProvider.GetService<ICalendarService>();
             await calendarService.DeleteCalendarAsync(e.Guild.Id);
         }
 
-        private async Task OnGuildMemberRemove(GuildMemberRemoveEventArgs e)
+        private async Task OnGuildMemberRemove(DiscordClient client, GuildMemberRemoveEventArgs e)
         {
             var permissionService = ServiceProvider.GetService<IPermissionService>();
             await permissionService.RemoveUserPermissionsAsync(e.Guild.Id, e.Member.Id);
         }
 
-        private async Task OnGuildRoleDelete(GuildRoleDeleteEventArgs e)
+        private async Task OnGuildRoleDelete(DiscordClient client, GuildRoleDeleteEventArgs e)
         {
             var permissionService = ServiceProvider.GetService<IPermissionService>();
             await permissionService.RemoveRolePermissionsAsync(e.Guild.Id, e.Role.Id);
         }
 
-        private async Task OnClientReady(ReadyEventArgs e)
+        private async Task OnClientReady(DiscordClient client, ReadyEventArgs e)
         {
             var logger = ServiceProvider.GetService<ILogger<Program>>();
 
             // Set status
             logger.LogInformation("Updating status");
             var version = Assembly.GetEntryAssembly().GetCustomAttribute<AssemblyInformationalVersionAttribute>().InformationalVersion;
-            await e.Client.UpdateStatusAsync(new DiscordActivity(string.Format(Configuration.GetSection("Bot").GetValue<string>("Status"), version)));
+            await client.UpdateStatusAsync(new DiscordActivity(string.Format(Configuration.GetSection("Bot").GetValue<string>("Status"), version)));
 
             // Start event polling
-            logger.LogInformation($"Starting initial event poll for shard {e.Client.ShardId}");
-            await PollAndScheduleEvents(e.Client);
-            logger.LogInformation($"Initial event poll completed for shard {e.Client.ShardId}");
-            logger.LogInformation($"Starting poll timer for shard {e.Client.ShardId}");
-            StartEventPollTimer(e.Client);
-            logger.LogInformation($"Poll timer started for shard {e.Client.ShardId}");
+            logger.LogInformation($"Starting initial event poll for shard {client.ShardId}");
+            await PollAndScheduleEvents(client);
+            logger.LogInformation($"Initial event poll completed for shard {client.ShardId}");
+            logger.LogInformation($"Starting poll timer for shard {client.ShardId}");
+            StartEventPollTimer(client);
+            logger.LogInformation($"Poll timer started for shard {client.ShardId}");
         }
 
-        private async Task OnCommandError(CommandErrorEventArgs e)
+        private async Task OnCommandError(CommandsNextExtension extension, CommandErrorEventArgs e)
         {
             var exceptionType = e.Exception.GetType();
             if (exceptionType != typeof(CommandNotFoundException) && exceptionType != typeof(ArgumentException) && exceptionType != typeof(UnauthorizedException) && exceptionType != typeof(InvalidOperationException))
@@ -329,29 +325,6 @@ namespace SchedulerBot.Client
             var eventScheduler = ServiceProvider.GetService<IEventScheduler>();
             logger.LogInformation($"Polling for events for shard {client.ShardId}");
             await eventScheduler.PollAndScheduleEvents(client);
-        }
-
-        private void OnLogMessageReceived(object sender, DebugLogMessageEventArgs e)
-        {
-            var logger = ServiceProvider.GetService<ILogger<Program>>();
-            switch (e.Level)
-            {
-                case DSharpPlus.LogLevel.Critical:
-                    logger.LogCritical($"[{e.Application}] {e.Message}");
-                    break;
-                case DSharpPlus.LogLevel.Debug:
-                    logger.LogDebug($"[{e.Application}] {e.Message}");
-                    break;
-                case DSharpPlus.LogLevel.Error:
-                    logger.LogError($"[{e.Application}] {e.Message}");
-                    break;
-                case DSharpPlus.LogLevel.Info:
-                    logger.LogInformation($"[{e.Application}] {e.Message}");
-                    break;
-                case DSharpPlus.LogLevel.Warning:
-                    logger.LogWarning($"[{e.Application}] {e.Message}");
-                    break;
-            }
         }
     }
 }

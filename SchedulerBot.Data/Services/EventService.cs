@@ -27,7 +27,6 @@ namespace SchedulerBot.Data.Services
                     throw new CalendarNotFoundException();
                 }
 
-                evt.Id = Guid.NewGuid();
                 calendar.Events.Add(evt);
                 await db.SaveChangesAsync();
             }
@@ -404,11 +403,11 @@ namespace SchedulerBot.Data.Services
         {
             using (var db = _contextFactory.CreateDbContext())
             {
-                var events = await db.Events
+                var events = (await db.Events
                     .Include(e => e.Mentions)
                     .Include(e => e.RSVPs)
-                    .Where(e => e.EndTimestamp < DateTimeOffset.Now)
-                    .ToListAsync();
+                    .ToListAsync())
+                    .Where(e => e.EndTimestamp < DateTimeOffset.Now);
 
                 foreach (var evt in events)
                 {

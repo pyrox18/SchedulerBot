@@ -1,13 +1,27 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 15
-VisualStudioVersion = 15.0.27703.2035
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.30611.23
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SchedulerBot.Client", "SchedulerBot.Client\SchedulerBot.Client.csproj", "{70630CBA-AF33-4574-989D-EE711FCE017B}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SchedulerBot.Data", "SchedulerBot.Data\SchedulerBot.Data.csproj", "{ADD9096A-CB1C-4406-8970-B382302AF254}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SchedulerBot.MigrationTool", "SchedulerBot.MigrationTool\SchedulerBot.MigrationTool.csproj", "{A530AAE0-BF1A-489E-9297-E4B0B618B6CC}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{4A1AD755-430A-47FC-947A-21EA11CE46F7}"
+	ProjectSection(SolutionItems) = preProject
+		.dockerignore = .dockerignore
+		.gitignore = .gitignore
+		.travis.yml = .travis.yml
+		BACKERS.md = BACKERS.md
+		CHANGELOG.md = CHANGELOG.md
+		CONTRIBUTING.md = CONTRIBUTING.md
+		Dockerfile = Dockerfile
+		LICENSE = LICENSE
+		NuGet.config = NuGet.config
+		README.md = README.md
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
