@@ -2,6 +2,12 @@
 
 This changelog is formatted based on [Keep a Changelog](http://keepachangelog.com/) and this project attempts to adhere to [Semantic Versioning](http://semver.org) as much as possible.
 
+## v2.1.5 - 2020-11-03
+
+### Changed
+
+- Updated the bot to use .NET Core 3.1 and nightly version 00745 of the DSharpPlus framework to support the changes to the [Discord API host address](https://support.glitch.com/t/quick-update-on-discord-api/28714). Details on minor code changes related to this exercise can be found in the message for commit ffd87e5.
+
 ## v2.1.4 - 2018-10-25
 
 ### Changed
